@@ -1,0 +1,293 @@
+@import "tailwindcss";
+@import "pretendard/dist/web/static/pretendard.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
+@import "@fontsource/jetbrains-mono/700.css";
+
+/*
+  "Signal Room" — 공장 제어실/계측 장비를 참조한 다크 우선 산업용 모니터링 테마.
+  일반 SaaS 대시보드의 파스텔 카드·둥근 모서리·소프트 섀도 언어를 의도적으로 배제하고,
+  데이터는 전부 모노스페이스, 상태는 LED 인디케이터, 배경은 블루프린트 격자로 표현한다.
+*/
+
+:root {
+  color-scheme: dark;
+
+  --page: #07090a;
+  --surface-1: #0e1113;
+  --surface-2: #161a1d;
+  --surface-raised: #1a1f22;
+  --text-primary: #eef2f1;
+  --text-secondary: #9aa5a3;
+  --text-muted: #63706e;
+  --gridline: #1c2124;
+  --axis: #2a3134;
+  --border: rgba(238, 242, 241, 0.1);
+  --border-soft: rgba(238, 242, 241, 0.06);
+  --border-strong: rgba(238, 242, 241, 0.18);
+
+  --accent: #35e0c2;
+  --accent-dim: rgba(53, 224, 194, 0.14);
+  --accent-ink: #04231d;
+
+  --series-1: #35e0c2; /* signal cyan — primary */
+  --series-2: #f2b33d; /* amber — secondary / AS-IS */
+  --series-3: #b98cf2; /* muted violet — tertiary */
+
+  --status-good: #35d07f;
+  --status-warning: #f2b33d;
+  --status-serious: #f2874a;
+  --status-critical: #f2495c;
+
+  --status-good-wash: rgba(53, 208, 127, 0.14);
+  --status-warning-wash: rgba(242, 179, 61, 0.14);
+  --status-serious-wash: rgba(242, 135, 74, 0.14);
+  --status-critical-wash: rgba(242, 73, 92, 0.14);
+
+  --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --focus-ring: 0 0 0 2px var(--page), 0 0 0 4px var(--accent);
+
+  --radius: 3px;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* 블루프린트 격자 배경 — 라이트/다크 모두에서 재정의됨 */
+  --grid-line-color: rgba(238, 242, 241, 0.035);
+  --grid-size: 28px;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --page: #f4f5f3;
+  --surface-1: #fbfbfa;
+  --surface-2: #eef0ee;
+  --surface-raised: #ffffff;
+  --text-primary: #0c1210;
+  --text-secondary: #495450;
+  --text-muted: #7c8783;
+  --gridline: #dfe3e0;
+  --axis: #c5cbc7;
+  --border: rgba(12, 18, 16, 0.12);
+  --border-soft: rgba(12, 18, 16, 0.07);
+  --border-strong: rgba(12, 18, 16, 0.22);
+
+  --accent: #0e9c85;
+  --accent-dim: rgba(14, 156, 133, 0.12);
+  --accent-ink: #ffffff;
+
+  --series-1: #0e9c85;
+  --series-2: #b8791f;
+  --series-3: #8354c9;
+
+  --status-good: #1f9d5c;
+  --status-warning: #b8791f;
+  --status-serious: #c85f2e;
+  --status-critical: #c9273c;
+
+  --status-good-wash: rgba(31, 157, 92, 0.12);
+  --status-warning-wash: rgba(184, 121, 31, 0.12);
+  --status-serious-wash: rgba(200, 95, 46, 0.12);
+  --status-critical-wash: rgba(201, 39, 60, 0.1);
+
+  --shadow-card: 0 1px 2px color-mix(in oklab, var(--text-primary) 6%, transparent);
+  --shadow-card-hover: 0 8px 24px color-mix(in oklab, var(--text-primary) 10%, transparent);
+  --focus-ring: 0 0 0 2px var(--page), 0 0 0 4px var(--accent);
+
+  --grid-line-color: rgba(12, 18, 16, 0.045);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  background-image:
+    linear-gradient(var(--grid-line-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family:
+    "Pretendard",
+    system-ui,
+    -apple-system,
+    "Malgun Gothic",
+    "Apple SD Gothic Neo",
+    sans-serif;
+  font-feature-settings: "tnum" 1;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+.mono,
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+/* 카드형 컨테이너 공통 톤 — 각진 모서리 + 헤어라인 보더 + 최소한의 깊이만 */
+.surface-card {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+/* HUD 코너 브래킷 — 주요 패널에만 사용하는 시그니처 모티프 */
+.bracket-panel {
+  position: relative;
+}
+.bracket-panel::before,
+.bracket-panel::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: var(--accent);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.bracket-panel::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1.5px solid var(--accent);
+  border-left: 1.5px solid var(--accent);
+}
+.bracket-panel::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1.5px solid var(--accent);
+  border-right: 1.5px solid var(--accent);
+}
+
+/* 키보드 포커스 표시 — 접근성 필수 */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.icon-btn {
+  border-radius: var(--radius);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
+}
+.icon-btn:hover {
+  background: var(--border-soft);
+  color: var(--text-primary);
+}
+.icon-btn:active {
+  transform: scale(0.94);
+}
+.icon-btn--filled {
+  background: var(--surface-2);
+}
+.icon-btn--filled:hover {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.nav-link {
+  border-radius: var(--radius);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.nav-link:hover {
+  color: var(--text-primary);
+  background: var(--border-soft);
+}
+.nav-link.is-active {
+  position: relative;
+}
+.nav-link.is-active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -1px;
+  height: 1.5px;
+  background: var(--accent);
+}
+
+.cta-primary {
+  border-radius: var(--radius);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+.cta-primary:hover {
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow-card-hover);
+  transform: translateY(-1px);
+}
+.cta-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.theme-toggle-track:hover {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
+}
+.theme-toggle-track:active {
+  transform: scale(0.97);
+}
+
+.back-link {
+  width: fit-content;
+  transition: color 0.15s ease;
+}
+.back-link:hover {
+  color: var(--text-primary);
+}
+
+/* LED 인디케이터 — 파스텔 배지 대신 계측 장비의 상태등을 참조 */
+.led-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.led-dot--live {
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim), 0 0 6px color-mix(in oklab, var(--accent) 70%, transparent);
+  animation: led-pulse 2s ease-in-out infinite;
+}
+@keyframes led-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .led-dot--live {
+    animation: none;
+  }
+}
