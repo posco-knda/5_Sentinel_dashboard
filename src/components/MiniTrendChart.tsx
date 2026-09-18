@@ -6,7 +6,7 @@ function MiniTooltip({ active, payload, unit }: any) {
   return (
     <div
       className="mono border px-2.5 py-1.5 text-[11.5px]"
-      style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-strong)' }}
+      style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-xs)' }}
     >
       <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
         {v.toFixed(1)}

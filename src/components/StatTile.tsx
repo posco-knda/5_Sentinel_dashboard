@@ -45,7 +45,7 @@ export function StatTile({
 
   return (
     <motion.div
-      className="surface-card flex flex-col gap-2.5 border p-5"
+      className="surface-card surface-card--interactive flex flex-col gap-2.5 border p-5"
       style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}

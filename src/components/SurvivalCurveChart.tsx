@@ -19,7 +19,7 @@ function CurveTooltip({ active, payload, label }: any) {
   return (
     <div
       className="border px-3 py-2 text-[12px]"
-      style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-strong)' }}
+      style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-xs)' }}
     >
       <div style={{ color: 'var(--text-muted)' }}>
         누적 마일리지 <span className="mono">+{label}km</span>

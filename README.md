@@ -23,7 +23,6 @@
 | (모델 성능 부분) | feature importance + P/R/F1 더미 값 → 실제 `Anomaly_*` 라벨 기준 모델 성능 |
 | (정비 이력 부분) | `maintenanceHistory` 더미 값 → 실제 `work_roll_mileage` 리셋(롤 교체) 이력 |
 | `src/pages/Simulation.tsx` | AS-IS/TO-BE 비용 비교 더미 숫자 → 실제 비용 시뮬레이션 결과 |
-| `src/components/EquipmentDiagram.tsx` | 실제 대회 설비 형태가 확정되면 (이미 5단 텐덤 박스 다이어그램으로 교체 완료 — 필요 시 세부 형태만 조정) |
 
 ## 실행 방법
 

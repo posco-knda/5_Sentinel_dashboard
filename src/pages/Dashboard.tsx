@@ -8,23 +8,33 @@ import { Scrubber } from '../components/Scrubber'
 import { Toast } from '../components/Toast'
 import { getKpisAtHour, anomalyWindow } from '../data/mock'
 
-function Panel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function Panel({ title, action, children }: { title?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <div className="mb-3.5 flex flex-row items-center justify-between">
-        <p className="m-0 text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-          {title}
-        </p>
-        {action}
-      </div>
+      {(title || action) && (
+        <div className="mb-3.5 flex flex-row items-center justify-between">
+          {title && (
+            <p className="m-0 text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {title}
+            </p>
+          )}
+          {action}
+        </div>
+      )}
       {children}
     </div>
   )
 }
 
+const sideTabs = [
+  { id: 'priority', label: '정비 우선순위' },
+  { id: 'alerts', label: '알림 로그' },
+] as const
+
 export function Dashboard() {
   const [hour, setHour] = useState(24)
   const [playing, setPlaying] = useState(false)
+  const [sideTab, setSideTab] = useState<(typeof sideTabs)[number]['id']>('priority')
   const rafRef = useRef<number | null>(null)
   const lastTsRef = useRef<number | null>(null)
 
@@ -72,9 +82,16 @@ export function Dashboard() {
         body="Force 값이 임계치를 초과했습니다"
       />
 
+      <div>
+        <h1 className="m-0 text-[22px] font-semibold tracking-[-0.01em]">실시간 모니터링</h1>
+        <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
+          타임라인을 움직여 하루 동안의 이상탐지 흐름을 재생해볼 수 있습니다
+        </p>
+      </div>
+
       <Scrubber hour={hour} onChange={setHour} playing={playing} onTogglePlay={togglePlay} />
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile
           label="모니터링 스탠드"
           value={kpis.totalEquipment}
@@ -114,7 +131,7 @@ export function Dashboard() {
       </div>
 
       <motion.div
-        className="grid grid-cols-[2fr_1fr] gap-5"
+        className="grid grid-cols-1 gap-5 lg:grid-cols-[1.6fr_1fr]"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.2 }}
@@ -124,7 +141,7 @@ export function Dashboard() {
           action={
             <span
               className="border px-3 py-1.5 text-[12.5px]"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
             >
               최근 24시간
             </span>
@@ -136,14 +153,21 @@ export function Dashboard() {
           </p>
         </Panel>
 
-        <Panel title="정비 우선순위">
-          <RankedList hour={hour} />
-        </Panel>
-      </motion.div>
-
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }}>
-        <Panel title="최근 이상탐지 로그">
-          <AlertsTable hour={hour} />
+        <Panel>
+          <div className="flex flex-row gap-4" style={{ borderBottom: '1px solid var(--border)' }}>
+            {sideTabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setSideTab(t.id)}
+                className={`tab-btn ${sideTab === t.id ? 'is-active' : ''}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="pt-3.5">
+            {sideTab === 'priority' ? <RankedList hour={hour} /> : <AlertsTable hour={hour} compact />}
+          </div>
         </Panel>
       </motion.div>
     </div>

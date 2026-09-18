@@ -15,7 +15,8 @@ export function Toast({ show, title, body }: { show: boolean; title: string; bod
               background: 'var(--surface-raised)',
               borderColor: 'var(--border)',
               borderLeft: '3px solid var(--status-critical)',
-              boxShadow: '0 8px 24px color-mix(in oklab, var(--status-critical) 14%, transparent)',
+              borderRadius: 'var(--radius-sm)',
+              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.35)',
             }}
           >
             <svg
