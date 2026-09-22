@@ -1,3 +1,7 @@
+// ⚠️ 자동 생성 파일 — analysis/src/export_dashboard.py 가 만든다. 직접 고치지 말고 파이썬을 다시 돌릴 것.
+// 대시보드 src/data/mock.ts 와 같은 이름의 export를 제공한다. (mock.ts 자리에 그대로 복사해서 쓰면 됨)
+// 원본 CSV에 시각이 없어서 '시간'은 코일 번호(생산 순서)다.
+
 export type Status = 'good' | 'warning' | 'serious' | 'critical'
 
 export const statusLabel: Record<Status, string> = {
@@ -7,40 +11,77 @@ export const statusLabel: Record<Status, string> = {
   critical: '위험',
 }
 
-/** 대시보드 상단 메인 차트: Stand 3 압연력(force) 추이 — 스크러버 시각(hour)에 따른 값.
- *  실제 데이터 연결 시 tcm5_dataset_*.csv의 force_3 컬럼(시간순 리샘플)으로 교체. */
-export const sensorSeries = [
-  { t: '00:00', h: 0, v: 3.1 },
-  { t: '02:00', h: 2, v: 3.4 },
-  { t: '04:00', h: 4, v: 3.0 },
-  { t: '06:00', h: 6, v: 3.6 },
-  { t: '08:00', h: 8, v: 3.3 },
-  { t: '10:00', h: 10, v: 3.8 },
-  { t: '12:00', h: 12, v: 4.5 },
-  { t: '14:00', h: 14, v: 6.8 },
-  { t: '15:00', h: 15, v: 9.2 },
-  { t: '16:00', h: 16, v: 9.8 },
-  { t: '17:00', h: 17, v: 8.4 },
-  { t: '18:00', h: 18, v: 6.0 },
-  { t: '20:00', h: 20, v: 3.9 },
-  { t: '22:00', h: 22, v: 3.5 },
-  { t: '24:00', h: 24, v: 3.2 },
-]
+export const dataMeta = {
+  "generatedAt": "2026-09-21T14:52:56",
+  "dataset": 6,
+  "startRow": 16289,
+  "endRow": 16313,
+  "note": "원본 CSV에 시각 정보가 없어 시간축은 생산 순서(코일 번호). 비용·정지시간은 가정값(analysis/src/cost.py).",
+  "costAssumptions": {
+    "WorkRoll": {
+      "hours_planned": 1.0,
+      "hours_unplanned": 4.0,
+      "repair_planned": 500.0
+    },
+    "Bearing": {
+      "hours_planned": 2.0,
+      "hours_unplanned": 8.0,
+      "repair_planned": 2000.0
+    },
+    "Electric": {
+      "hours_planned": 2.0,
+      "hours_unplanned": 6.0,
+      "repair_planned": 1500.0
+    },
+    "Reduction": {
+      "hours_planned": 0.0,
+      "hours_unplanned": 0.0,
+      "repair_planned": 0.0
+    },
+    "downtime_cost_per_hour": 5000.0,
+    "repair_unplanned_ratio": 4.5,
+    "coil_loss": 150.0,
+    "false_alarm_hours": 0.25,
+    "false_alarm_labor": 100.0,
+    "unplanned_hours_multiplier": 1.0
+  }
+}
 
-export const anomalyWindow = { start: 14, end: 18 }
+/** 메인 차트: Stand 3 압연력(force, MN) 추이 — h = 창 안의 코일 순서(0~24) */
+export const sensorSeries: { t: string; h: number; v: number }[] = [{"t": "#16289", "h": 0, "v": 6.538},
+   {"t": "#16290", "h": 1, "v": 7.072},
+   {"t": "#16291", "h": 2, "v": 6.734},
+   {"t": "#16292", "h": 3, "v": 3.944},
+   {"t": "#16293", "h": 4, "v": 3.959},
+   {"t": "#16294", "h": 5, "v": 3.936},
+   {"t": "#16295", "h": 6, "v": 4.1},
+   {"t": "#16296", "h": 7, "v": 6.373},
+   {"t": "#16297", "h": 8, "v": 5.936},
+   {"t": "#16298", "h": 9, "v": 6.363},
+   {"t": "#16299", "h": 10, "v": 6.098},
+   {"t": "#16300", "h": 11, "v": 6.981},
+   {"t": "#16301", "h": 12, "v": 6.946},
+   {"t": "#16302", "h": 13, "v": 7.281},
+   {"t": "#16303", "h": 14, "v": 8.37},
+   {"t": "#16304", "h": 15, "v": 8.404},
+   {"t": "#16305", "h": 16, "v": 8.567},
+   {"t": "#16306", "h": 17, "v": 8.109},
+   {"t": "#16307", "h": 18, "v": 8.457},
+   {"t": "#16308", "h": 19, "v": 8.269},
+   {"t": "#16309", "h": 20, "v": 6.452},
+   {"t": "#16310", "h": 21, "v": 6.304},
+   {"t": "#16311", "h": 22, "v": 6.279},
+   {"t": "#16312", "h": 23, "v": 6.152},
+   {"t": "#16313", "h": 24, "v": 5.799}]
+
+export const anomalyWindow = {"start": 14, "end": 20}
+
+const START_ROW: number = 16289
 
 export function formatHour(h: number): string {
-  const hh = Math.floor(h) % 24
-  const mm = Math.round((h - Math.floor(h)) * 60)
-  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+  return `코일 #${START_ROW + Math.round(h)}`
 }
 
-function parseTimeToHour(time: string): number {
-  const [hh, mm] = time.split(':').map(Number)
-  return hh + mm / 60
-}
-
-/** sensorSeries의 두 점 사이를 선형보간해서 임의의 시각의 압연력(force) 값을 계산 */
 export function getVibrationAtHour(hour: number): number {
   const clamped = Math.max(0, Math.min(24, hour))
   for (let i = 0; i < sensorSeries.length - 1; i++) {
@@ -61,14 +102,12 @@ export interface EquipmentRow {
   status: Status
 }
 
-/** 5단 텐덤 라인의 스탠드 1·2·4·5 — Stand 3(아래 getEquipmentRankingAtHour에서 실시간 계산)를
- *  제외한 나머지는 고정값. 실제 연결 시 스탠드별 Anomaly_* 라벨 집계로 교체. */
-const baseEquipment: EquipmentRow[] = [
-  { id: 'stand-1', name: 'Stand 1', health: 41, status: 'warning' },
-  { id: 'stand-2', name: 'Stand 2', health: 58, status: 'warning' },
-  { id: 'stand-4', name: 'Stand 4', health: 76, status: 'good' },
-  { id: 'stand-5', name: 'Stand 5', health: 91, status: 'good' },
-]
+/** 스탠드별 헬스 점수(0~100) 시계열. 정의: 100 × (1 − (0.7 × 최근 이상 증거 + 0.3 × 롤 마모 진행도)) */
+const standHealth: Record<string, number[]> = {"stand-1": [79, 79, 79, 78, 78, 78, 77, 77, 77, 76, 76, 6, 6, 5, 5, 5, 5, 4, 4, 4, 3, 3, 73, 72, 72],
+   "stand-2": [96, 96, 96, 95, 95, 95, 94, 94, 93, 93, 93, 92, 92, 91, 91, 91, 90, 90, 90, 89, 89, 89, 88, 88, 88],
+   "stand-3": [76, 75, 75, 74, 75, 74, 74, 73, 73, 72, 72, 70, 70, 69, 30, 30, 29, 29, 28, 28, 27, 30, 30, 70, 88],
+   "stand-4": [79, 80, 79, 78, 78, 77, 78, 77, 77, 76, 75, 73, 73, 72, 72, 72, 71, 71, 70, 70, 69, 69, 100, 98, 98],
+   "stand-5": [73, 73, 73, 71, 71, 70, 70, 70, 99, 98, 98, 96, 95, 95, 95, 96, 95, 94, 94, 92, 91, 91, 92, 91, 90]}
 
 function statusFromHealth(health: number): Status {
   if (health < 30) return 'critical'
@@ -76,51 +115,64 @@ function statusFromHealth(health: number): Status {
   return 'good'
 }
 
-/** 스크러버 시각(hour)에 따라 Stand 3의 헬스가 실시간으로 악화되는 것처럼 계산.
- *  압연력(force) 값에서 직접 유도해서 센서 차트와 항상 일관되게 맞춰줍니다. */
 export function getEquipmentRankingAtHour(hour: number): EquipmentRow[] {
-  const force = getVibrationAtHour(hour)
-  const stand3Health = Math.max(0, Math.min(100, Math.round(100 - force * 8)))
-  const stand3: EquipmentRow = {
-    id: 'stand-3',
-    name: 'Stand 3',
-    health: stand3Health,
-    status: statusFromHealth(stand3Health),
-  }
-  return [stand3, ...baseEquipment].sort((a, b) => a.health - b.health)
+  const h = Math.max(0, Math.min(24, hour))
+  const lo = Math.floor(h)
+  const hi = Math.min(24, lo + 1)
+  const frac = h - lo
+  return Object.keys(standHealth)
+    .map((id) => {
+      const arr = standHealth[id]
+      const health = Math.max(0, Math.min(100, Math.round(arr[lo] + (arr[hi] - arr[lo]) * frac)))
+      return { id, name: `Stand ${id.split('-')[1]}`, health, status: statusFromHealth(health) }
+    })
+    .sort((a, b) => a.health - b.health)
 }
 
 export const equipmentRanking = getEquipmentRankingAtHour(24)
 
 export interface AlertRow {
   time: string
+  h: number
   equipment: string
   sensor: string
   severity: Status
   action: string
+  type?: string
 }
 
-/** 실제 연결 시 Anomaly_Reduction / Anomaly_Electric_1~5 / Anomaly_Bearing_1~5 /
- *  Anomaly_WorkRoll_1~5 라벨이 True로 바뀌는 시점을 시간순으로 뽑아 교체. */
+/** 모델(RandomForest)이 경보를 낸 시점. 창 안에서 시간순의 반대(최신이 위). */
 export const alertLog: AlertRow[] = [
-  { time: '14:12', equipment: 'Stand 3', sensor: 'Force', severity: 'critical', action: '확인 필요' },
-  { time: '13:47', equipment: 'Stand 1', sensor: 'Tension', severity: 'warning', action: '모니터링 중' },
-  { time: '11:05', equipment: 'Stand 2', sensor: 'Torque', severity: 'warning', action: '모니터링 중' },
-  { time: '09:32', equipment: 'Stand 4', sensor: 'Force', severity: 'good', action: '조치 완료' },
-  { time: '08:58', equipment: 'Stand 5', sensor: 'Motor Power', severity: 'good', action: '조치 완료' },
+  {
+    "h": 14,
+    "time": "코일 #16303",
+    "equipment": "Stand 3",
+    "sensor": "Force",
+    "severity": "critical",
+    "action": "롤 교체 검토",
+    "type": "WorkRoll"
+  },
+  {
+    "h": 11,
+    "time": "코일 #16300",
+    "equipment": "Stand 1",
+    "sensor": "Motor Power",
+    "severity": "warning",
+    "action": "전동기 점검",
+    "type": "Electric"
+  }
 ]
 
-/** 스크러버가 아직 지나가지 않은 시각의 알림은 "아직 발생 전"으로 취급해서 숨깁니다. */
 export function getAlertsUpToHour(hour: number): AlertRow[] {
-  return alertLog.filter((a) => parseTimeToHour(a.time) <= hour)
+  return alertLog.filter((a) => a.h <= hour)
 }
 
 export const kpis = {
   totalEquipment: 5,
-  riskEquipment: 3,
-  avgHealth: 82.4,
-  todayAlerts: 7,
-  alertsDelta: 2,
+  riskEquipment: equipmentRanking.filter((e) => e.status === 'critical').length,
+  avgHealth: equipmentRanking.reduce((s, e) => s + e.health, 0) / equipmentRanking.length,
+  todayAlerts: alertLog.length,
+  alertsDelta: 0,
 }
 
 export function getKpisAtHour(hour: number) {
@@ -137,56 +189,250 @@ export function getKpisAtHour(hour: number) {
   }
 }
 
-/** 설비 상세 페이지: 기본 정보 (Stand 3 기준) */
 export const equipmentInfo = {
-  line: '냉간압연 5단 텐덤 라인 · Stand 3',
-  installedAt: '2019-04-12',
-  lastMaintenance: '2026-06-02',
-  team: '설비보전 2팀',
-  /** work_roll_mileage_3 누적값(km) — 리셋(=롤 교체) 전까지 누적된 거리 */
-  operatingHours: 18420,
-  /** 워크롤 규격 코드 (예시) */
-  modelNo: 'WR-820x1550',
+  "line": "냉간압연 5단 텐덤 라인 · Stand 3",
+  "installedAt": "—(데이터에 없음)",
+  "lastMaintenance": "코일 #16310",
+  "team": "—",
+  "operatingHours": 4.6,
+  "modelNo": "Ø561mm"
 }
 
-/** 설비 상세 페이지: Stand 3 공정변수 최근 72시간 추이 (스크러버와는 별개의 고정 이력 데이터).
- *  실제 연결 시 tcm5_dataset_*.csv의 torque_3 / tension_3 / motor_power_3 컬럼으로 교체. */
+/** 공정변수 추이(72코일 구간을 9점으로). 단위: torque kN·m, motor_power kW, tension kN */
 export const sensorTrend72h = {
-  torque_3: [
-    { h: 0, v: 3.2 }, { h: 12, v: 3.4 }, { h: 24, v: 3.1 }, { h: 36, v: 3.6 },
-    { h: 48, v: 4.0 }, { h: 60, v: 5.4 }, { h: 66, v: 7.8 }, { h: 72, v: 9.8 },
+  "torque_3": [
+    {
+      "h": 0,
+      "v": 66.98
+    },
+    {
+      "h": 9,
+      "v": 61.72
+    },
+    {
+      "h": 18,
+      "v": 69.65
+    },
+    {
+      "h": 27,
+      "v": 69.54
+    },
+    {
+      "h": 36,
+      "v": 84.02
+    },
+    {
+      "h": 45,
+      "v": 60.35
+    },
+    {
+      "h": 54,
+      "v": 52.8
+    },
+    {
+      "h": 63,
+      "v": 88.95
+    },
+    {
+      "h": 72,
+      "v": 66.75
+    }
   ],
-  motor_power_3: [
-    { h: 0, v: 58 }, { h: 12, v: 59 }, { h: 24, v: 57 }, { h: 36, v: 60 },
-    { h: 48, v: 62 }, { h: 60, v: 66 }, { h: 66, v: 69 }, { h: 72, v: 71.2 },
+  "motor_power_3": [
+    {
+      "h": 0,
+      "v": 3472.5
+    },
+    {
+      "h": 9,
+      "v": 2821.4
+    },
+    {
+      "h": 18,
+      "v": 3854.9
+    },
+    {
+      "h": 27,
+      "v": 4075.0
+    },
+    {
+      "h": 36,
+      "v": 2627.8
+    },
+    {
+      "h": 45,
+      "v": 2984.1
+    },
+    {
+      "h": 54,
+      "v": 1786.2
+    },
+    {
+      "h": 63,
+      "v": 4122.3
+    },
+    {
+      "h": 72,
+      "v": 3189.8
+    }
   ],
-  tension_3: [
-    { h: 0, v: 6.1 }, { h: 12, v: 6.2 }, { h: 24, v: 6.0 }, { h: 36, v: 6.3 },
-    { h: 48, v: 6.2 }, { h: 60, v: 6.3 }, { h: 66, v: 6.4 }, { h: 72, v: 6.4 },
-  ],
+  "tension_3": [
+    {
+      "h": 0,
+      "v": 120.69
+    },
+    {
+      "h": 9,
+      "v": 130.84
+    },
+    {
+      "h": 18,
+      "v": 99.53
+    },
+    {
+      "h": 27,
+      "v": 122.35
+    },
+    {
+      "h": 36,
+      "v": 288.85
+    },
+    {
+      "h": 45,
+      "v": 134.21
+    },
+    {
+      "h": 54,
+      "v": 141.21
+    },
+    {
+      "h": 63,
+      "v": 196.62
+    },
+    {
+      "h": 72,
+      "v": 178.87
+    }
+  ]
 }
 
-/** 설비 상세 페이지: 워크롤 잔존 마일리지 예측(RUL) — Weibull AFT 기반 생존곡선.
- *  km = 앞으로 더 탈 수 있는 마일리지. km 0 = 현재 시점(= 마지막 롤 교체 이후 누적 지점). */
-export const survivalCurve = [
-  { km: 0, median: 1.0, lower: 1.0, upper: 1.0 },
-  { km: 10, median: 0.94, lower: 0.88, upper: 0.98 },
-  { km: 20, median: 0.85, lower: 0.74, upper: 0.94 },
-  { km: 30, median: 0.74, lower: 0.58, upper: 0.88 },
-  { km: 40, median: 0.62, lower: 0.42, upper: 0.8 },
-  { km: 50, median: 0.5, lower: 0.29, upper: 0.71 },
-  { km: 60, median: 0.38, lower: 0.18, upper: 0.61 },
-  { km: 70, median: 0.28, lower: 0.11, upper: 0.51 },
-  { km: 80, median: 0.19, lower: 0.06, upper: 0.41 },
-  { km: 90, median: 0.13, lower: 0.03, upper: 0.32 },
-  { km: 100, median: 0.08, lower: 0.01, upper: 0.24 },
-  { km: 120, median: 0.03, lower: 0, upper: 0.13 },
-  { km: 140, median: 0.01, lower: 0, upper: 0.06 },
-]
-export const predictedRulMileage = { median: 60, lower: 40, upper: 90 }
+/** 각 지표의 단위와 차트 축 범위 (실제 값 크기에 맞춤) */
+export const trendMeta: Record<string, { unit: string; domain: [number, number] }> = {
+  "force_3": {
+    "unit": "MN",
+    "domain": [
+      0,
+      12
+    ]
+  },
+  "torque_3": {
+    "unit": "kN·m",
+    "domain": [
+      47.0,
+      95.0
+    ]
+  },
+  "motor_power_3": {
+    "unit": "kW",
+    "domain": [
+      1435.0,
+      4473.0
+    ]
+  },
+  "tension_3": {
+    "unit": "kN",
+    "domain": [
+      71.0,
+      318.0
+    ]
+  }
+}
 
-/** 설비 상세 페이지: 이상탐지 baseline 모델 성능 (Anomaly_Bearing_3 라벨 기준 홀드아웃 테스트셋, 예시 값) */
-export const classifierMetrics = { precision: 0.91, recall: 0.87, f1: 0.89 }
+/** 지금 롤 나이에서 '앞으로 km(마일리지) 더 쓸 때까지 아직 쓰고 있을 확률' (부트스트랩 90% 구간) */
+export const survivalCurve = [
+  {
+    "km": 0,
+    "median": 1.0,
+    "lower": 1.0,
+    "upper": 1.0
+  },
+  {
+    "km": 10,
+    "median": 0.9792,
+    "lower": 0.9764,
+    "upper": 0.982
+  },
+  {
+    "km": 20,
+    "median": 0.9743,
+    "lower": 0.9714,
+    "upper": 0.9777
+  },
+  {
+    "km": 30,
+    "median": 0.9743,
+    "lower": 0.9714,
+    "upper": 0.9777
+  },
+  {
+    "km": 40,
+    "median": 0.9743,
+    "lower": 0.9714,
+    "upper": 0.9777
+  },
+  {
+    "km": 50,
+    "median": 0.9743,
+    "lower": 0.9714,
+    "upper": 0.9777
+  },
+  {
+    "km": 60,
+    "median": 0.9743,
+    "lower": 0.9714,
+    "upper": 0.9777
+  },
+  {
+    "km": 70,
+    "median": 0.9743,
+    "lower": 0.9714,
+    "upper": 0.9777
+  },
+  {
+    "km": 80,
+    "median": 0.9743,
+    "lower": 0.9714,
+    "upper": 0.9777
+  },
+  {
+    "km": 90,
+    "median": 0.9743,
+    "lower": 0.9714,
+    "upper": 0.9777
+  },
+  {
+    "km": 100,
+    "median": 0.9743,
+    "lower": 0.9714,
+    "upper": 0.9777
+  },
+  {
+    "km": 120,
+    "median": 0.0,
+    "lower": 0.0,
+    "upper": 0.0
+  },
+  {
+    "km": 140,
+    "median": 0.0,
+    "lower": 0.0,
+    "upper": 0.0
+  }
+]
+export const predictedRulMileage = {"median": 114.4, "lower": 112.6, "upper": 115.3}
+
+/** 이상탐지(RandomForest, Anomaly_Bearing_3) 시험 구간 성능 */
+export const classifierMetrics = {"precision": 0.979, "recall": 1.0, "f1": 0.989}
 
 export interface MaintenanceEvent {
   date: string
@@ -195,25 +441,74 @@ export interface MaintenanceEvent {
   status: 'done' | 'scheduled'
 }
 
-/** 설비 상세 페이지: 최근 롤 교체 이력 — work_roll_mileage_3가 0으로 리셋되는 지점을
- *  "롤 교체 이벤트"로 변환한 것. */
 export const maintenanceHistory: MaintenanceEvent[] = [
-  { date: '2026-08-25', type: '예정', description: 'RUL 예측 기반 — 잔존 마일리지 소진 임박, 워크롤 교체 권고', status: 'scheduled' },
-  { date: '2026-06-02', type: '롤 교체', description: '워크롤 마일리지 리셋 — 정상 교체', status: 'done' },
-  { date: '2026-03-14', type: '점검', description: 'Stand 3 텐션 센서 점검, 이상 없음', status: 'done' },
-  { date: '2025-12-01', type: '롤 교체', description: '워크롤 마일리지 리셋 — 정상 교체', status: 'done' },
+  {
+    "date": "코일 #16374",
+    "type": "예정",
+    "description": "RUL 예측 기반 — 남은 마일리지 약 114 소진 시 워크롤 교체 권고",
+    "status": "scheduled"
+  },
+  {
+    "date": "코일 #16310",
+    "type": "롤 교체",
+    "description": "워크롤 마일리지 리셋 — 조기 교체(작업롤 이상) · 직전 롤 사용 10",
+    "status": "done"
+  },
+  {
+    "date": "코일 #16303",
+    "type": "롤 교체",
+    "description": "워크롤 마일리지 리셋 — 정상 교체 · 직전 롤 사용 118",
+    "status": "done"
+  },
+  {
+    "date": "코일 #16241",
+    "type": "롤 교체",
+    "description": "워크롤 마일리지 리셋 — 정상 교체 · 직전 롤 사용 119",
+    "status": "done"
+  }
 ]
 
-/** 설비 상세 페이지: 이상탐지 기여 요인 — Anomaly_Bearing_3 분류에 대한 특성 기여도 (예시 값) */
 export const featureImportance = [
-  { label: 'Force 변동성 (압연력)', value: 0.42 },
-  { label: 'Torque 변화율 (토크)', value: 0.27 },
-  { label: 'Tension 편차 (텐션)', value: 0.18 },
-  { label: 'Work Roll Mileage (누적 마일리지)', value: 0.13 },
+  {
+    "label": "Torque 관련 (토크·토크 잔차)",
+    "value": 0.919
+  },
+  {
+    "label": "Motor Power 관련 (전력·효율)",
+    "value": 0.034
+  },
+  {
+    "label": "운전 조건 (속도·틈·두께·폭)",
+    "value": 0.023
+  },
+  {
+    "label": "Force 관련 (압연력·압연력 잔차)",
+    "value": 0.012
+  }
 ]
 
+/** AS-IS(사후정비) vs TO-BE(예지보전). 비용은 가정값 기반 시뮬레이션 (코일 1,000개당) */
 export const scenarioCompare = [
-  { metric: '평균 정지시간 (시간/월)', asIs: 18, toBe: 6 },
-  { metric: '정비 비용 (백만원/월)', asIs: 42, toBe: 31 },
-  { metric: '생산차질 손실 (백만원/월)', asIs: 65, toBe: 12 },
+  {
+    "metric": "평균 정지시간 (시간/1,000코일)",
+    "asIs": 41.5,
+    "toBe": 12.0
+  },
+  {
+    "metric": "정비 비용 (백만원/1,000코일)",
+    "asIs": 428.8,
+    "toBe": 100.1
+  },
+  {
+    "metric": "생산차질 손실 (백만원/1,000코일)",
+    "asIs": 2146.2,
+    "toBe": 630.8
+  }
 ]
+
+export const savingsSummary = {
+  "perThousandCoilsMillionWon": 1844.1,
+  "savingRatePct": 71.6,
+  "anomalyCoilReductionPct": 80.1,
+  "note": "코일 1,000개당 값. 연간 환산은 실제 현장의 이상 발생 빈도를 알아야 의미가 있어서(시뮬레이션은 코일의 약 5%가 이상) 일부러 하지 않음."
+}
