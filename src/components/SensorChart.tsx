@@ -18,7 +18,7 @@ function ChartTooltip({ active, payload, label }: any) {
   return (
     <div
       className="border px-3 py-2 text-[12px]"
-      style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-strong)' }}
+      style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-xs)' }}
     >
       <div className="mono" style={{ color: 'var(--text-muted)' }}>
         {formatHour(label)}

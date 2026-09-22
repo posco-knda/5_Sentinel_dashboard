@@ -12,7 +12,7 @@ export const statusLabel: Record<Status, string> = {
 }
 
 export const dataMeta = {
-  "generatedAt": "2026-09-21T14:52:56",
+  "generatedAt": "2026-09-22T09:41:49",
   "dataset": 6,
   "startRow": 16289,
   "endRow": 16313,
@@ -511,4 +511,67 @@ export const savingsSummary = {
   "savingRatePct": 71.6,
   "anomalyCoilReductionPct": 80.1,
   "note": "코일 1,000개당 값. 연간 환산은 실제 현장의 이상 발생 빈도를 알아야 의미가 있어서(시뮬레이션은 코일의 약 5%가 이상) 일부러 하지 않음."
+}
+
+/** 시험 구간의 이상 사건 요약 + 비용 가정. 시나리오 화면의 슬라이더가 이 값으로 AS-IS/TO-BE 비용을 다시 계산한다.
+ *  (계산식은 analysis/src/cost.py 와 같다. 금액 단위 = 만원, 시간 단위 = h) */
+export const costModel = {
+  "nCoils": 16005,
+  "general": {
+    "downtimeCostPerHour": 5000.0,
+    "repairUnplannedRatio": 4.5,
+    "coilLoss": 150.0,
+    "falseAlarmHours": 0.25,
+    "falseAlarmLabor": 100.0
+  },
+  "types": {
+    "Electric": {
+      "episodes": 38,
+      "detected": 38,
+      "missed": 0,
+      "falseAlarms": 0,
+      "anomalyCoils": 226,
+      "detectedCoils": 39,
+      "missedCoils": 0,
+      "hoursPlanned": 2.0,
+      "hoursUnplanned": 6.0,
+      "repairPlanned": 1500.0
+    },
+    "Bearing": {
+      "episodes": 41,
+      "detected": 40,
+      "missed": 1,
+      "falseAlarms": 2,
+      "anomalyCoils": 158,
+      "detectedCoils": 45,
+      "missedCoils": 3,
+      "hoursPlanned": 2.0,
+      "hoursUnplanned": 8.0,
+      "repairPlanned": 2000.0
+    },
+    "WorkRoll": {
+      "episodes": 27,
+      "detected": 27,
+      "missed": 0,
+      "falseAlarms": 2,
+      "anomalyCoils": 189,
+      "detectedCoils": 27,
+      "missedCoils": 0,
+      "hoursPlanned": 1.0,
+      "hoursUnplanned": 4.0,
+      "repairPlanned": 500.0
+    },
+    "Reduction": {
+      "episodes": 192,
+      "detected": 186,
+      "missed": 6,
+      "falseAlarms": 3,
+      "anomalyCoils": 194,
+      "detectedCoils": 186,
+      "missedCoils": 6,
+      "hoursPlanned": 0.0,
+      "hoursUnplanned": 0.0,
+      "repairPlanned": 0.0
+    }
+  }
 }

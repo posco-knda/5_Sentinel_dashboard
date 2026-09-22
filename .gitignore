@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
+
+# Claude Code skill installs (local dev tooling, not project code)
+.agents/
+.claude/skills/
+.claude/references/
+skills-lock.json

@@ -3,100 +3,100 @@
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
 @import "@fontsource/jetbrains-mono/600.css";
-@import "@fontsource/jetbrains-mono/700.css";
 
 /*
-  "Signal Room" — 공장 제어실/계측 장비를 참조한 다크 우선 산업용 모니터링 테마.
-  일반 SaaS 대시보드의 파스텔 카드·둥근 모서리·소프트 섀도 언어를 의도적으로 배제하고,
-  데이터는 전부 모노스페이스, 상태는 LED 인디케이터, 배경은 블루프린트 격자로 표현한다.
+  "Signal" — Linear/Notion류의 고급 미니멀 제품 UI를 참조한 다크 우선 모니터링 테마.
+  블루프린트 격자·LED HUD·각진 브래킷 같은 장식 모티프 대신, 헤어라인 보더 + 서페이스
+  래더(canvas → surface-1 → surface-2 → raised) + 단일 액센트 컬러로 위계를 만든다.
+  모노스페이스는 실제 수치·타임스탬프 등 데이터 컨텍스트에만 쓰고, 라벨·헤드라인은 산세리프.
 */
 
 :root {
   color-scheme: dark;
 
-  --page: #07090a;
-  --surface-1: #0e1113;
-  --surface-2: #161a1d;
-  --surface-raised: #1a1f22;
-  --text-primary: #eef2f1;
-  --text-secondary: #9aa5a3;
-  --text-muted: #63706e;
-  --gridline: #1c2124;
-  --axis: #2a3134;
-  --border: rgba(238, 242, 241, 0.1);
-  --border-soft: rgba(238, 242, 241, 0.06);
-  --border-strong: rgba(238, 242, 241, 0.18);
+  --page: #0a0a0d;
+  --surface-1: #131419;
+  --surface-2: #191b21;
+  --surface-raised: #1e2027;
+  --text-primary: #f2f3f5;
+  --text-secondary: #a4a8b3;
+  --text-muted: #6c707a;
+  --gridline: rgba(255, 255, 255, 0.06);
+  --axis: rgba(255, 255, 255, 0.16);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-soft: rgba(255, 255, 255, 0.045);
+  --border-strong: rgba(255, 255, 255, 0.14);
 
-  --accent: #35e0c2;
-  --accent-dim: rgba(53, 224, 194, 0.14);
-  --accent-ink: #04231d;
+  --accent: #6672f0;
+  --accent-dim: rgba(102, 114, 240, 0.16);
+  --accent-ink: #ffffff;
 
-  --series-1: #35e0c2; /* signal cyan — primary */
-  --series-2: #f2b33d; /* amber — secondary / AS-IS */
-  --series-3: #b98cf2; /* muted violet — tertiary */
+  --series-1: #6672f0; /* accent lavender — primary */
+  --series-2: #e2a33d; /* amber — secondary / 사후보전 */
+  --series-3: #b98cf2; /* violet — tertiary */
 
-  --status-good: #35d07f;
-  --status-warning: #f2b33d;
-  --status-serious: #f2874a;
+  --status-good: #3fb975;
+  --status-warning: #e2a33d;
+  --status-serious: #e2793d;
   --status-critical: #f2495c;
 
-  --status-good-wash: rgba(53, 208, 127, 0.14);
-  --status-warning-wash: rgba(242, 179, 61, 0.14);
-  --status-serious-wash: rgba(242, 135, 74, 0.14);
+  --status-good-wash: rgba(63, 185, 117, 0.14);
+  --status-warning-wash: rgba(226, 163, 61, 0.14);
+  --status-serious-wash: rgba(226, 121, 61, 0.14);
   --status-critical-wash: rgba(242, 73, 92, 0.14);
 
-  --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.4);
-  --shadow-card-hover: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-card: none;
+  --shadow-card-hover: 0 16px 40px rgba(0, 0, 0, 0.4);
   --focus-ring: 0 0 0 2px var(--page), 0 0 0 4px var(--accent);
 
-  --radius: 3px;
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+  /* 하위 호환 — 기존 컴포넌트가 참조 */
+  --radius: var(--radius-sm);
+
   --font-mono:
     "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-
-  /* 블루프린트 격자 배경 — 라이트/다크 모두에서 재정의됨 */
-  --grid-line-color: rgba(238, 242, 241, 0.035);
-  --grid-size: 28px;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --page: #f4f5f3;
-  --surface-1: #fbfbfa;
-  --surface-2: #eef0ee;
+  --page: #fafafa;
+  --surface-1: #ffffff;
+  --surface-2: #f3f3f4;
   --surface-raised: #ffffff;
-  --text-primary: #0c1210;
-  --text-secondary: #495450;
-  --text-muted: #7c8783;
-  --gridline: #dfe3e0;
-  --axis: #c5cbc7;
-  --border: rgba(12, 18, 16, 0.12);
-  --border-soft: rgba(12, 18, 16, 0.07);
-  --border-strong: rgba(12, 18, 16, 0.22);
+  --text-primary: #141417;
+  --text-secondary: #5b5e68;
+  --text-muted: #8c8f99;
+  --gridline: rgba(20, 20, 23, 0.06);
+  --axis: rgba(20, 20, 23, 0.16);
+  --border: rgba(20, 20, 23, 0.1);
+  --border-soft: rgba(20, 20, 23, 0.055);
+  --border-strong: rgba(20, 20, 23, 0.18);
 
-  --accent: #0e9c85;
-  --accent-dim: rgba(14, 156, 133, 0.12);
+  --accent: #4f5bd5;
+  --accent-dim: rgba(79, 91, 213, 0.1);
   --accent-ink: #ffffff;
 
-  --series-1: #0e9c85;
+  --series-1: #4f5bd5;
   --series-2: #b8791f;
   --series-3: #8354c9;
 
   --status-good: #1f9d5c;
   --status-warning: #b8791f;
-  --status-serious: #c85f2e;
-  --status-critical: #c9273c;
+  --status-serious: #c05a2e;
+  --status-critical: #d1293f;
 
-  --status-good-wash: rgba(31, 157, 92, 0.12);
-  --status-warning-wash: rgba(184, 121, 31, 0.12);
-  --status-serious-wash: rgba(200, 95, 46, 0.12);
-  --status-critical-wash: rgba(201, 39, 60, 0.1);
+  --status-good-wash: rgba(31, 157, 92, 0.1);
+  --status-warning-wash: rgba(184, 121, 31, 0.1);
+  --status-serious-wash: rgba(192, 90, 46, 0.1);
+  --status-critical-wash: rgba(209, 41, 63, 0.09);
 
-  --shadow-card: 0 1px 2px color-mix(in oklab, var(--text-primary) 6%, transparent);
-  --shadow-card-hover: 0 8px 24px color-mix(in oklab, var(--text-primary) 10%, transparent);
+  --shadow-card: 0 1px 2px rgba(20, 20, 23, 0.04);
+  --shadow-card-hover: 0 12px 32px rgba(20, 20, 23, 0.08);
   --focus-ring: 0 0 0 2px var(--page), 0 0 0 4px var(--accent);
-
-  --grid-line-color: rgba(12, 18, 16, 0.045);
 }
 
 * {
@@ -112,11 +112,6 @@ body,
 body {
   margin: 0;
   background: var(--page);
-  background-image:
-    linear-gradient(var(--grid-line-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px);
-  background-size: var(--grid-size) var(--grid-size);
-  background-attachment: fixed;
   color: var(--text-primary);
   font-family:
     "Pretendard",
@@ -139,44 +134,22 @@ body {
 }
 
 ::selection {
-  background: color-mix(in oklab, var(--accent) 35%, transparent);
+  background: color-mix(in oklab, var(--accent) 30%, transparent);
 }
 
-/* 카드형 컨테이너 공통 톤 — 각진 모서리 + 헤어라인 보더 + 최소한의 깊이만 */
+/* 카드형 컨테이너 공통 톤 — 헤어라인 보더 + 서페이스 래더, 다크에서는 그림자 대신 보더 명도로 위계 표현 */
 .surface-card {
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   transition:
     box-shadow 0.2s ease,
     border-color 0.2s ease,
     transform 0.15s ease;
 }
-
-/* HUD 코너 브래킷 — 주요 패널에만 사용하는 시그니처 모티프 */
-.bracket-panel {
-  position: relative;
-}
-.bracket-panel::before,
-.bracket-panel::after {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-color: var(--accent);
-  opacity: 0.55;
-  pointer-events: none;
-}
-.bracket-panel::before {
-  top: -1px;
-  left: -1px;
-  border-top: 1.5px solid var(--accent);
-  border-left: 1.5px solid var(--accent);
-}
-.bracket-panel::after {
-  bottom: -1px;
-  right: -1px;
-  border-bottom: 1.5px solid var(--accent);
-  border-right: 1.5px solid var(--accent);
+.surface-card--interactive:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
 }
 
 /* 키보드 포커스 표시 — 접근성 필수 */
@@ -189,7 +162,7 @@ input:focus-visible,
 }
 
 .icon-btn {
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   transition:
     background-color 0.15s ease,
     color 0.15s ease,
@@ -211,7 +184,7 @@ input:focus-visible,
 }
 
 .nav-link {
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
@@ -231,17 +204,20 @@ input:focus-visible,
   bottom: -1px;
   height: 1.5px;
   background: var(--accent);
+  border-radius: 1px;
 }
 
 .cta-primary {
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
-    background-color 0.15s ease;
+    background-color 0.15s ease,
+    filter 0.15s ease;
 }
 .cta-primary:hover {
-  box-shadow: 0 0 0 1px var(--accent), var(--shadow-card-hover);
+  filter: brightness(1.08);
+  box-shadow: var(--shadow-card-hover);
   transform: translateY(-1px);
 }
 .cta-primary:active {
@@ -263,7 +239,82 @@ input:focus-visible,
   color: var(--text-primary);
 }
 
-/* LED 인디케이터 — 파스텔 배지 대신 계측 장비의 상태등을 참조 */
+/* 좌측 사이드바 앱 셸 */
+.sidebar-link {
+  border-radius: var(--radius-sm);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.sidebar-link:hover {
+  color: var(--text-primary);
+  background: var(--border-soft);
+}
+.sidebar-link.is-active {
+  color: var(--text-primary);
+  background: var(--accent-dim);
+}
+
+/* 탭 전환 — 설비 상세/모니터링의 하위 패널 전환에 사용 */
+.tab-btn {
+  position: relative;
+  padding: 9px 2px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+.tab-btn:hover {
+  color: var(--text-secondary);
+}
+.tab-btn.is-active {
+  color: var(--text-primary);
+}
+.tab-btn.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+/* 시뮬레이션 슬라이더 */
+.range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  outline: none;
+}
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--surface-1);
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: pointer;
+}
+.range-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--surface-1);
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: pointer;
+  border: none;
+}
+
+/* 상태 인디케이터 — 실시간/치명 알림처럼 실제 의미가 있는 신호에만 사용하는 작은 점 */
 .led-dot {
   display: inline-block;
   width: 6px;
@@ -273,8 +324,8 @@ input:focus-visible,
 }
 .led-dot--live {
   background: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-dim), 0 0 6px color-mix(in oklab, var(--accent) 70%, transparent);
-  animation: led-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 0 3px var(--accent-dim);
+  animation: led-pulse 2.4s ease-in-out infinite;
 }
 @keyframes led-pulse {
   0%,
@@ -282,7 +333,7 @@ input:focus-visible,
     opacity: 1;
   }
   50% {
-    opacity: 0.45;
+    opacity: 0.5;
   }
 }
 

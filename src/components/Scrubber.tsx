@@ -22,7 +22,7 @@ export function Scrubber({
 
   return (
     <div
-      className="surface-card bracket-panel flex flex-row items-center gap-4 border px-5 py-4"
+      className="surface-card flex flex-row items-center gap-4 border px-5 py-4"
       style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
     >
       <button
@@ -49,9 +49,10 @@ export function Scrubber({
           className="mono pointer-events-none absolute top-0 -translate-x-1/2 border px-1.5 py-0.5 text-[11px] font-semibold"
           style={{
             left: `${labelPct}%`,
-            background: 'var(--surface-1)',
+            background: 'var(--surface-2)',
             borderColor: 'var(--accent)',
             color: 'var(--accent)',
+            borderRadius: 'var(--radius-xs)',
           }}
         >
           {formatHour(hour)}

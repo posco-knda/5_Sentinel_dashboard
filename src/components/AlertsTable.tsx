@@ -2,13 +2,48 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { getAlertsUpToHour } from '../data/mock'
 import { Badge } from './Badge'
 
-export function AlertsTable({ hour }: { hour: number }) {
+export function AlertsTable({ hour, compact = false }: { hour: number; compact?: boolean }) {
   const rows = getAlertsUpToHour(hour)
 
   if (!rows.length) {
     return (
       <div className="py-10 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>
         아직 이 시각까지 발생한 이상탐지 로그가 없습니다
+      </div>
+    )
+  }
+
+  if (compact) {
+    return (
+      <div className="flex flex-col">
+        <AnimatePresence initial={false}>
+          {rows.map((row, i) => (
+            <motion.div
+              key={row.time + row.equipment}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="flex flex-row items-start gap-3 py-3"
+              style={{ borderBottom: i < rows.length - 1 ? '1px solid var(--border-soft)' : 'none' }}
+            >
+              <span className="mono mt-0.5 shrink-0 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                {row.time}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-row items-center justify-between gap-2">
+                  <span className="truncate text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
+                    {row.equipment} · {row.sensor}
+                  </span>
+                  <Badge status={row.severity} />
+                </div>
+                <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                  {row.action}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     )
   }

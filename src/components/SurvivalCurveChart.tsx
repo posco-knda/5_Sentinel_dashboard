@@ -19,7 +19,7 @@ function CurveTooltip({ active, payload, label }: any) {
   return (
     <div
       className="border px-3 py-2 text-[12px]"
-      style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-strong)' }}
+      style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-xs)' }}
     >
       <div style={{ color: 'var(--text-muted)' }}>
         누적 마일리지 <span className="mono">+{label}km</span>
@@ -34,9 +34,8 @@ function CurveTooltip({ active, payload, label }: any) {
   )
 }
 
-/** Weibull AFT 기반 워크롤 잔존 마일리지(RUL) 예측 곡선 — 생존확률(S(mileage))이 누적
- *  마일리지에 따라 감소하는 형태를 신뢰구간 밴드와 함께 시각화. km=0이 현재 시점이고,
- *  예측 중앙값(median RUL)에 기준선 표시. */
+/** 워크롤 잔존 마일리지(RUL) 곡선 — 지금 롤 나이에서 "앞으로 km 더 쓸 때까지 아직 쓰고 있을 확률"을
+ *  부트스트랩 신뢰구간 밴드와 함께 시각화. km=0이 현재 시점이고, 예측 중앙값(median RUL)에 기준선 표시. */
 export function SurvivalCurveChart() {
   return (
     <div className="h-[220px] w-full">
