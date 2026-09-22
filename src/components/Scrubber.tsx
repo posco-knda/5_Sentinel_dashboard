@@ -81,7 +81,7 @@ export function Scrubber({
                 className="mono mt-1 -translate-x-1/2 whitespace-nowrap text-[10.5px]"
                 style={{ color: 'var(--text-muted)' }}
               >
-                {String(t).padStart(2, '0')}:00
+                {formatHour(t).replace('코일 ', '')}
               </span>
             </div>
           ))}

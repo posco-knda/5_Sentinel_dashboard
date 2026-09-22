@@ -69,7 +69,7 @@ export function Dashboard() {
       <Toast
         show={showAnomalyToast}
         title="Stand 3 이상 감지"
-        body="Force 값이 임계치를 초과했습니다"
+        body="작업롤 이상 신호 — 압연력 잔차가 임계값을 넘었습니다"
       />
 
       <Scrubber hour={hour} onChange={setHour} playing={playing} onTogglePlay={togglePlay} />
@@ -95,9 +95,9 @@ export function Dashboard() {
           }
           foot="즉시 점검 필요"
         />
-        <StatTile label="평균 헬스 스코어" value={kpis.avgHealth} decimals={1} delay={0.1} foot="최근 7일 추이" />
+        <StatTile label="평균 헬스 스코어" value={kpis.avgHealth} decimals={1} delay={0.1} foot="창 안 스탠드 평균" />
         <StatTile
-          label="금일 발생 알림"
+          label="구간 내 발생 알림"
           value={kpis.todayAlerts}
           suffix="건"
           delay={0.15}
@@ -107,7 +107,7 @@ export function Dashboard() {
                 <line x1="12" y1="19" x2="12" y2="5" />
                 <polyline points="5 12 12 5 19 12" />
               </svg>
-              전일 대비 +{kpis.alertsDelta}건
+              앞 12코일 대비 {kpis.alertsDelta >= 0 ? '+' : ''}{kpis.alertsDelta}건
             </>
           }
         />
@@ -126,13 +126,13 @@ export function Dashboard() {
               className="border px-3 py-1.5 text-[12.5px]"
               style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
             >
-              최근 24시간
+              코일 25개 구간
             </span>
           }
         >
           <SensorChart hour={hour} />
           <p className="mt-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            정상 범위 0–5.5 kN(예시) · 이상 구간은 임계치를 초과한 시간대를 표시합니다
+            Stand 3 압연력(MN) · 붉은 띠는 실제 작업롤 이상 라벨 구간이며, 알림은 RandomForest 모델이 낸 경보입니다
           </p>
         </Panel>
 

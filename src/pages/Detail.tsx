@@ -10,6 +10,8 @@ import {
   sensorSeries,
   sensorTrend72h,
   predictedRulMileage,
+  trendMeta,
+  getEquipmentRankingAtHour,
   classifierMetrics,
   maintenanceHistory,
 } from '../data/mock'
@@ -18,7 +20,7 @@ const equipmentSensors: SensorCallout[] = [
   {
     id: 'force',
     label: 'Force (압연력)',
-    value: `${sensorSeries[sensorSeries.length - 1].v.toFixed(1)} kN`,
+    value: `${sensorSeries[sensorSeries.length - 1].v.toFixed(2)} ${trendMeta.force_3.unit}`,
     color: 'var(--series-1)',
     anchor: { x: 360, y: 94 },
     label_at: { x: 360, y: 34, anchor: 'middle' },
@@ -26,7 +28,7 @@ const equipmentSensors: SensorCallout[] = [
   {
     id: 'tension',
     label: 'Tension (텐션)',
-    value: `${sensorTrend72h.tension_3[sensorTrend72h.tension_3.length - 1].v.toFixed(1)} kN`,
+    value: `${sensorTrend72h.tension_3[sensorTrend72h.tension_3.length - 1].v.toFixed(0)} ${trendMeta.tension_3.unit}`,
     color: 'var(--series-3)',
     anchor: { x: 297, y: 110 },
     label_at: { x: 220, y: 34, anchor: 'middle' },
@@ -34,7 +36,7 @@ const equipmentSensors: SensorCallout[] = [
   {
     id: 'torque',
     label: 'Torque (토크)',
-    value: `${sensorTrend72h.torque_3[sensorTrend72h.torque_3.length - 1].v.toFixed(1)} kN·m`,
+    value: `${sensorTrend72h.torque_3[sensorTrend72h.torque_3.length - 1].v.toFixed(0)} ${trendMeta.torque_3.unit}`,
     color: 'var(--series-2)',
     anchor: { x: 328, y: 110 },
     label_at: { x: 430, y: 34, anchor: 'middle' },
@@ -42,9 +44,9 @@ const equipmentSensors: SensorCallout[] = [
 ]
 
 const trendCards = [
-  { key: 'torque_3', label: 'Torque (토크)', unit: 'kN·m', color: 'var(--series-1)', domain: [0, 12] as [number, number], data: sensorTrend72h.torque_3 },
-  { key: 'motor_power_3', label: 'Motor Power (모터파워)', unit: 'kW', color: 'var(--series-2)', domain: [50, 80] as [number, number], data: sensorTrend72h.motor_power_3 },
-  { key: 'tension_3', label: 'Tension (텐션)', unit: 'kN', color: 'var(--series-3)', domain: [5, 8] as [number, number], data: sensorTrend72h.tension_3 },
+  { key: 'torque_3', label: 'Torque (토크)', unit: trendMeta.torque_3.unit, color: 'var(--series-1)', domain: trendMeta.torque_3.domain, data: sensorTrend72h.torque_3 },
+  { key: 'motor_power_3', label: 'Motor Power (모터파워)', unit: trendMeta.motor_power_3.unit, color: 'var(--series-2)', domain: trendMeta.motor_power_3.domain, data: sensorTrend72h.motor_power_3 },
+  { key: 'tension_3', label: 'Tension (텐션)', unit: trendMeta.tension_3.unit, color: 'var(--series-3)', domain: trendMeta.tension_3.domain, data: sensorTrend72h.tension_3 },
 ]
 
 const infoChips = [
@@ -88,7 +90,7 @@ export function Detail() {
       <div>
         <div className="flex flex-row items-center gap-2.5">
           <h1 className="m-0 text-xl font-semibold">Stand 3</h1>
-          <Badge status="critical" />
+          <Badge status={getEquipmentRankingAtHour(24).find((e) => e.id === 'stand-3')?.status ?? 'good'} />
         </div>
         <p className="mt-1.5 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
           {equipmentInfo.line} · 설치일 {equipmentInfo.installedAt}
@@ -110,7 +112,7 @@ export function Detail() {
       </div>
 
       <div className="grid grid-cols-2 gap-5">
-        <Panel title="워크롤 잔존 마일리지 예측 (RUL) · Weibull AFT" accent>
+        <Panel title="워크롤 잔존 마일리지 예측 (RUL) · RandomForest 회귀 + 생존곡선" accent>
           <div className="flex flex-row items-baseline gap-2.5">
             <span className="text-[40px] font-bold leading-none">
               약 <span className="mono">{predictedRulMileage.median}</span>km
@@ -120,8 +122,8 @@ export function Detail() {
             </span>
           </div>
           <p className="mt-2 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            현재 force·torque 추세가 유지될 경우, 생존확률 S(mileage)이 누적 마일리지에 따라 감소하는 형태로 다음 롤
-            교체까지 남은 마일리지를 추정합니다
+            지금 롤의 나이(누적 마일리지)와 최근 공정변수로 남은 마일리지를 회귀 예측하고, 전체 롤 수명 분포로
+            "앞으로 이만큼 더 쓸 때까지 아직 쓰고 있을 확률" 곡선을 그립니다 (음영 = 부트스트랩 90% 구간)
           </p>
 
           <div className="mt-4">
@@ -142,8 +144,9 @@ export function Detail() {
                 권장 조치
               </div>
               <div className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                잔존 마일리지 소진이 임박했습니다. 워크롤 교체를 계획하세요. force·torque 동반 상승 패턴은 과거 워크롤
-                마모 사례와 유사합니다.
+                {predictedRulMileage.median < 20
+                  ? '잔존 마일리지 소진이 임박했습니다. 워크롤 교체를 계획하세요.'
+                  : `교체 직후라 잔존 마일리지가 충분합니다(약 ${predictedRulMileage.median}). 다음 교체 예정: ${maintenanceHistory[0].date}. 정상 롤은 수명이 거의 일정해서 정기 교체 시점을 앞당길 이유는 크지 않고, 이상 경보 즉시 대응이 핵심입니다.`}
               </div>
             </div>
           </div>
@@ -172,7 +175,7 @@ export function Detail() {
             ))}
           </div>
           <p className="mt-2.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-            Anomaly_Bearing_3 분류에 대한 특성 기여도 (예시 값)
+            Anomaly_Bearing_3 분류에 대한 특성 기여도 (RandomForest, 특성 묶음별 합)
           </p>
 
           <div className="mt-4 grid grid-cols-3 gap-3">
@@ -190,7 +193,7 @@ export function Detail() {
             ))}
           </div>
           <p className="mt-2 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-            ※ RandomForest(Anomaly_Bearing_3 라벨) 홀드아웃 테스트셋 기준 예시 값 — 실제 분석 결과 확보 후 교체 예정
+            ※ RandomForest(Anomaly_Bearing_3 라벨), Stand 3 시험 구간(시간순 마지막 20%) 기준. 합성 시뮬레이션 데이터라 실제 현장보다 쉬운 문제입니다
           </p>
 
           {/* 정비 이력 타임라인 */}
@@ -222,7 +225,7 @@ export function Detail() {
         </Panel>
       </div>
 
-      <Panel title="공정변수별 최근 72시간 추이">
+      <Panel title="공정변수별 최근 72코일 추이">
         <div className="mb-4 border p-4" style={{ background: 'var(--page)', borderColor: 'var(--border)' }}>
           <EquipmentDiagram sensors={equipmentSensors} highlightStand={3} />
         </div>
@@ -248,7 +251,7 @@ export function Detail() {
           })}
         </div>
         <p className="mt-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-          72시간 전 대비 torque·motor power가 동반 상승하는 추세 — 잔존 마일리지 예측 모델의 핵심 입력 변수입니다
+          이상이 생기면 토크(베어링)·전력(전동기)·압연력(작업롤)이 "조건 대비 기대값"보다 먼저 튑니다 — 이 잔차가 이상탐지 모델의 핵심 입력입니다
         </p>
       </Panel>
     </div>

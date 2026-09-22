@@ -24,7 +24,7 @@ function ChartTooltip({ active, payload, label }: any) {
         {formatHour(label)}
       </div>
       <div className="mt-0.5 font-semibold" style={{ color: inAnomaly ? 'var(--status-critical)' : 'var(--text-primary)' }}>
-        Force <span className="mono">{v.toFixed(1)} kN</span>
+        Force <span className="mono">{v.toFixed(2)} MN</span>
         {inAnomaly ? ' · 임계치 초과' : ''}
       </div>
     </div>
