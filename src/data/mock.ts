@@ -12,7 +12,7 @@ export const statusLabel: Record<Status, string> = {
 }
 
 export const dataMeta = {
-  "generatedAt": "2026-09-22T09:41:49",
+  "generatedAt": "2026-09-22T09:49:29",
   "dataset": 6,
   "startRow": 16289,
   "endRow": 16313,
@@ -495,19 +495,19 @@ export const scenarioCompare = [
     "toBe": 12.0
   },
   {
-    "metric": "정비 비용 (백만원/1,000코일)",
-    "asIs": 428.8,
-    "toBe": 100.1
+    "metric": "정비 비용 (억원/1,000코일)",
+    "asIs": 4.3,
+    "toBe": 1.0
   },
   {
-    "metric": "생산차질 손실 (백만원/1,000코일)",
-    "asIs": 2146.2,
-    "toBe": 630.8
+    "metric": "생산차질 손실 (억원/1,000코일)",
+    "asIs": 21.5,
+    "toBe": 6.3
   }
 ]
 
 export const savingsSummary = {
-  "perThousandCoilsMillionWon": 1844.1,
+  "perThousandCoilsEok": 18.4,
   "savingRatePct": 71.6,
   "anomalyCoilReductionPct": 80.1,
   "note": "코일 1,000개당 값. 연간 환산은 실제 현장의 이상 발생 빈도를 알아야 의미가 있어서(시뮬레이션은 코일의 약 5%가 이상) 일부러 하지 않음."

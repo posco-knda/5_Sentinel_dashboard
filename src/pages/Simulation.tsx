@@ -88,7 +88,7 @@ function CompareChart({ metric, asIs, toBe, delay }: { metric: string; asIs: num
 type Mult = { repair: number; loss: number; unplanned: number }
 
 /** 시험 구간의 이상 사건 요약(costModel)에 비용 가정을 곱해서 AS-IS/TO-BE 비용을 다시 계산한다.
- *  계산식은 analysis/src/cost.py 와 같다. 금액 = 만원, 시간 = h */
+ *  계산식은 analysis/src/cost.py 와 같다. 내부 계산은 만원 단위, 화면에는 억원(1억원 = 10,000만원)으로 표시 */
 function computeScenario(m: Mult) {
   const g = costModel.general
   const hourCost = g.downtimeCostPerHour * m.loss
@@ -118,10 +118,10 @@ function computeScenario(m: Mult) {
   return {
     metrics: [
       { metric: '평균 정지시간 (시간/1,000코일)', asIs: r1(acc.asis.hours * per1000), toBe: r1(acc.tobe.hours * per1000) },
-      { metric: '정비 비용 (백만원/1,000코일)', asIs: r1((acc.asis.repair * per1000) / 100), toBe: r1((acc.tobe.repair * per1000) / 100) },
-      { metric: '생산차질 손실 (백만원/1,000코일)', asIs: r1((loss(acc.asis) * per1000) / 100), toBe: r1((loss(acc.tobe) * per1000) / 100) },
+      { metric: '정비 비용 (억원/1,000코일)', asIs: r1((acc.asis.repair * per1000) / 10000), toBe: r1((acc.tobe.repair * per1000) / 10000) },
+      { metric: '생산차질 손실 (억원/1,000코일)', asIs: r1((loss(acc.asis) * per1000) / 10000), toBe: r1((loss(acc.tobe) * per1000) / 10000) },
     ],
-    savingPer1000: Math.round(((asisTotal - tobeTotal) * per1000) / 100),
+    savingPer1000: r1(((asisTotal - tobeTotal) * per1000) / 10000),
     savingRate: asisTotal > 0 ? Math.round(((asisTotal - tobeTotal) / asisTotal) * 1000) / 10 : 0,
     coilReduction: coilsAsis3 > 0 ? Math.round((1 - coilsTobe3 / coilsAsis3) * 100) : 0,
   }
@@ -154,13 +154,13 @@ export function Simulation() {
             시뮬레이션 가정 조절
           </p>
           <Slider
-            label={`라인 정지 손실 단가 (기준 ${baseHourCost.toLocaleString()}만원/시간)`}
+            label={`라인 정지 손실 단가 (기준 ${(baseHourCost / 10000).toFixed(1)}억원/시간)`}
             value={lossMult}
             onChange={setLossMult}
             min={0.1}
             max={4}
             step={0.1}
-            format={(v) => `×${v.toFixed(1)} · ${Math.round(baseHourCost * v).toLocaleString()}만원`}
+            format={(v) => `×${v.toFixed(1)} · ${((baseHourCost * v) / 10000).toFixed(2)}억원`}
           />
           <Slider
             label="비계획 정지 시간 배율 (사후보전에서 고장 수리에 걸리는 시간)"
@@ -215,7 +215,7 @@ export function Simulation() {
               예상 절감 효과 (코일 1,000개당)
             </span>
             <span className="text-[34px] font-bold" style={{ color: 'var(--accent)' }}>
-              {result.savingPer1000.toLocaleString()}백만원 · 절감률 {result.savingRate}%
+              {result.savingPer1000.toLocaleString()}억원 · 절감률 {result.savingRate}%
             </span>
             <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
               정지가 필요한 이상(전동기·베어링·작업롤)에서 이상 상태로 가공되는 코일이 {result.coilReduction}% 줄어듭니다 (가정과
