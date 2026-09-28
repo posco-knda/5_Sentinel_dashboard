@@ -82,7 +82,7 @@ export function Scrubber({
                 className="mono mt-1 -translate-x-1/2 whitespace-nowrap text-[10.5px]"
                 style={{ color: 'var(--text-muted)' }}
               >
-                {formatHour(t).replace('코일 ', '')}
+                {formatHour(t).replace('cycle ', '')}
               </span>
             </div>
           ))}

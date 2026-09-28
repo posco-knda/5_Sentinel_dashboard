@@ -6,7 +6,7 @@ import { RankedList } from '../components/RankedList'
 import { AlertsTable } from '../components/AlertsTable'
 import { Scrubber } from '../components/Scrubber'
 import { Toast } from '../components/Toast'
-import { getKpisAtHour, anomalyWindow } from '../data/mock'
+import { getKpisAtHour, anomalyWindow, dataMeta } from '../data/mock'
 
 function Panel({ title, action, children }: { title?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -78,14 +78,14 @@ export function Dashboard() {
     <div className="flex flex-col gap-5">
       <Toast
         show={showAnomalyToast}
-        title="Stand 3 이상 감지"
-        body="작업롤 이상 신호 — 압연력 잔차가 임계값을 넘었습니다"
+        title={`Engine #${dataMeta.featuredEngine} 위험 감지`}
+        body="예측 RUL이 위험 임계값(20 cycle) 아래로 떨어졌습니다"
       />
 
       <div>
         <h1 className="m-0 text-[22px] font-semibold tracking-[-0.01em]">실시간 모니터링</h1>
         <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
-          타임라인을 움직여 코일 25개 구간의 이상탐지 흐름을 재생해볼 수 있습니다
+          타임라인을 움직여 사이클 25개 구간의 위험 조기경보 흐름을 재생해볼 수 있습니다
         </p>
       </div>
 
@@ -93,13 +93,13 @@ export function Dashboard() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile
-          label="모니터링 스탠드"
+          label="모니터링 엔진"
           value={kpis.totalEquipment}
           suffix="개"
-          foot="5단 텐덤 라인 전체 · 실시간 연동"
+          foot="선택된 엔진 플릿 · 실시간 연동"
         />
         <StatTile
-          label="위험 스탠드"
+          label="위험 엔진"
           value={kpis.riskEquipment}
           suffix="개"
           delay={0.05}
@@ -112,7 +112,7 @@ export function Dashboard() {
           }
           foot="즉시 점검 필요"
         />
-        <StatTile label="평균 헬스 스코어" value={kpis.avgHealth} decimals={1} delay={0.1} foot="창 안 스탠드 평균" />
+        <StatTile label="평균 헬스 스코어" value={kpis.avgHealth} decimals={1} delay={0.1} foot="모니터링 엔진 평균" />
         <StatTile
           label="구간 내 발생 알림"
           value={kpis.todayAlerts}
@@ -124,7 +124,7 @@ export function Dashboard() {
                 <line x1="12" y1="19" x2="12" y2="5" />
                 <polyline points="5 12 12 5 19 12" />
               </svg>
-              앞 12코일 대비 {kpis.alertsDelta >= 0 ? '+' : ''}{kpis.alertsDelta}건
+              앞 12사이클 대비 {kpis.alertsDelta >= 0 ? '+' : ''}{kpis.alertsDelta}건
             </>
           }
         />
@@ -137,19 +137,19 @@ export function Dashboard() {
         transition={{ duration: 0.4, delay: 0.2 }}
       >
         <Panel
-          title="Force · Stand 3"
+          title={`예측 RUL · Engine #${dataMeta.featuredEngine}`}
           action={
             <span
               className="border px-3 py-1.5 text-[12.5px]"
               style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
             >
-              코일 25개 구간
+              사이클 25개 구간
             </span>
           }
         >
           <SensorChart hour={hour} />
           <p className="mt-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            Stand 3 압연력(MN) · 붉은 띠는 실제 작업롤 이상 라벨 구간이며, 알림은 RandomForest 모델이 낸 경보입니다
+            Engine #{dataMeta.featuredEngine} 예측 RUL(cycle) 추이 · 붉은 띠는 위험 임계값(RUL&lt;20) 이하 구간이며, 알림은 LSTM 모델의 예측 기반입니다
           </p>
         </Panel>
 

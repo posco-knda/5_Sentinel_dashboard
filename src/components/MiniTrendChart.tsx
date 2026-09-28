@@ -28,11 +28,12 @@ export function MiniTrendChart({
   unit: string
   domain: [number, number]
 }) {
+  const hMax = data.length ? data[data.length - 1].h : 0
   return (
     <div className="h-14 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 2, right: 2, bottom: 0, left: 2 }}>
-          <XAxis dataKey="h" type="number" domain={[0, 72]} hide />
+          <XAxis dataKey="h" type="number" domain={[0, hMax]} hide />
           <YAxis domain={domain} hide />
           <Tooltip content={<MiniTooltip unit={unit} />} cursor={{ stroke: 'var(--axis)', strokeWidth: 1 }} />
           <Area

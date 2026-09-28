@@ -7,6 +7,7 @@ import { Overview } from './pages/Overview'
 import { Dashboard } from './pages/Dashboard'
 import { Detail } from './pages/Detail'
 import { Simulation } from './pages/Simulation'
+import { DEFAULT_ENGINE_ID } from './data/mock'
 
 function HomeIcon() {
   return (
@@ -65,7 +66,7 @@ function CloseIcon() {
 const navItems = [
   { to: '/', label: '홈', icon: HomeIcon },
   { to: '/dashboard', label: '모니터링', icon: ActivityIcon },
-  { to: '/equipment/stand-3', label: '설비 상세', icon: CpuIcon },
+  { to: `/equipment/${DEFAULT_ENGINE_ID}`, label: '설비 상세', icon: CpuIcon },
   { to: '/simulation', label: '시나리오 시뮬레이션', icon: SlidersIcon },
 ]
 
