@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Badge } from '../components/Badge'
 import { Meter } from '../components/Meter'
-import { equipmentRanking, getKpisAtHour, scenarioCompare, classifierMetrics } from '../data/mock'
+import { equipmentRanking, getKpisAtHour, scenarioCompare, classifierMetrics, riskThresholds } from '../data/mock'
 
 const kpis = getKpisAtHour(24)
 
@@ -10,7 +10,7 @@ const pct = (asIs: number, toBe: number) => `${Math.round((toBe / asIs - 1) * 10
 const impactStats = [
   { label: '가동중단 시간 (예지보전 vs 사후보전)', value: pct(scenarioCompare[0].asIs, scenarioCompare[0].toBe) },
   { label: '정비 비용 (예지보전 vs 사후보전)', value: pct(scenarioCompare[1].asIs, scenarioCompare[1].toBe) },
-  { label: '위험 조기경보 모델 F1 (RUL<20)', value: classifierMetrics.f1.toFixed(2) },
+  { label: `위험 조기경보 모델 F1 (RUL≤${riskThresholds.dangerRul})`, value: classifierMetrics.f1.toFixed(2) },
 ]
 
 export function Overview() {

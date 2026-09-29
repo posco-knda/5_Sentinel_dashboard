@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { costModel, savingsSummary } from '../data/mock'
+import { costModel, savingsSummary, riskThresholds } from '../data/mock'
 
 function Slider({
   label,
@@ -217,7 +217,7 @@ export function Simulation() {
               {result.savingPer1000.toLocaleString()}억원 · 절감률 {result.savingRate}%
             </span>
             <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-              위험 상태(RUL&lt;20)로 방치되는 엔진 사례가 {result.dangerCaseReduction}% 줄어듭니다 (가정과 무관한, 탐지·누락
+              위험 상태(RUL ≤ {riskThresholds.dangerRul})로 방치되는 엔진 사례가 {result.dangerCaseReduction}% 줄어듭니다 (가정과 무관한, 탐지·누락
               건수 기반의 실제 결과). 기준 가정의 절감률은 {savingsSummary.savingRatePct}%입니다
             </span>
           </motion.div>

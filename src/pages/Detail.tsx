@@ -11,6 +11,7 @@ import {
   engineDetails,
   equipmentRanking,
   DEFAULT_ENGINE_ID,
+  riskThresholds,
   type EngineDetail,
 } from '../data/mock'
 
@@ -73,9 +74,9 @@ function RulTab({ detail }: { detail: EngineDetail }) {
             권장 조치
           </div>
           <div className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-            {rul.median < 20
+            {rul.median <= riskThresholds.dangerRul
               ? '잔존수명 소진이 임박했습니다. 엔진 정비 일정을 지금 수립하세요.'
-              : `아직 여유가 있습니다(예측 RUL 약 ${rul.median} cycle). 예측 RUL 추이를 주기적으로 확인하며, 위험 임계값(20 cycle) 근접 시 즉시 대응하세요.`}
+              : `아직 여유가 있습니다(예측 RUL 약 ${rul.median} cycle). 예측 RUL 추이를 주기적으로 확인하며, 위험 임계값(${riskThresholds.dangerRul} cycle) 근접 시 즉시 대응하세요.`}
           </div>
         </div>
       </div>
@@ -132,7 +133,7 @@ function ModelTab() {
         ))}
       </div>
       <p className="mt-2 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-        ※ LSTM 회귀로 예측한 RUL이 20 cycle 미만이면 '위험'으로 보는 조기경보 규칙의 성능입니다.
+        ※ LSTM 회귀로 예측한 RUL이 {riskThresholds.dangerRul} cycle 이하면 '위험'으로 보는 조기경보 규칙의 성능입니다.
         공식 test 100개 엔진 기준 실제 결과입니다 (TP={classifierMetrics.tp}, FN={classifierMetrics.fn}, FP={classifierMetrics.fp}).
         C-MAPSS는 시뮬레이션 데이터라 실제 현장보다 쉬운 문제일 수 있습니다.
       </p>
