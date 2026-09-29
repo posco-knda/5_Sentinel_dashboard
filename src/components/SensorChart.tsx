@@ -9,7 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { sensorSeries, anomalyWindow, getVibrationAtHour, formatHour } from '../data/mock'
+import { sensorSeries, anomalyWindow, getRulAtHour, formatHour } from '../data/mock'
 
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
@@ -24,8 +24,8 @@ function ChartTooltip({ active, payload, label }: any) {
         {formatHour(label)}
       </div>
       <div className="mt-0.5 font-semibold" style={{ color: inAnomaly ? 'var(--status-critical)' : 'var(--text-primary)' }}>
-        Force <span className="mono">{v.toFixed(2)} MN</span>
-        {inAnomaly ? ' · 임계치 초과' : ''}
+        예측 RUL <span className="mono">{v.toFixed(1)} cycle</span>
+        {inAnomaly ? ' · 위험 임계값 이하' : ''}
       </div>
     </div>
   )
@@ -35,7 +35,7 @@ export function SensorChart({ hour }: { hour: number }) {
   // hour까지의 확정된 포인트 + 현재 스크러버 위치의 보간값 하나를 이어붙여서
   // 드래그할 때 끝점이 뚝뚝 끊기지 않고 부드럽게 따라오게 만듭니다.
   const visible = sensorSeries.filter((p) => p.h <= hour)
-  const current = { h: hour, v: getVibrationAtHour(hour) }
+  const current = { h: hour, v: getRulAtHour(hour) }
   const data = visible.length && visible[visible.length - 1].h === hour ? visible : [...visible, current]
 
   const bandEnd = Math.min(hour, anomalyWindow.end)
@@ -57,8 +57,8 @@ export function SensorChart({ hour }: { hour: number }) {
             tickLine={false}
           />
           <YAxis
-            domain={[0, 12]}
-            ticks={[0, 4, 8, 12]}
+            domain={[0, 125]}
+            ticks={[0, 25, 50, 75, 100, 125]}
             tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
             axisLine={false}
             tickLine={false}
@@ -70,7 +70,7 @@ export function SensorChart({ hour }: { hour: number }) {
               x2={bandEnd}
               fill="var(--status-critical)"
               fillOpacity={0.12}
-              label={{ value: '이상 구간', position: 'insideTop', fill: 'var(--status-serious)', fontSize: 11, fontWeight: 600 }}
+              label={{ value: '위험 구간', position: 'insideTop', fill: 'var(--status-serious)', fontSize: 11, fontWeight: 600 }}
             />
           )}
           <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--axis)', strokeWidth: 1 }} />

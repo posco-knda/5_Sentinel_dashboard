@@ -9,9 +9,13 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { survivalCurve, predictedRulMileage } from '../data/mock'
 
-const data = survivalCurve.map((d) => ({ ...d, band: [d.lower, d.upper] as [number, number] }))
+interface SurvivalPoint {
+  cycle: number
+  median: number
+  lower: number
+  upper: number
+}
 
 function CurveTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
@@ -22,31 +26,35 @@ function CurveTooltip({ active, payload, label }: any) {
       style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-xs)' }}
     >
       <div style={{ color: 'var(--text-muted)' }}>
-        누적 마일리지 <span className="mono">+{label}km</span>
+        앞으로 <span className="mono">+{label} cycle</span> 더
       </div>
       <div className="mt-0.5 font-semibold" style={{ color: 'var(--text-primary)' }}>
         생존확률 <span className="mono">{(row.median * 100).toFixed(0)}%</span>
       </div>
       <div style={{ color: 'var(--text-muted)' }}>
-        신뢰구간 <span className="mono">{(row.lower * 100).toFixed(0)}–{(row.upper * 100).toFixed(0)}%</span>
+        90% 구간 <span className="mono">{(row.lower * 100).toFixed(0)}–{(row.upper * 100).toFixed(0)}%</span>
       </div>
     </div>
   )
 }
 
-/** 워크롤 잔존 마일리지(RUL) 곡선 — 지금 롤 나이에서 "앞으로 km 더 쓸 때까지 아직 쓰고 있을 확률"을
- *  부트스트랩 신뢰구간 밴드와 함께 시각화. km=0이 현재 시점이고, 예측 중앙값(median RUL)에 기준선 표시. */
-export function SurvivalCurveChart() {
+/** 엔진 잔존수명(RUL) 생존곡선 — 지금 엔진 나이(사이클)에서 "앞으로 X 사이클 더 가동될 때까지
+ *  아직 고장나지 않을 확률"을, 검증 엔진에서 모델이 비슷한 RUL을 예측했던 순간들의 실제 잔존수명
+ *  분포로 계산해(밴드 = 검증 엔진 단위 부트스트랩 90% 구간) 시각화. cycle=0이 현재 시점이고,
+ *  모델이 예측한 RUL에 기준선 표시 — 곡선이 50% 근처를 지나는 지점과 대체로 겹칩니다. */
+export function SurvivalCurveChart({ data, predictedRul }: { data: SurvivalPoint[]; predictedRul: { median: number; lower: number; upper: number } }) {
+  const chartData = data.map((d) => ({ ...d, band: [d.lower, d.upper] as [number, number] }))
+  const maxCycle = Math.max(...data.map((d) => d.cycle))
+
   return (
     <div className="h-[220px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 12, right: 16, bottom: 4, left: 0 }}>
+        <ComposedChart data={chartData} margin={{ top: 12, right: 16, bottom: 4, left: 0 }}>
           <CartesianGrid stroke="var(--gridline)" vertical={false} />
           <XAxis
-            dataKey="km"
+            dataKey="cycle"
             type="number"
-            domain={[0, 140]}
-            ticks={[0, 20, 40, 60, 80, 100, 120, 140]}
+            domain={[0, maxCycle]}
             tickFormatter={(d) => `+${d}`}
             tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
             axisLine={{ stroke: 'var(--axis)' }}
@@ -62,10 +70,10 @@ export function SurvivalCurveChart() {
             width={40}
           />
           <ReferenceLine
-            x={predictedRulMileage.median}
+            x={predictedRul.median}
             stroke="var(--status-warning)"
             strokeDasharray="4 3"
-            label={{ value: `예측 RUL +${predictedRulMileage.median}km`, position: 'top', fill: 'var(--status-warning)', fontSize: 11, fontWeight: 600 }}
+            label={{ value: `예측 RUL +${predictedRul.median}cycle`, position: 'top', fill: 'var(--status-warning)', fontSize: 11, fontWeight: 600 }}
           />
           <Tooltip content={<CurveTooltip />} cursor={{ stroke: 'var(--axis)', strokeWidth: 1 }} />
           <Area

@@ -87,43 +87,40 @@ function CompareChart({ metric, asIs, toBe, delay }: { metric: string; asIs: num
 
 type Mult = { repair: number; loss: number; unplanned: number }
 
-/** 시험 구간의 이상 사건 요약(costModel)에 비용 가정을 곱해서 AS-IS/TO-BE 비용을 다시 계산한다.
- *  계산식은 analysis/src/cost.py 와 같다. 내부 계산은 만원 단위, 화면에는 억원(1억원 = 10,000만원)으로 표시 */
+/** test 엔진 100대의 실제 탐지/누락/오탐 건수(costModel)에 비용 가정을 곱해서 AS-IS/TO-BE 비용을 다시 계산한다.
+ *  계산식은 scripts/08_export_dashboard_ts.py 의 compute_scenario()와 같다.
+ *  내부 계산은 만원 단위, 화면에는 억원(1억원 = 10,000만원)으로 표시.
+ *  FD001은 고장 유형이 엔진 교체(EngineRemoval) 하나뿐이라 costModel.types에 항목이 하나뿐이지만,
+ *  원래 대시보드처럼 여러 유형을 합산하는 구조는 그대로 남겨서 유형이 늘어도 고치지 않고 동작하게 했다. */
 function computeScenario(m: Mult) {
   const g = costModel.general
   const hourCost = g.downtimeCostPerHour * m.loss
-  const acc = { asis: { hours: 0, repair: 0, coils: 0 }, tobe: { hours: 0, repair: 0, coils: 0 } }
-  let coilsAsis3 = 0
-  let coilsTobe3 = 0
-  for (const [name, t] of Object.entries(costModel.types)) {
+  const acc = { asis: { hours: 0, repair: 0, dangerCases: 0 }, tobe: { hours: 0, repair: 0, dangerCases: 0 } }
+  for (const t of Object.values(costModel.types)) {
     const hu = t.hoursUnplanned * m.unplanned
     const repP = t.repairPlanned * m.repair
     const repU = repP * g.repairUnplannedRatio
     acc.asis.hours += t.episodes * hu
     acc.asis.repair += t.episodes * repU
-    acc.asis.coils += t.anomalyCoils
+    acc.asis.dangerCases += t.dangerCases
     acc.tobe.hours += t.detected * t.hoursPlanned + t.missed * hu + t.falseAlarms * g.falseAlarmHours
     acc.tobe.repair += t.detected * repP + t.missed * repU + t.falseAlarms * g.falseAlarmLabor * m.repair
-    acc.tobe.coils += t.detectedCoils + t.missedCoils
-    if (name !== 'Reduction') {
-      coilsAsis3 += t.anomalyCoils
-      coilsTobe3 += t.detectedCoils + t.missedCoils
-    }
+    acc.tobe.dangerCases += t.dangerCasesDetected + t.dangerCasesMissed
   }
-  const loss = (x: { hours: number; coils: number }) => x.hours * hourCost + x.coils * g.coilLoss
-  const per1000 = 1000 / costModel.nCoils
+  const loss = (x: { hours: number; dangerCases: number }) => x.hours * hourCost + x.dangerCases * g.dangerCaseLoss
+  const per1000 = 1000 / costModel.nEngines
   const asisTotal = acc.asis.repair + loss(acc.asis)
   const tobeTotal = acc.tobe.repair + loss(acc.tobe)
   const r1 = (v: number) => Math.round(v * 10) / 10
   return {
     metrics: [
-      { metric: '평균 정지시간 (시간/1,000코일)', asIs: r1(acc.asis.hours * per1000), toBe: r1(acc.tobe.hours * per1000) },
-      { metric: '정비 비용 (억원/1,000코일)', asIs: r1((acc.asis.repair * per1000) / 10000), toBe: r1((acc.tobe.repair * per1000) / 10000) },
-      { metric: '생산차질 손실 (억원/1,000코일)', asIs: r1((loss(acc.asis) * per1000) / 10000), toBe: r1((loss(acc.tobe) * per1000) / 10000) },
+      { metric: '평균 가동중단 시간 (시간/1,000대 환산)', asIs: r1(acc.asis.hours * per1000), toBe: r1(acc.tobe.hours * per1000) },
+      { metric: '정비 비용 (억원/1,000대 환산)', asIs: r1((acc.asis.repair * per1000) / 10000), toBe: r1((acc.tobe.repair * per1000) / 10000) },
+      { metric: '가동중단 손실 (억원/1,000대 환산)', asIs: r1((loss(acc.asis) * per1000) / 10000), toBe: r1((loss(acc.tobe) * per1000) / 10000) },
     ],
     savingPer1000: r1(((asisTotal - tobeTotal) * per1000) / 10000),
     savingRate: asisTotal > 0 ? Math.round(((asisTotal - tobeTotal) / asisTotal) * 1000) / 10 : 0,
-    coilReduction: coilsAsis3 > 0 ? Math.round((1 - coilsTobe3 / coilsAsis3) * 100) : 0,
+    dangerCaseReduction: acc.asis.dangerCases > 0 ? Math.round((1 - acc.tobe.dangerCases / acc.asis.dangerCases) * 100) : 0,
   }
 }
 
@@ -143,8 +140,9 @@ export function Simulation() {
       <div>
         <p className="m-0 text-xl font-semibold">정비 시나리오 비교 시뮬레이션</p>
         <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
-          아래 가정을 조절하면 사후보전(고장 후 수리)과 예지보전(사전 예측 대응)의 비용 격차가 실시간으로 다시
-          계산됩니다. 사건 수·탐지율·탐지 지연은 시험 구간의 실제 결과이고, 정지시간·단가는 가정값입니다
+          아래 가정을 조절하면 사후보전(고장 후 수리)과 예지보전(RUL 기반 사전 정비)의 비용 격차가 실시간으로 다시
+          계산됩니다. 사건 수·탐지율(정밀도·재현율)은 test 엔진 100대에 대한 LSTM 모델의 실제 결과이고, 가동중단
+          시간·단가는 가정값입니다
         </p>
       </div>
 
@@ -154,7 +152,7 @@ export function Simulation() {
             시뮬레이션 가정 조절
           </p>
           <Slider
-            label={`라인 정지 손실 단가 (기준 ${(baseHourCost / 10000).toFixed(1)}억원/시간)`}
+            label={`엔진 가동중단 손실 단가 (기준 ${(baseHourCost / 10000).toFixed(1)}억원/시간)`}
             value={lossMult}
             onChange={setLossMult}
             min={0.1}
@@ -181,7 +179,8 @@ export function Simulation() {
             format={(v) => `×${v.toFixed(1)}`}
           />
           <p className="m-0 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-            · 기준값: 유형별 비계획 정지 작업롤 4h · 전동기 6h · 베어링 8h, 계획 정지 1~2h, 응급 수리비는 계획 수리비의 4.5배
+            · 기준값: 비계획 정지(고장 후 교체) 24h vs 계획 정지(RUL 기반 사전 교체) 4h, 오탐 1건당 점검 0.5h, 응급
+            수리비는 계획 수리비의 3배
           </p>
         </div>
 
@@ -212,22 +211,23 @@ export function Simulation() {
             style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
           >
             <span className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
-              예상 절감 효과 (코일 1,000개당)
+              예상 절감 효과 (1,000대 환산)
             </span>
             <span className="text-[34px] font-bold" style={{ color: 'var(--accent)' }}>
               {result.savingPer1000.toLocaleString()}억원 · 절감률 {result.savingRate}%
             </span>
             <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-              정지가 필요한 이상(전동기·베어링·작업롤)에서 이상 상태로 가공되는 코일이 {result.coilReduction}% 줄어듭니다 (가정과
-              무관한 실제 결과). 기준 가정의 절감률은 {savingsSummary.savingRatePct}%입니다
+              위험 상태(RUL&lt;20)로 방치되는 엔진 사례가 {result.dangerCaseReduction}% 줄어듭니다 (가정과 무관한, 탐지·누락
+              건수 기반의 실제 결과). 기준 가정의 절감률은 {savingsSummary.savingRatePct}%입니다
             </span>
           </motion.div>
         </div>
       </div>
 
       <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-        ※ 데이터에 비용·정지시간 정보가 없어서 금액과 정지시간은 가정값입니다. 시뮬레이션 데이터는 이상 발생 빈도가 실제 현장보다 훨씬
-        높아서, 연간 환산이나 ROI는 계산하지 않았습니다.
+        ※ C-MAPSS 데이터에는 실제 비용·정비 시간 정보가 없어서, 금액과 가동중단 시간은 항공 정비 맥락의 illustrative
+        가정값입니다(항공사·기종별로 실제 단가는 다를 수 있습니다). 탐지·누락·오탐 건수만 test 엔진 100대에 대한 실제
+        모델 성능이며, 표본 수가 적어 연간 환산이나 ROI는 계산하지 않았습니다.
       </p>
     </div>
   )

@@ -1,61 +1,58 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { Badge } from '../components/Badge'
 import { SurvivalCurveChart } from '../components/SurvivalCurveChart'
 import { MiniTrendChart } from '../components/MiniTrendChart'
 import {
   featureImportance,
-  equipmentInfo,
-  sensorTrend72h,
-  predictedRulMileage,
   classifierMetrics,
-  maintenanceHistory,
   trendMeta,
-  getEquipmentRankingAtHour,
+  engineDetails,
+  equipmentRanking,
+  DEFAULT_ENGINE_ID,
+  type EngineDetail,
 } from '../data/mock'
 
-const trendCards = [
-  { key: 'torque_3', label: 'Torque (토크)', unit: trendMeta.torque_3.unit, color: 'var(--series-1)', domain: trendMeta.torque_3.domain, data: sensorTrend72h.torque_3 },
-  { key: 'motor_power_3', label: 'Motor Power (모터파워)', unit: trendMeta.motor_power_3.unit, color: 'var(--series-2)', domain: trendMeta.motor_power_3.domain, data: sensorTrend72h.motor_power_3 },
-  { key: 'tension_3', label: 'Tension (텐션)', unit: trendMeta.tension_3.unit, color: 'var(--series-3)', domain: trendMeta.tension_3.domain, data: sensorTrend72h.tension_3 },
-]
-
-const infoChips = [
-  { label: '라인/공정', value: equipmentInfo.line },
-  { label: '설치일', value: equipmentInfo.installedAt },
-  { label: '워크롤 규격', value: equipmentInfo.modelNo },
-  { label: '누적 마일리지', value: `${equipmentInfo.operatingHours.toLocaleString()} km` },
-  { label: '최근 롤 교체일', value: equipmentInfo.lastMaintenance },
-  { label: '담당팀', value: equipmentInfo.team },
-]
+const SENSOR_LABELS: Record<string, string> = {
+  s4: 'LPT outlet 온도 (s4)',
+  s9: '코어 속도 N2 (s9)',
+  s3: 'HPC outlet 온도 (s3)',
+}
+const SENSOR_COLORS: Record<string, string> = {
+  s4: 'var(--series-1)',
+  s9: 'var(--series-2)',
+  s3: 'var(--series-3)',
+}
 
 const tabs = [
   { id: 'rul', label: 'RUL 예측' },
-  { id: 'model', label: '이상탐지 요인' },
+  { id: 'model', label: '위험 조기경보 요인' },
   { id: 'sensors', label: '센서 추이' },
-  { id: 'history', label: '정비 이력' },
+  { id: 'history', label: '정비 권고' },
 ] as const
 
-function RulTab() {
+function RulTab({ detail }: { detail: EngineDetail }) {
+  const rul = detail.predictedRulCycle
   return (
     <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <p className="m-0 mb-3.5 text-[14px] font-semibold">워크롤 잔존 마일리지 예측 (RUL) · RandomForest 회귀 + 생존곡선</p>
+      <p className="m-0 mb-3.5 text-[14px] font-semibold">엔진 잔존수명 예측 (RUL) · LSTM Seq2Seq 회귀 + 생존곡선</p>
       <div className="flex flex-row items-baseline gap-2.5">
         <span className="text-[40px] font-bold leading-none">
-          약 <span className="mono">{predictedRulMileage.median}</span>km
+          약 <span className="mono">{rul.median}</span> cycle
         </span>
         <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-          신뢰구간 {predictedRulMileage.lower}–{predictedRulMileage.upper}km
+          90% 구간 {rul.lower}–{rul.upper} cycle
         </span>
       </div>
       <p className="mt-2 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-        지금 롤의 나이(누적 마일리지)와 최근 공정변수로 남은 마일리지를 회귀 예측하고, 전체 롤 수명 분포로
-        "앞으로 이만큼 더 쓸 때까지 아직 쓰고 있을 확률" 곡선을 그립니다 (음영 = 부트스트랩 90% 구간)
+        지금까지 관측된 센서 이력으로 남은 사이클 수를 회귀 예측합니다. 90% 구간과 생존곡선("앞으로 이만큼 더
+        가동해도 아직 고장나지 않을 확률")은 검증 엔진에서 모델이 비슷한 값을 예측했던 순간들의 실제 잔존수명
+        분포로 계산합니다 (음영 = 검증 엔진 단위 부트스트랩 90% 구간)
       </p>
 
       <div className="mt-4">
-        <SurvivalCurveChart />
+        <SurvivalCurveChart data={detail.survivalCurve} predictedRul={rul} />
       </div>
 
       <div
@@ -76,9 +73,9 @@ function RulTab() {
             권장 조치
           </div>
           <div className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-            {predictedRulMileage.median < 20
-              ? '잔존 마일리지 소진이 임박했습니다. 워크롤 교체를 계획하세요.'
-              : `교체 직후라 잔존 마일리지가 충분합니다(약 ${predictedRulMileage.median}). 다음 교체 예정: ${maintenanceHistory[0].date}. 정상 롤은 수명이 거의 일정해서 정기 교체 시점을 앞당길 이유는 크지 않고, 이상 경보 즉시 대응이 핵심입니다.`}
+            {rul.median < 20
+              ? '잔존수명 소진이 임박했습니다. 엔진 정비 일정을 지금 수립하세요.'
+              : `아직 여유가 있습니다(예측 RUL 약 ${rul.median} cycle). 예측 RUL 추이를 주기적으로 확인하며, 위험 임계값(20 cycle) 근접 시 즉시 대응하세요.`}
           </div>
         </div>
       </div>
@@ -90,7 +87,7 @@ function ModelTab() {
   const maxImportance = Math.max(...featureImportance.map((f) => f.value))
   return (
     <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <p className="m-0 mb-3.5 text-[14px] font-semibold">이상탐지 기여 요인 (모델 설명)</p>
+      <p className="m-0 mb-3.5 text-[14px] font-semibold">위험 조기경보 기여 요인 (모델 설명)</p>
       <div className="flex flex-col gap-2">
         {featureImportance.map((f, i) => (
           <div key={f.label} className="flex flex-row items-center gap-3">
@@ -113,7 +110,7 @@ function ModelTab() {
         ))}
       </div>
       <p className="mt-2.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-        Anomaly_Bearing_3 분류에 대한 특성 기여도 (RandomForest, 특성 묶음별 합)
+        RUL 예측(Random Forest)에 대한 센서별 기여도 (피처 종류별 합산)
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -135,19 +132,29 @@ function ModelTab() {
         ))}
       </div>
       <p className="mt-2 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-        ※ RandomForest(Anomaly_Bearing_3 라벨), Stand 3 시험 구간(시간순 마지막 20%) 기준. 합성 시뮬레이션 데이터라 실제 현장보다 쉬운 문제입니다
+        ※ LSTM 회귀로 예측한 RUL이 20 cycle 미만이면 '위험'으로 보는 조기경보 규칙의 성능입니다.
+        공식 test 100개 엔진 기준 실제 결과입니다 (TP={classifierMetrics.tp}, FN={classifierMetrics.fn}, FP={classifierMetrics.fp}).
+        C-MAPSS는 시뮬레이션 데이터라 실제 현장보다 쉬운 문제일 수 있습니다.
       </p>
     </div>
   )
 }
 
-function SensorsTab() {
+function SensorsTab({ detail }: { detail: EngineDetail }) {
+  const trendCards = Object.entries(detail.sensorTrend).map(([key, data]) => ({
+    key,
+    label: SENSOR_LABELS[key] ?? key,
+    unit: trendMeta[key]?.unit ?? '',
+    color: SENSOR_COLORS[key] ?? 'var(--series-1)',
+    domain: trendMeta[key]?.domain ?? ([0, 1] as [number, number]),
+    data,
+  }))
   return (
     <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <p className="m-0 mb-3.5 text-[14px] font-semibold">공정변수별 최근 72코일 추이</p>
+      <p className="m-0 mb-3.5 text-[14px] font-semibold">센서별 관측 이력 추이 (전체 관측 사이클, 9구간 샘플)</p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {trendCards.map((c) => {
-          const last = c.data[c.data.length - 1].v
+          const last = c.data[c.data.length - 1]?.v ?? 0
           return (
             <div
               key={c.key}
@@ -171,19 +178,24 @@ function SensorsTab() {
         })}
       </div>
       <p className="mt-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-        이상이 생기면 토크(베어링)·전력(전동기)·압연력(작업롤)이 "조건 대비 기대값"보다 먼저 튑니다 — 이 잔차가 이상탐지 모델의 핵심 입력입니다
+        열화가 진행되면 저압/고압 터빈·압축기 출구 온도와 코어 회전수가 정상 대비 서서히 벗어납니다 —
+        이 변화가 RUL 예측 모델의 핵심 입력입니다 (RF 피처 중요도 상위 센서 기준)
       </p>
     </div>
   )
 }
 
-function HistoryTab() {
+function HistoryTab({ detail }: { detail: EngineDetail }) {
   return (
     <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <p className="m-0 mb-3.5 text-[14px] font-semibold">최근 롤 교체 이력</p>
+      <p className="m-0 mb-3.5 text-[14px] font-semibold">정비 권고 (RUL 예측 기반)</p>
+      <p className="mb-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+        C-MAPSS는 엔진 1대당 1회 run-to-failure(가동 시작~고장)만 기록된 데이터라 실제 교체 이력은 없습니다.
+        아래는 현재 예측을 바탕으로 한 향후 정비 권고입니다.
+      </p>
       <div className="flex flex-col">
-        {maintenanceHistory.map((m, i) => (
-          <div key={m.date + m.type} className="flex flex-row gap-3 pb-3.5" style={{ borderLeft: i < maintenanceHistory.length - 1 ? '1px solid var(--border-soft)' : '1px solid transparent', marginLeft: 5 }}>
+        {detail.maintenanceHistory.map((m, i) => (
+          <div key={m.date + m.type} className="flex flex-row gap-3 pb-3.5" style={{ borderLeft: i < detail.maintenanceHistory.length - 1 ? '1px solid var(--border-soft)' : '1px solid transparent', marginLeft: 5 }}>
             <div
               className="-ml-[5px] mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full border-2"
               style={{
@@ -210,7 +222,20 @@ function HistoryTab() {
 }
 
 export function Detail() {
+  const { id } = useParams<{ id: string }>()
+  const engineId = id && engineDetails[id] ? id : DEFAULT_ENGINE_ID
+  const detail = engineDetails[engineId]
+  const displayName = equipmentRanking.find((e) => e.id === engineId)?.name ?? engineId
   const [tab, setTab] = useState<(typeof tabs)[number]['id']>('rul')
+
+  const infoChips = [
+    { label: '라인/공정', value: detail.equipmentInfo.line },
+    { label: '설치일', value: detail.equipmentInfo.installedAt },
+    { label: '엔진 모델', value: detail.equipmentInfo.modelNo },
+    { label: '누적 사이클', value: `${detail.equipmentInfo.operatingCycles.toLocaleString()} cycle` },
+    { label: '최근 정비 이력', value: detail.equipmentInfo.lastMaintenance },
+    { label: '담당팀', value: detail.equipmentInfo.team },
+  ]
 
   return (
     <div className="flex flex-col gap-5">
@@ -223,16 +248,16 @@ export function Detail() {
           <line x1="19" y1="12" x2="5" y2="12" />
           <polyline points="12 19 5 12 12 5" />
         </svg>
-        전체 스탠드
+        전체 엔진
       </Link>
 
       <div>
         <div className="flex flex-row items-center gap-2.5">
-          <h1 className="m-0 text-xl font-semibold">Stand 3</h1>
-          <Badge status={getEquipmentRankingAtHour(24).find((e) => e.id === 'stand-3')?.status ?? 'good'} />
+          <h1 className="m-0 text-xl font-semibold">{displayName}</h1>
+          <Badge status={detail.status} />
         </div>
         <p className="mt-1.5 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-          {equipmentInfo.line} · 설치일 {equipmentInfo.installedAt}
+          {detail.equipmentInfo.line} · 설치일 {detail.equipmentInfo.installedAt}
         </p>
       </div>
 
@@ -262,11 +287,11 @@ export function Detail() {
         ))}
       </div>
 
-      <motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-        {tab === 'rul' && <RulTab />}
+      <motion.div key={tab + engineId} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+        {tab === 'rul' && <RulTab detail={detail} />}
         {tab === 'model' && <ModelTab />}
-        {tab === 'sensors' && <SensorsTab />}
-        {tab === 'history' && <HistoryTab />}
+        {tab === 'sensors' && <SensorsTab detail={detail} />}
+        {tab === 'history' && <HistoryTab detail={detail} />}
       </motion.div>
     </div>
   )
