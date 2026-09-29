@@ -42,13 +42,13 @@ function RulTab({ detail }: { detail: EngineDetail }) {
           약 <span className="mono">{rul.median}</span> cycle
         </span>
         <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-          신뢰구간 {rul.lower}–{rul.upper} cycle
+          90% 구간 {rul.lower}–{rul.upper} cycle
         </span>
       </div>
       <p className="mt-2 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-        지금까지 관측된 센서 이력으로 남은 사이클 수를 회귀 예측하고, train 100개 엔진의 실제 수명
-        분포로 "앞으로 이만큼 더 가동될 때까지 아직 고장나지 않을 확률" 곡선을 그립니다 (음영 = 부트스트랩
-        90% 구간)
+        지금까지 관측된 센서 이력으로 남은 사이클 수를 회귀 예측합니다. 90% 구간과 생존곡선("앞으로 이만큼 더
+        가동해도 아직 고장나지 않을 확률")은 검증 엔진에서 모델이 비슷한 값을 예측했던 순간들의 실제 잔존수명
+        분포로 계산합니다 (음영 = 검증 엔진 단위 부트스트랩 90% 구간)
       </p>
 
       <div className="mt-4">
@@ -232,7 +232,7 @@ export function Detail() {
     { label: '라인/공정', value: detail.equipmentInfo.line },
     { label: '설치일', value: detail.equipmentInfo.installedAt },
     { label: '엔진 모델', value: detail.equipmentInfo.modelNo },
-    { label: '누적 사이클', value: `${detail.equipmentInfo.operatingHours.toLocaleString()} cycle` },
+    { label: '누적 사이클', value: `${detail.equipmentInfo.operatingCycles.toLocaleString()} cycle` },
     { label: '최근 정비 이력', value: detail.equipmentInfo.lastMaintenance },
     { label: '담당팀', value: detail.equipmentInfo.team },
   ]

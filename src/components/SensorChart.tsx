@@ -9,7 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { sensorSeries, anomalyWindow, getVibrationAtHour, formatHour } from '../data/mock'
+import { sensorSeries, anomalyWindow, getRulAtHour, formatHour } from '../data/mock'
 
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
@@ -35,7 +35,7 @@ export function SensorChart({ hour }: { hour: number }) {
   // hour까지의 확정된 포인트 + 현재 스크러버 위치의 보간값 하나를 이어붙여서
   // 드래그할 때 끝점이 뚝뚝 끊기지 않고 부드럽게 따라오게 만듭니다.
   const visible = sensorSeries.filter((p) => p.h <= hour)
-  const current = { h: hour, v: getVibrationAtHour(hour) }
+  const current = { h: hour, v: getRulAtHour(hour) }
   const data = visible.length && visible[visible.length - 1].h === hour ? visible : [...visible, current]
 
   const bandEnd = Math.min(hour, anomalyWindow.end)

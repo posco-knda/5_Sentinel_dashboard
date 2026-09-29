@@ -32,15 +32,16 @@ function CurveTooltip({ active, payload, label }: any) {
         생존확률 <span className="mono">{(row.median * 100).toFixed(0)}%</span>
       </div>
       <div style={{ color: 'var(--text-muted)' }}>
-        신뢰구간 <span className="mono">{(row.lower * 100).toFixed(0)}–{(row.upper * 100).toFixed(0)}%</span>
+        90% 구간 <span className="mono">{(row.lower * 100).toFixed(0)}–{(row.upper * 100).toFixed(0)}%</span>
       </div>
     </div>
   )
 }
 
 /** 엔진 잔존수명(RUL) 생존곡선 — 지금 엔진 나이(사이클)에서 "앞으로 X 사이클 더 가동될 때까지
- *  아직 고장나지 않을 확률"을, train 100개 엔진의 실제 수명 분포에서 부트스트랩으로 추정한
- *  신뢰구간 밴드와 함께 시각화. cycle=0이 현재 시점이고, 모델이 예측한 RUL 중앙값에 기준선 표시. */
+ *  아직 고장나지 않을 확률"을, 검증 엔진에서 모델이 비슷한 RUL을 예측했던 순간들의 실제 잔존수명
+ *  분포로 계산해(밴드 = 검증 엔진 단위 부트스트랩 90% 구간) 시각화. cycle=0이 현재 시점이고,
+ *  모델이 예측한 RUL에 기준선 표시 — 곡선이 50% 근처를 지나는 지점과 대체로 겹칩니다. */
 export function SurvivalCurveChart({ data, predictedRul }: { data: SurvivalPoint[]; predictedRul: { median: number; lower: number; upper: number } }) {
   const chartData = data.map((d) => ({ ...d, band: [d.lower, d.upper] as [number, number] }))
   const maxCycle = Math.max(...data.map((d) => d.cycle))

@@ -6,7 +6,8 @@
 다시 연결했습니다.
 
 작성일: 2026-09-28 / 작성: Claude (팀 요청으로 대시보드 연동까지 단독 진행)
-데이터 생성 스크립트: [`5_Sentinel_python`](https://github.com/posco-knda/5_Sentinel_python)의
+수정일: 2026-09-29 — 생성 스크립트를 레포에 복원, RUL 90% 구간·생존곡선 계산 수정(§9), TCM 시절 변수명 정리(§10)
+데이터 생성 스크립트: 분석 파이프라인 저장소(현재 [`udwns310/knda_python_project`](https://github.com/udwns310/knda_python_project))의
 `scripts/08_export_dashboard_ts.py` (`outputs/dashboard_data/mock.ts` → 이 저장소
 `src/data/mock.ts`로 복사)
 
@@ -42,7 +43,7 @@
 | 모니터링(Dashboard) | Stand 3 압연력(MN) 25코일 추이 | 대표 엔진(#37) 예측 RUL(cycle) 25사이클 추이 | `lstm_test_predictions.csv`에서 #37의 마지막 25포인트 |
 | 모니터링: 정비 우선순위 | 스탠드별 헬스 점수(시간에 따라 변함) | 9개 엔진의 헬스 점수 — **정적 스냅샷** | 아래 §3 참고 |
 | 모니터링: 이상탐지 로그 | RandomForest 경보 | 대표 엔진(#37)이 YELLOW/RED 임계값을 넘은 실제 시점 2건 | `lstm_test_predictions.csv` |
-| 설비 상세: RUL·생존곡선 | Stand 3 고정, 작업롤 잔존 마일리지 | **URL의 엔진 ID에 따라 동적으로 전환**, RUL(cycle) | `engineDetails[engine-N]` (9개 엔진 각각) |
+| 설비 상세: RUL·생존곡선 | Stand 3 고정, 작업롤 잔존 마일리지 | **URL의 엔진 ID에 따라 동적으로 전환**, RUL(cycle)과 90% 구간·생존곡선 | `engineDetails[engine-N]` (9개 엔진 각각), 계산 방식은 §9 |
 | 설비 상세: 위험 조기경보 요인 | RandomForest 이상탐지 확률·성능(0.979/1.0/0.989 — 사실상 완벽) | RUL 회귀 기반 위험 조기경보의 **실제** precision/recall/F1(0.73/0.85/0.79) | `05_evaluate.py` 결과, 아래 §4 참고 |
 | 설비 상세: 센서 추이 | 토크/전력/장력(가상 채널 3종) | 실제 C-MAPSS 센서 3종(s4, s9, s3 — RF 피처 중요도 상위) | `engine_timeseries/{unit}.json` |
 | 설비 상세: 정비 이력 | 작업롤 교체로 마일리지가 리셋된 지점들 | (실제 교체 이력 없음 — 이유는 §5) 예측 기반 향후 권고만 표시 | — |
@@ -126,7 +127,7 @@ run-to-failure 데이터입니다. 기존 냉간압연 주제처럼 "작업롤�
 ## 7. 다시 생성하려면
 
 ```bash
-# 분석 저장소(5_Sentinel_python)에서
+# 분석 파이프라인 저장소(knda_python_project)에서, 01~07 실행 후
 python scripts/08_export_dashboard_ts.py   # → outputs/dashboard_data/mock.ts 생성
 cp outputs/dashboard_data/mock.ts <이 저장소>/src/data/mock.ts
 ```
@@ -145,3 +146,49 @@ cp outputs/dashboard_data/mock.ts <이 저장소>/src/data/mock.ts
 3. 위험도 등급 임계값(RED<20 / YELLOW 20~60 / GREEN>60)은 실제 정비 리드타임 데이터가
    없어 상식적으로 가정한 값입니다 — 분석 저장소 `DESIGN_DECISIONS.md` 임의 설정값 #7과
    동일한 한계입니다.
+4. 생성 스크립트는 아직 팀 분석 저장소(`5_Sentinel_python`)가 아니라 개인 저장소에 있습니다.
+
+---
+
+## 9. RUL 90% 구간 · 생존곡선 계산 수정 (2026-09-29)
+
+처음 연동(2026-09-28) 때 값을 파이썬 결과와 다시 대조해보니 두 가지 문제가 있었습니다.
+
+1. **신뢰구간의 위/아래가 뒤집혀 있었음.** 예전 값은 `[예측 − 18.6, 예측 + 25.6]`이었는데,
+   검증셋에서 실제 RUL은 예측보다 "최대 25.6 작고 최대 18.6 큰" 분포였으므로 방향이 반대였습니다.
+   고장이 더 빨리 올 수 있는 **위험 쪽 폭을 작게** 보여주고 있었습니다.
+2. **생존곡선이 모델 예측을 반영하지 않았음.** 엔진의 현재 나이(누적 사이클)만 보고 train 엔진 수명
+   분포로 그렸기 때문에, 예측 RUL 15.6인 #37에 "앞으로 40사이클 더 버틸 확률 84%"가 함께 표시되는
+   모순이 있었습니다.
+
+**바뀐 계산 방식**: 검증 엔진(학습에 안 쓴 20대)에서 모델이 **비슷한 값(±10 cycle)을 예측했던 순간들**을
+모아, 그때 실제로 남아 있던 RUL 분포를 봅니다.
+- 90% 구간 = 그 분포의 5%~95%
+- 생존곡선 S(x) = 그중 실제 RUL이 x보다 컸던 비율 ("앞으로 x 사이클 더 가동해도 아직 고장나지 않을 확률")
+- 음영 = 검증 엔진을 엔진 단위로 다시 뽑는 부트스트랩(1000회) 90% 구간
+
+세 값이 모두 같은 근거에서 나오므로, 이제 예측 RUL 기준선이 생존곡선의 50% 근처를 지나갑니다.
+
+| 엔진 | 예측 RUL | 예전 구간 | 바뀐 90% 구간 |
+|---|---|---|---|
+| #37 | 15.6 | 0.0 – 41.2 | 3.0 – 29.0 |
+| #43 | 61.6 | 43.0 – 87.2 | 41.0 – 84.3 |
+| #47 | 125.0 | 106.4 – 125 | 96.5 – 221.5 |
+
+#47처럼 예측이 상한(125)에 붙은 엔진은 "적어도 한참 남았다"는 뜻이라 위쪽 구간이 넓게 나옵니다
+(모델이 125 이상은 구분하도록 학습되지 않았기 때문 — 분석 저장소 DESIGN_DECISIONS.md 임의 설정값 #2).
+그 밖의 모든 값(랭킹·경보·조기경보 성능·센서 추이·비용 시뮬레이션)은 예전과 동일함을 확인했습니다.
+
+## 10. TCM 시절 변수명 정리 (2026-09-29)
+
+화면에는 안 보이지만 코드를 읽을 때 헷갈리던 이름을 터보팬 주제에 맞게 바꿨습니다 (값·계산식은 동일).
+
+| 예전 | 지금 |
+|---|---|
+| `costModel.nCoils` | `costModel.nEngines` |
+| `anomalyCoils` / `detectedCoils` / `missedCoils` | `dangerCases` / `dangerCasesDetected` / `dangerCasesMissed` (위험 상태로 방치된 엔진 수) |
+| `general.coilLoss` | `general.dangerCaseLoss` |
+| `savingsSummary.perThousandCoilsEok` / `anomalyCoilReductionPct` | `perThousandEnginesEok` / `dangerCaseReductionPct` |
+| `getVibrationAtHour()` | `getRulAtHour()` (실제로 반환하는 값이 예측 RUL) |
+| `equipmentInfo.operatingHours` | `equipmentInfo.operatingCycles` |
+| `predictedRulMileage`, `sensorTrend72h` 등 플랫 export | 삭제 (어디서도 쓰지 않음, `engineDetails[...]`로 접근) |

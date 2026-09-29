@@ -95,20 +95,20 @@ type Mult = { repair: number; loss: number; unplanned: number }
 function computeScenario(m: Mult) {
   const g = costModel.general
   const hourCost = g.downtimeCostPerHour * m.loss
-  const acc = { asis: { hours: 0, repair: 0, coils: 0 }, tobe: { hours: 0, repair: 0, coils: 0 } }
+  const acc = { asis: { hours: 0, repair: 0, dangerCases: 0 }, tobe: { hours: 0, repair: 0, dangerCases: 0 } }
   for (const t of Object.values(costModel.types)) {
     const hu = t.hoursUnplanned * m.unplanned
     const repP = t.repairPlanned * m.repair
     const repU = repP * g.repairUnplannedRatio
     acc.asis.hours += t.episodes * hu
     acc.asis.repair += t.episodes * repU
-    acc.asis.coils += t.anomalyCoils
+    acc.asis.dangerCases += t.dangerCases
     acc.tobe.hours += t.detected * t.hoursPlanned + t.missed * hu + t.falseAlarms * g.falseAlarmHours
     acc.tobe.repair += t.detected * repP + t.missed * repU + t.falseAlarms * g.falseAlarmLabor * m.repair
-    acc.tobe.coils += t.detectedCoils + t.missedCoils
+    acc.tobe.dangerCases += t.dangerCasesDetected + t.dangerCasesMissed
   }
-  const loss = (x: { hours: number; coils: number }) => x.hours * hourCost + x.coils * g.coilLoss
-  const per1000 = 1000 / costModel.nCoils
+  const loss = (x: { hours: number; dangerCases: number }) => x.hours * hourCost + x.dangerCases * g.dangerCaseLoss
+  const per1000 = 1000 / costModel.nEngines
   const asisTotal = acc.asis.repair + loss(acc.asis)
   const tobeTotal = acc.tobe.repair + loss(acc.tobe)
   const r1 = (v: number) => Math.round(v * 10) / 10
@@ -120,7 +120,7 @@ function computeScenario(m: Mult) {
     ],
     savingPer1000: r1(((asisTotal - tobeTotal) * per1000) / 10000),
     savingRate: asisTotal > 0 ? Math.round(((asisTotal - tobeTotal) / asisTotal) * 1000) / 10 : 0,
-    coilReduction: acc.asis.coils > 0 ? Math.round((1 - acc.tobe.coils / acc.asis.coils) * 100) : 0,
+    dangerCaseReduction: acc.asis.dangerCases > 0 ? Math.round((1 - acc.tobe.dangerCases / acc.asis.dangerCases) * 100) : 0,
   }
 }
 
@@ -217,7 +217,7 @@ export function Simulation() {
               {result.savingPer1000.toLocaleString()}억원 · 절감률 {result.savingRate}%
             </span>
             <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-              위험 상태(RUL&lt;20)로 방치되는 엔진 사례가 {result.coilReduction}% 줄어듭니다 (가정과 무관한, 탐지·누락
+              위험 상태(RUL&lt;20)로 방치되는 엔진 사례가 {result.dangerCaseReduction}% 줄어듭니다 (가정과 무관한, 탐지·누락
               건수 기반의 실제 결과). 기준 가정의 절감률은 {savingsSummary.savingRatePct}%입니다
             </span>
           </motion.div>
