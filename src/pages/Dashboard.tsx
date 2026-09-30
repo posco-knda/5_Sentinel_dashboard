@@ -149,7 +149,7 @@ export function Dashboard() {
         >
           <SensorChart hour={hour} />
           <p className="mt-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            Engine #{dataMeta.featuredEngine} 예측 RUL(cycle) 추이 · 붉은 띠는 위험 임계값(RUL ≤ {riskThresholds.dangerRul}) 이하 구간이며, 알림은 LSTM 모델의 예측 기반입니다
+            Engine #{dataMeta.featuredEngine} 예측 RUL(cycle) 추이 · 붉은 띠는 위험 임계값(RUL ≤ {riskThresholds.dangerRul}) 이하 구간이며, 알림은 {dataMeta.model} 모델의 예측 기반입니다
           </p>
         </Panel>
 

@@ -30,7 +30,7 @@ function RulTab({ detail }: { detail: EngineDetail }) {
   const rul = detail.predictedRulCycle
   return (
     <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <p className="m-0 mb-3.5 text-[14px] font-semibold">엔진 잔존수명 예측 (RUL) · LSTM Seq2Seq 회귀 + 생존곡선</p>
+      <p className="m-0 mb-3.5 text-[14px] font-semibold">엔진 잔존수명 예측 (RUL) · {dataMeta.model} Seq2Seq 회귀 + 생존곡선</p>
       <div className="flex flex-row items-baseline gap-2.5">
         <span className="text-[40px] font-bold leading-none">
           약 <span className="mono">{rul.median}</span> cycle
@@ -126,7 +126,7 @@ function ModelTab() {
         ))}
       </div>
       <p className="mt-2 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-        ※ LSTM 회귀로 예측한 RUL이 {riskThresholds.dangerRul} cycle 이하면 '위험'으로 보는 조기경보 규칙의 성능입니다.
+        ※ {dataMeta.model} 회귀로 예측한 RUL이 {riskThresholds.dangerRul} cycle 이하면 '위험'으로 보는 조기경보 규칙의 성능입니다.
         공식 test {dataMeta.testEngines}개 엔진({dataMeta.dataset}) 기준 실제 결과입니다 (TP={classifierMetrics.tp}, FN={classifierMetrics.fn}, FP={classifierMetrics.fp}).
         C-MAPSS는 시뮬레이션 데이터라 실제 현장보다 쉬운 문제일 수 있습니다.
       </p>

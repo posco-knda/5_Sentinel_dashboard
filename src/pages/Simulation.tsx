@@ -141,7 +141,7 @@ export function Simulation() {
         <p className="m-0 text-xl font-semibold">정비 시나리오 비교 시뮬레이션</p>
         <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
           아래 가정을 조절하면 사후보전(고장 후 수리)과 예지보전(RUL 기반 사전 정비)의 비용 격차가 실시간으로 다시
-          계산됩니다. 사건 수·탐지율(정밀도·재현율)은 test 엔진 {dataMeta.testEngines}대에 대한 LSTM 모델의 실제 결과이고, 가동중단
+          계산됩니다. 사건 수·탐지율(정밀도·재현율)은 test 엔진 {dataMeta.testEngines}대에 대한 {dataMeta.model} 모델의 실제 결과이고, 가동중단
           시간·단가는 가정값입니다
         </p>
       </div>
