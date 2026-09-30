@@ -12,19 +12,12 @@ import {
   equipmentRanking,
   DEFAULT_ENGINE_ID,
   riskThresholds,
+  dataMeta,
   type EngineDetail,
 } from '../data/mock'
 
-const SENSOR_LABELS: Record<string, string> = {
-  s4: 'LPT outlet 온도 (s4)',
-  s9: '코어 속도 N2 (s9)',
-  s3: 'HPC outlet 온도 (s3)',
-}
-const SENSOR_COLORS: Record<string, string> = {
-  s4: 'var(--series-1)',
-  s9: 'var(--series-2)',
-  s3: 'var(--series-3)',
-}
+// 센서 이름·단위는 데이터셋마다 달라서(FD004: s3·s17·s8) mock.ts의 trendMeta에서 읽고, 색은 순서대로 배정
+const SERIES_COLORS = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)']
 
 const tabs = [
   { id: 'rul', label: 'RUL 예측' },
@@ -134,7 +127,7 @@ function ModelTab() {
       </div>
       <p className="mt-2 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
         ※ LSTM 회귀로 예측한 RUL이 {riskThresholds.dangerRul} cycle 이하면 '위험'으로 보는 조기경보 규칙의 성능입니다.
-        공식 test 100개 엔진 기준 실제 결과입니다 (TP={classifierMetrics.tp}, FN={classifierMetrics.fn}, FP={classifierMetrics.fp}).
+        공식 test {dataMeta.testEngines}개 엔진({dataMeta.dataset}) 기준 실제 결과입니다 (TP={classifierMetrics.tp}, FN={classifierMetrics.fn}, FP={classifierMetrics.fp}).
         C-MAPSS는 시뮬레이션 데이터라 실제 현장보다 쉬운 문제일 수 있습니다.
       </p>
     </div>
@@ -142,17 +135,17 @@ function ModelTab() {
 }
 
 function SensorsTab({ detail }: { detail: EngineDetail }) {
-  const trendCards = Object.entries(detail.sensorTrend).map(([key, data]) => ({
+  const trendCards = Object.entries(detail.sensorTrend).map(([key, data], i) => ({
     key,
-    label: SENSOR_LABELS[key] ?? key,
+    label: trendMeta[key]?.label ?? key,
     unit: trendMeta[key]?.unit ?? '',
-    color: SENSOR_COLORS[key] ?? 'var(--series-1)',
+    color: SERIES_COLORS[i % SERIES_COLORS.length],
     domain: trendMeta[key]?.domain ?? ([0, 1] as [number, number]),
     data,
   }))
   return (
     <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <p className="m-0 mb-3.5 text-[14px] font-semibold">센서별 관측 이력 추이 (전체 관측 사이클, 9구간 샘플)</p>
+      <p className="m-0 mb-3.5 text-[14px] font-semibold">센서별 관측 이력 추이 (전체 관측 사이클, 9구간 샘플 · {dataMeta.sensorValues})</p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {trendCards.map((c) => {
           const last = c.data[c.data.length - 1]?.v ?? 0
@@ -179,8 +172,8 @@ function SensorsTab({ detail }: { detail: EngineDetail }) {
         })}
       </div>
       <p className="mt-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-        열화가 진행되면 저압/고압 터빈·압축기 출구 온도와 코어 회전수가 정상 대비 서서히 벗어납니다 —
-        이 변화가 RUL 예측 모델의 핵심 입력입니다 (RF 피처 중요도 상위 센서 기준)
+        열화가 진행되면 이 센서들이 정상 수준에서 서서히 벗어납니다 —
+        이 변화가 RUL 예측 모델의 핵심 입력입니다 (RF 피처 중요도 상위 센서, 비행 조건 차이를 뺀 운전조건 보정값)
       </p>
     </div>
   )

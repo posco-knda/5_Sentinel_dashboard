@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Badge } from '../components/Badge'
 import { Meter } from '../components/Meter'
-import { equipmentRanking, getKpisAtHour, scenarioCompare, classifierMetrics, riskThresholds } from '../data/mock'
+import { equipmentRanking, getKpisAtHour, scenarioCompare, classifierMetrics, riskThresholds, dataMeta } from '../data/mock'
 
 const kpis = getKpisAtHour(24)
 
@@ -25,7 +25,7 @@ export function Overview() {
         <div>
           <span className="flex flex-row items-center gap-2 text-[12.5px] font-medium" style={{ color: 'var(--accent)' }}>
             <span className="led-dot led-dot--live" />
-            터보팬 엔진 플릿(C-MAPSS FD001) 실시간 현황
+            터보팬 엔진 플릿({dataMeta.dataset} · {dataMeta.datasetDescription}) 실시간 현황
           </span>
           <h1 className="mt-2 text-[26px] font-semibold tracking-[-0.01em]">엔진 플릿 현황</h1>
         </div>
@@ -93,7 +93,7 @@ export function Overview() {
 
       <div className="mt-10 border-t pt-6" style={{ borderColor: 'var(--border)' }}>
         <p className="m-0 text-[13px] font-medium" style={{ color: 'var(--text-secondary)' }}>
-          프로젝트 기대 효과 <span style={{ color: 'var(--text-muted)' }}>· 공식 test 100개 엔진 결과 (가동중단 시간·비용은 가정 기반 시뮬레이션)</span>
+          프로젝트 기대 효과 <span style={{ color: 'var(--text-muted)' }}>· 공식 test {dataMeta.testEngines}개 엔진 결과 (가동중단 시간·비용은 가정 기반 시뮬레이션)</span>
         </p>
         <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {impactStats.map((s) => (
