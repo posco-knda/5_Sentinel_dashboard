@@ -6,7 +6,7 @@ import { RankedList } from '../components/RankedList'
 import { AlertsTable } from '../components/AlertsTable'
 import { Scrubber } from '../components/Scrubber'
 import { Toast } from '../components/Toast'
-import { getKpisAtHour, anomalyWindow, dataMeta } from '../data/mock'
+import { getKpisAtHour, anomalyWindow, dataMeta, riskThresholds } from '../data/mock'
 
 function Panel({ title, action, children }: { title?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -79,7 +79,7 @@ export function Dashboard() {
       <Toast
         show={showAnomalyToast}
         title={`Engine #${dataMeta.featuredEngine} 위험 감지`}
-        body="예측 RUL이 위험 임계값(20 cycle) 아래로 떨어졌습니다"
+        body={`예측 RUL이 위험 임계값(${riskThresholds.dangerRul} cycle) 이하로 떨어졌습니다`}
       />
 
       <div>
@@ -149,7 +149,7 @@ export function Dashboard() {
         >
           <SensorChart hour={hour} />
           <p className="mt-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            Engine #{dataMeta.featuredEngine} 예측 RUL(cycle) 추이 · 붉은 띠는 위험 임계값(RUL&lt;20) 이하 구간이며, 알림은 LSTM 모델의 예측 기반입니다
+            Engine #{dataMeta.featuredEngine} 예측 RUL(cycle) 추이 · 붉은 띠는 위험 임계값(RUL ≤ {riskThresholds.dangerRul}) 이하 구간이며, 알림은 {dataMeta.model} 모델의 예측 기반입니다
           </p>
         </Panel>
 

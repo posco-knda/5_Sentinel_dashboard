@@ -1,6 +1,6 @@
 // ⚠️ 자동 생성 파일 — 분석 레포의 scripts/08_export_dashboard_ts.py 가 만든다.
 // 직접 고치지 말고 파이썬 파이프라인을 다시 돌려서 새로 받아올 것.
-// 원본 데이터: C-MAPSS FD001 (NASA 터보팬 엔진 열화 시뮬레이션), 모델: LSTM Seq2Seq
+// 원본 데이터: C-MAPSS FD004 (운전조건 6종 · 고장모드 2종, NASA 터보팬 엔진 열화 시뮬레이션), 모델: GRU Seq2Seq 회귀
 // (분석 레포 docs/DESIGN_DECISIONS.md, 이 레포 docs/DATA_MAPPING.md 참고)
 // 시간축은 엔진 운행 '사이클(cycle)' 입니다.
 
@@ -14,159 +14,166 @@ export const statusLabel: Record<Status, string> = {
 }
 
 export const dataMeta = {
-  "generatedAt": "2026-09-29T10:39:11",
-  "dataset": "C-MAPSS FD001",
-  "testEngines": 100,
+  "generatedAt": "2026-09-30T14:23:27",
+  "dataset": "C-MAPSS FD004",
+  "datasetDescription": "운전조건 6종 · 고장모드 2종",
+  "sensorValues": "운전조건 보정값",
+  "model": "GRU",
+  "testEngines": 248,
   "selectedEngines": [
-    34,
-    42,
-    81,
-    76,
-    37,
-    56,
-    18,
-    43,
-    47
+    31,
+    103,
+    158,
+    58,
+    198,
+    70,
+    185,
+    221,
+    10
   ],
-  "featuredEngine": 37,
-  "note": "시간축은 엔진 운행 사이클(cycle). 위험 등급(RED/YELLOW/GREEN)은 예측 RUL 기준(<20/<60/그 외). 비용·정비시간은 가정값(08_export_dashboard_ts.py COST_ASSUMPTIONS), 탐지 성능(TP/FN/FP)은 LSTM 모델의 실제 test set 결과. RUL 신뢰구간·생존곡선은 검증셋에서 예측이 비슷했던 사례들의 실제 RUL 분포."
+  "featuredEngine": 198,
+  "note": "시간축은 엔진 운행 사이클(cycle). 위험 등급(RED/YELLOW/GREEN)은 예측 RUL 기준(≤40/<80/그 외). 비용·정비시간은 가정값(08_export_dashboard_ts.py COST_ASSUMPTIONS), 탐지 성능(TP/FN/FP)은 GRU 모델의 실제 test set 결과. RUL 신뢰구간·생존곡선은 검증셋에서 예측이 비슷했던 사례들의 실제 RUL 분포."
 }
 
-/** 메인 차트: 대표 엔진(#37)의 예측 RUL 추이 — h = 창 안의 사이클 순서(0~24) */
+/** 신호등 기준 (분석 레포 common.py의 DANGER_RUL · RISK_THRESHOLDS) — 화면 문구도 이 값을 씀
+ *  위험: 예측 RUL ≤ dangerRul, 주의: dangerRul 초과 ~ warningRul 미만, 정상: warningRul 이상 */
+export const riskThresholds = { dangerRul: 40, warningRul: 80 }
+
+/** 메인 차트: 대표 엔진(#198)의 예측 RUL 추이 — h = 창 안의 사이클 순서(0~24) */
 export const sensorSeries: { t: string; h: number; v: number }[] = [
   {
-    "t": "#97",
+    "t": "#91",
     "h": 0,
-    "v": 77.92
+    "v": 57.97
+  },
+  {
+    "t": "#92",
+    "h": 1,
+    "v": 58.55
+  },
+  {
+    "t": "#93",
+    "h": 2,
+    "v": 53.5
+  },
+  {
+    "t": "#94",
+    "h": 3,
+    "v": 50.31
+  },
+  {
+    "t": "#95",
+    "h": 4,
+    "v": 46.92
+  },
+  {
+    "t": "#96",
+    "h": 5,
+    "v": 45.75
+  },
+  {
+    "t": "#97",
+    "h": 6,
+    "v": 43.18
   },
   {
     "t": "#98",
-    "h": 1,
-    "v": 73.7
+    "h": 7,
+    "v": 40.62
   },
   {
     "t": "#99",
-    "h": 2,
-    "v": 70.51
+    "h": 8,
+    "v": 38.95
   },
   {
     "t": "#100",
-    "h": 3,
-    "v": 67.86
+    "h": 9,
+    "v": 37.27
   },
   {
     "t": "#101",
-    "h": 4,
-    "v": 63.5
+    "h": 10,
+    "v": 36.65
   },
   {
     "t": "#102",
-    "h": 5,
-    "v": 63.45
+    "h": 11,
+    "v": 35.62
   },
   {
     "t": "#103",
-    "h": 6,
-    "v": 68.99
+    "h": 12,
+    "v": 35.2
   },
   {
     "t": "#104",
-    "h": 7,
-    "v": 63.52
+    "h": 13,
+    "v": 32.89
   },
   {
     "t": "#105",
-    "h": 8,
-    "v": 60.02
+    "h": 14,
+    "v": 34.58
   },
   {
     "t": "#106",
-    "h": 9,
-    "v": 57.43
+    "h": 15,
+    "v": 35.31
   },
   {
     "t": "#107",
-    "h": 10,
-    "v": 59.74
+    "h": 16,
+    "v": 32.54
   },
   {
     "t": "#108",
-    "h": 11,
-    "v": 44.06
+    "h": 17,
+    "v": 31.92
   },
   {
     "t": "#109",
-    "h": 12,
-    "v": 36.03
+    "h": 18,
+    "v": 28.51
   },
   {
     "t": "#110",
-    "h": 13,
-    "v": 31.63
+    "h": 19,
+    "v": 27.11
   },
   {
     "t": "#111",
-    "h": 14,
-    "v": 23.96
+    "h": 20,
+    "v": 25.2
   },
   {
     "t": "#112",
-    "h": 15,
-    "v": 20.07
+    "h": 21,
+    "v": 22.84
   },
   {
     "t": "#113",
-    "h": 16,
-    "v": 15.3
+    "h": 22,
+    "v": 20.58
   },
   {
     "t": "#114",
-    "h": 17,
-    "v": 13.69
+    "h": 23,
+    "v": 19.67
   },
   {
     "t": "#115",
-    "h": 18,
-    "v": 12.66
-  },
-  {
-    "t": "#116",
-    "h": 19,
-    "v": 14.0
-  },
-  {
-    "t": "#117",
-    "h": 20,
-    "v": 13.3
-  },
-  {
-    "t": "#118",
-    "h": 21,
-    "v": 12.98
-  },
-  {
-    "t": "#119",
-    "h": 22,
-    "v": 13.05
-  },
-  {
-    "t": "#120",
-    "h": 23,
-    "v": 14.85
-  },
-  {
-    "t": "#121",
     "h": 24,
-    "v": 15.61
+    "v": 17.41
   }
 ]
 
 export const anomalyWindow = {
-  "start": 16,
+  "start": 8,
   "end": 24
 }
 
-const START_CYCLE: number = 97
+const START_CYCLE: number = 91
 
 export function formatHour(h: number): string {
   return `cycle #${START_CYCLE + Math.round(h)}`
@@ -198,56 +205,56 @@ export interface EquipmentRow {
  *  스크러버(hour)에 따라 순위가 실시간으로 바뀌지는 않고 마지막 관측 시점 기준 스냅샷입니다. */
 const equipmentRankingStatic: EquipmentRow[] = [
   {
-    "id": "engine-34",
-    "name": "Engine #34",
+    "id": "engine-31",
+    "name": "Engine #31",
+    "health": 7,
+    "status": "critical"
+  },
+  {
+    "id": "engine-103",
+    "name": "Engine #103",
+    "health": 7,
+    "status": "critical"
+  },
+  {
+    "id": "engine-158",
+    "name": "Engine #158",
     "health": 8,
     "status": "critical"
   },
   {
-    "id": "engine-42",
-    "name": "Engine #42",
-    "health": 8,
-    "status": "critical"
-  },
-  {
-    "id": "engine-81",
-    "name": "Engine #81",
+    "id": "engine-58",
+    "name": "Engine #58",
     "health": 9,
     "status": "critical"
   },
   {
-    "id": "engine-76",
-    "name": "Engine #76",
-    "health": 9,
+    "id": "engine-198",
+    "name": "Engine #198",
+    "health": 14,
     "status": "critical"
   },
   {
-    "id": "engine-37",
-    "name": "Engine #37",
-    "health": 12,
-    "status": "critical"
-  },
-  {
-    "id": "engine-56",
-    "name": "Engine #56",
-    "health": 18,
+    "id": "engine-70",
+    "name": "Engine #70",
+    "health": 32,
     "status": "warning"
   },
   {
-    "id": "engine-18",
-    "name": "Engine #18",
-    "health": 19,
+    "id": "engine-185",
+    "name": "Engine #185",
+    "health": 33,
     "status": "warning"
   },
   {
-    "id": "engine-43",
-    "name": "Engine #43",
-    "health": 49,
+    "id": "engine-221",
+    "name": "Engine #221",
+    "health": 64,
     "status": "good"
   },
   {
-    "id": "engine-47",
-    "name": "Engine #47",
+    "id": "engine-10",
+    "name": "Engine #10",
     "health": 100,
     "status": "good"
   }
@@ -269,21 +276,21 @@ export interface AlertRow {
   type?: string
 }
 
-/** 대표 엔진(#37)의 예측 RUL이 주의(60미만)/위험(20미만) 임계값을 넘은 시점 — 실제 계산값 */
+/** 대표 엔진(#198)의 예측 RUL이 주의(80 미만)/위험(40 이하) 임계값을 넘은 시점 — 실제 계산값 */
 export const alertLog: AlertRow[] = [
   {
-    "h": 16,
-    "time": "cycle #113",
-    "equipment": "Engine #37",
+    "h": 8,
+    "time": "cycle #99",
+    "equipment": "Engine #198",
     "sensor": "예측 RUL",
     "severity": "critical",
     "action": "정비 일정 즉시 수립",
     "type": "EngineRemoval"
   },
   {
-    "h": 9,
-    "time": "cycle #106",
-    "equipment": "Engine #37",
+    "h": 0,
+    "time": "cycle #91",
+    "equipment": "Engine #198",
     "sensor": "예측 RUL",
     "severity": "warning",
     "action": "정비 계획 준비",
@@ -333,195 +340,1413 @@ export interface EngineDetail {
 }
 
 export const engineDetails: Record<string, EngineDetail> = {
-  "engine-34": {
+  "engine-198": {
     "equipmentInfo": {
-      "line": "터보팬 엔진 · C-MAPSS FD001 (운전조건 1종)",
+      "line": "터보팬 엔진 · C-MAPSS FD004 (운전조건 6종 · 고장모드 2종)",
       "installedAt": "—(데이터에 없음)",
       "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
       "team": "5조 감시자들",
-      "operatingCycles": 203,
-      "modelNo": "Turbofan (FD001)"
+      "operatingCycles": 115,
+      "modelNo": "Turbofan (FD004)"
     },
     "predictedRulCycle": {
-      "median": 9.5,
-      "lower": 1.0,
-      "upper": 24.1
+      "median": 17.4,
+      "lower": 2.0,
+      "upper": 26.0
     },
     "survivalCurve": [
       {
         "cycle": 0,
-        "median": 0.9523,
-        "lower": 0.9474,
-        "upper": 0.9566
+        "median": 0.9861,
+        "lower": 0.9804,
+        "upper": 0.9912
       },
       {
         "cycle": 10,
-        "median": 0.4749,
-        "lower": 0.4211,
-        "upper": 0.5228
+        "median": 0.5869,
+        "lower": 0.5533,
+        "upper": 0.6183
       },
       {
         "cycle": 20,
-        "median": 0.1193,
-        "lower": 0.069,
-        "upper": 0.17
+        "median": 0.147,
+        "lower": 0.1019,
+        "upper": 0.1929
       },
       {
         "cycle": 30,
-        "median": 0.0143,
-        "lower": 0.0,
-        "upper": 0.0407
+        "median": 0.0348,
+        "lower": 0.002,
+        "upper": 0.0678
       },
       {
         "cycle": 40,
-        "median": 0.0,
+        "median": 0.0328,
         "lower": 0.0,
-        "upper": 0.0
+        "upper": 0.0655
       },
       {
         "cycle": 60,
-        "median": 0.0,
+        "median": 0.0328,
         "lower": 0.0,
-        "upper": 0.0
+        "upper": 0.0655
       },
       {
         "cycle": 80,
-        "median": 0.0,
+        "median": 0.0328,
         "lower": 0.0,
-        "upper": 0.0
+        "upper": 0.0655
       },
       {
         "cycle": 100,
-        "median": 0.0,
+        "median": 0.0328,
         "lower": 0.0,
-        "upper": 0.0
+        "upper": 0.0655
       },
       {
         "cycle": 120,
-        "median": 0.0,
+        "median": 0.0328,
         "lower": 0.0,
-        "upper": 0.0
+        "upper": 0.0655
       },
       {
         "cycle": 140,
-        "median": 0.0,
+        "median": 0.0328,
         "lower": 0.0,
-        "upper": 0.0
+        "upper": 0.0655
       }
     ],
     "sensorTrend": {
-      "s4": [
-        {
-          "h": 1,
-          "v": 1402.56
-        },
-        {
-          "h": 26,
-          "v": 1387.99
-        },
-        {
-          "h": 51,
-          "v": 1395.88
-        },
-        {
-          "h": 77,
-          "v": 1405.09
-        },
-        {
-          "h": 102,
-          "v": 1393.27
-        },
-        {
-          "h": 127,
-          "v": 1402.14
-        },
-        {
-          "h": 153,
-          "v": 1406.22
-        },
-        {
-          "h": 178,
-          "v": 1416.91
-        },
-        {
-          "h": 203,
-          "v": 1427.49
-        }
-      ],
-      "s9": [
-        {
-          "h": 1,
-          "v": 9071.43
-        },
-        {
-          "h": 26,
-          "v": 9059.68
-        },
-        {
-          "h": 51,
-          "v": 9068.14
-        },
-        {
-          "h": 77,
-          "v": 9070.73
-        },
-        {
-          "h": 102,
-          "v": 9061.87
-        },
-        {
-          "h": 127,
-          "v": 9067.89
-        },
-        {
-          "h": 153,
-          "v": 9051.18
-        },
-        {
-          "h": 178,
-          "v": 9056.19
-        },
-        {
-          "h": 203,
-          "v": 9036.27
-        }
-      ],
       "s3": [
         {
           "h": 1,
-          "v": 1574.94
+          "v": 1420.31
         },
         {
-          "h": 26,
-          "v": 1586.31
+          "h": 15,
+          "v": 1418.15
+        },
+        {
+          "h": 29,
+          "v": 1421.03
+        },
+        {
+          "h": 44,
+          "v": 1425.57
+        },
+        {
+          "h": 58,
+          "v": 1422.62
+        },
+        {
+          "h": 72,
+          "v": 1422.97
+        },
+        {
+          "h": 87,
+          "v": 1420.87
+        },
+        {
+          "h": 101,
+          "v": 1419.15
+        },
+        {
+          "h": 115,
+          "v": 1424.73
+        }
+      ],
+      "s17": [
+        {
+          "h": 1,
+          "v": 349.13
+        },
+        {
+          "h": 15,
+          "v": 346.97
+        },
+        {
+          "h": 29,
+          "v": 349.07
+        },
+        {
+          "h": 44,
+          "v": 347.97
+        },
+        {
+          "h": 58,
+          "v": 347.6
+        },
+        {
+          "h": 72,
+          "v": 349.07
+        },
+        {
+          "h": 87,
+          "v": 348.23
+        },
+        {
+          "h": 101,
+          "v": 350.13
+        },
+        {
+          "h": 115,
+          "v": 349.97
+        }
+      ],
+      "s8": [
+        {
+          "h": 1,
+          "v": 2228.76
+        },
+        {
+          "h": 15,
+          "v": 2228.81
+        },
+        {
+          "h": 29,
+          "v": 2228.69
+        },
+        {
+          "h": 44,
+          "v": 2228.75
+        },
+        {
+          "h": 58,
+          "v": 2228.74
+        },
+        {
+          "h": 72,
+          "v": 2228.67
+        },
+        {
+          "h": 87,
+          "v": 2228.58
+        },
+        {
+          "h": 101,
+          "v": 2228.85
+        },
+        {
+          "h": 115,
+          "v": 2228.83
+        }
+      ]
+    },
+    "maintenanceHistory": [
+      {
+        "date": "cycle #115 시점 예측",
+        "type": "예정",
+        "description": "RUL 예측 기반 — 잔존 약 17.4 사이클 소진 시 정비 권고 (90% 구간 2.0~26.0)",
+        "status": "scheduled"
+      }
+    ],
+    "status": "critical",
+    "health": 14
+  },
+  "engine-31": {
+    "equipmentInfo": {
+      "line": "터보팬 엔진 · C-MAPSS FD004 (운전조건 6종 · 고장모드 2종)",
+      "installedAt": "—(데이터에 없음)",
+      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
+      "team": "5조 감시자들",
+      "operatingCycles": 134,
+      "modelNo": "Turbofan (FD004)"
+    },
+    "predictedRulCycle": {
+      "median": 8.9,
+      "lower": 0.0,
+      "upper": 16.0
+    },
+    "survivalCurve": [
+      {
+        "cycle": 0,
+        "median": 0.9293,
+        "lower": 0.9247,
+        "upper": 0.9337
+      },
+      {
+        "cycle": 10,
+        "median": 0.241,
+        "lower": 0.1975,
+        "upper": 0.2852
+      },
+      {
+        "cycle": 20,
+        "median": 0.0303,
+        "lower": 0.0,
+        "upper": 0.0662
+      },
+      {
+        "cycle": 30,
+        "median": 0.0303,
+        "lower": 0.0,
+        "upper": 0.0662
+      },
+      {
+        "cycle": 40,
+        "median": 0.0303,
+        "lower": 0.0,
+        "upper": 0.0662
+      },
+      {
+        "cycle": 60,
+        "median": 0.0303,
+        "lower": 0.0,
+        "upper": 0.0662
+      },
+      {
+        "cycle": 80,
+        "median": 0.0303,
+        "lower": 0.0,
+        "upper": 0.0662
+      },
+      {
+        "cycle": 100,
+        "median": 0.0303,
+        "lower": 0.0,
+        "upper": 0.0662
+      },
+      {
+        "cycle": 120,
+        "median": 0.0303,
+        "lower": 0.0,
+        "upper": 0.0662
+      },
+      {
+        "cycle": 140,
+        "median": 0.0303,
+        "lower": 0.0,
+        "upper": 0.0662
+      }
+    ],
+    "sensorTrend": {
+      "s3": [
+        {
+          "h": 1,
+          "v": 1414.22
+        },
+        {
+          "h": 18,
+          "v": 1410.47
+        },
+        {
+          "h": 34,
+          "v": 1415.3
         },
         {
           "h": 51,
-          "v": 1578.49
+          "v": 1415.51
         },
         {
-          "h": 77,
-          "v": 1583.53
+          "h": 67,
+          "v": 1415.35
         },
         {
-          "h": 102,
-          "v": 1591.2
+          "h": 84,
+          "v": 1416.0
+        },
+        {
+          "h": 101,
+          "v": 1419.79
+        },
+        {
+          "h": 117,
+          "v": 1424.17
+        },
+        {
+          "h": 134,
+          "v": 1432.84
+        }
+      ],
+      "s17": [
+        {
+          "h": 1,
+          "v": 347.98
+        },
+        {
+          "h": 18,
+          "v": 345.97
+        },
+        {
+          "h": 34,
+          "v": 348.13
+        },
+        {
+          "h": 51,
+          "v": 349.07
+        },
+        {
+          "h": 67,
+          "v": 346.98
+        },
+        {
+          "h": 84,
+          "v": 348.23
+        },
+        {
+          "h": 101,
+          "v": 348.98
+        },
+        {
+          "h": 117,
+          "v": 350.23
+        },
+        {
+          "h": 134,
+          "v": 350.6
+        }
+      ],
+      "s8": [
+        {
+          "h": 1,
+          "v": 2228.77
+        },
+        {
+          "h": 18,
+          "v": 2228.72
+        },
+        {
+          "h": 34,
+          "v": 2228.73
+        },
+        {
+          "h": 51,
+          "v": 2228.76
+        },
+        {
+          "h": 67,
+          "v": 2228.74
+        },
+        {
+          "h": 84,
+          "v": 2228.75
+        },
+        {
+          "h": 101,
+          "v": 2228.8
+        },
+        {
+          "h": 117,
+          "v": 2228.67
+        },
+        {
+          "h": 134,
+          "v": 2228.98
+        }
+      ]
+    },
+    "maintenanceHistory": [
+      {
+        "date": "cycle #134 시점 예측",
+        "type": "예정",
+        "description": "RUL 예측 기반 — 잔존 약 8.9 사이클 소진 시 정비 권고 (90% 구간 0.0~16.0)",
+        "status": "scheduled"
+      }
+    ],
+    "status": "critical",
+    "health": 7
+  },
+  "engine-103": {
+    "equipmentInfo": {
+      "line": "터보팬 엔진 · C-MAPSS FD004 (운전조건 6종 · 고장모드 2종)",
+      "installedAt": "—(데이터에 없음)",
+      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
+      "team": "5조 감시자들",
+      "operatingCycles": 145,
+      "modelNo": "Turbofan (FD004)"
+    },
+    "predictedRulCycle": {
+      "median": 9.0,
+      "lower": 0.0,
+      "upper": 16.1
+    },
+    "survivalCurve": [
+      {
+        "cycle": 0,
+        "median": 0.9299,
+        "lower": 0.9252,
+        "upper": 0.9342
+      },
+      {
+        "cycle": 10,
+        "median": 0.2475,
+        "lower": 0.2018,
+        "upper": 0.2925
+      },
+      {
+        "cycle": 20,
+        "median": 0.0315,
+        "lower": 0.0,
+        "upper": 0.0673
+      },
+      {
+        "cycle": 30,
+        "median": 0.0315,
+        "lower": 0.0,
+        "upper": 0.0673
+      },
+      {
+        "cycle": 40,
+        "median": 0.0315,
+        "lower": 0.0,
+        "upper": 0.0673
+      },
+      {
+        "cycle": 60,
+        "median": 0.0315,
+        "lower": 0.0,
+        "upper": 0.0673
+      },
+      {
+        "cycle": 80,
+        "median": 0.0315,
+        "lower": 0.0,
+        "upper": 0.0673
+      },
+      {
+        "cycle": 100,
+        "median": 0.0315,
+        "lower": 0.0,
+        "upper": 0.0673
+      },
+      {
+        "cycle": 120,
+        "median": 0.0315,
+        "lower": 0.0,
+        "upper": 0.0673
+      },
+      {
+        "cycle": 140,
+        "median": 0.0315,
+        "lower": 0.0,
+        "upper": 0.0673
+      }
+    ],
+    "sensorTrend": {
+      "s3": [
+        {
+          "h": 1,
+          "v": 1414.31
+        },
+        {
+          "h": 19,
+          "v": 1414.5
+        },
+        {
+          "h": 37,
+          "v": 1414.38
+        },
+        {
+          "h": 55,
+          "v": 1413.19
+        },
+        {
+          "h": 73,
+          "v": 1412.99
+        },
+        {
+          "h": 91,
+          "v": 1415.44
+        },
+        {
+          "h": 109,
+          "v": 1412.62
         },
         {
           "h": 127,
-          "v": 1586.2
+          "v": 1425.07
+        },
+        {
+          "h": 145,
+          "v": 1426.17
+        }
+      ],
+      "s17": [
+        {
+          "h": 1,
+          "v": 347.98
+        },
+        {
+          "h": 19,
+          "v": 347.23
+        },
+        {
+          "h": 37,
+          "v": 346.23
+        },
+        {
+          "h": 55,
+          "v": 346.13
+        },
+        {
+          "h": 73,
+          "v": 345.97
+        },
+        {
+          "h": 91,
+          "v": 347.97
+        },
+        {
+          "h": 109,
+          "v": 348.23
+        },
+        {
+          "h": 127,
+          "v": 349.97
+        },
+        {
+          "h": 145,
+          "v": 350.23
+        }
+      ],
+      "s8": [
+        {
+          "h": 1,
+          "v": 2228.85
+        },
+        {
+          "h": 19,
+          "v": 2228.94
+        },
+        {
+          "h": 37,
+          "v": 2228.87
+        },
+        {
+          "h": 55,
+          "v": 2228.73
+        },
+        {
+          "h": 73,
+          "v": 2228.76
+        },
+        {
+          "h": 91,
+          "v": 2228.75
+        },
+        {
+          "h": 109,
+          "v": 2228.73
+        },
+        {
+          "h": 127,
+          "v": 2228.8
+        },
+        {
+          "h": 145,
+          "v": 2228.36
+        }
+      ]
+    },
+    "maintenanceHistory": [
+      {
+        "date": "cycle #145 시점 예측",
+        "type": "예정",
+        "description": "RUL 예측 기반 — 잔존 약 9.0 사이클 소진 시 정비 권고 (90% 구간 0.0~16.1)",
+        "status": "scheduled"
+      }
+    ],
+    "status": "critical",
+    "health": 7
+  },
+  "engine-158": {
+    "equipmentInfo": {
+      "line": "터보팬 엔진 · C-MAPSS FD004 (운전조건 6종 · 고장모드 2종)",
+      "installedAt": "—(데이터에 없음)",
+      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
+      "team": "5조 감시자들",
+      "operatingCycles": 171,
+      "modelNo": "Turbofan (FD004)"
+    },
+    "predictedRulCycle": {
+      "median": 10.1,
+      "lower": 0.0,
+      "upper": 17.0
+    },
+    "survivalCurve": [
+      {
+        "cycle": 0,
+        "median": 0.9367,
+        "lower": 0.9318,
+        "upper": 0.9414
+      },
+      {
+        "cycle": 10,
+        "median": 0.2911,
+        "lower": 0.25,
+        "upper": 0.3321
+      },
+      {
+        "cycle": 20,
+        "median": 0.031,
+        "lower": 0.0,
+        "upper": 0.0672
+      },
+      {
+        "cycle": 30,
+        "median": 0.031,
+        "lower": 0.0,
+        "upper": 0.0672
+      },
+      {
+        "cycle": 40,
+        "median": 0.031,
+        "lower": 0.0,
+        "upper": 0.0672
+      },
+      {
+        "cycle": 60,
+        "median": 0.031,
+        "lower": 0.0,
+        "upper": 0.0672
+      },
+      {
+        "cycle": 80,
+        "median": 0.031,
+        "lower": 0.0,
+        "upper": 0.0672
+      },
+      {
+        "cycle": 100,
+        "median": 0.031,
+        "lower": 0.0,
+        "upper": 0.0672
+      },
+      {
+        "cycle": 120,
+        "median": 0.031,
+        "lower": 0.0,
+        "upper": 0.0672
+      },
+      {
+        "cycle": 140,
+        "median": 0.031,
+        "lower": 0.0,
+        "upper": 0.0672
+      }
+    ],
+    "sensorTrend": {
+      "s3": [
+        {
+          "h": 1,
+          "v": 1417.37
+        },
+        {
+          "h": 22,
+          "v": 1411.98
+        },
+        {
+          "h": 43,
+          "v": 1416.45
+        },
+        {
+          "h": 65,
+          "v": 1411.23
+        },
+        {
+          "h": 86,
+          "v": 1418.56
+        },
+        {
+          "h": 107,
+          "v": 1416.21
+        },
+        {
+          "h": 129,
+          "v": 1418.91
+        },
+        {
+          "h": 150,
+          "v": 1422.36
+        },
+        {
+          "h": 171,
+          "v": 1431.0
+        }
+      ],
+      "s17": [
+        {
+          "h": 1,
+          "v": 348.98
+        },
+        {
+          "h": 22,
+          "v": 348.23
+        },
+        {
+          "h": 43,
+          "v": 347.6
+        },
+        {
+          "h": 65,
+          "v": 347.98
+        },
+        {
+          "h": 86,
+          "v": 348.97
+        },
+        {
+          "h": 107,
+          "v": 349.6
+        },
+        {
+          "h": 129,
+          "v": 348.97
+        },
+        {
+          "h": 150,
+          "v": 347.98
+        },
+        {
+          "h": 171,
+          "v": 351.07
+        }
+      ],
+      "s8": [
+        {
+          "h": 1,
+          "v": 2228.61
+        },
+        {
+          "h": 22,
+          "v": 2228.5
+        },
+        {
+          "h": 43,
+          "v": 2228.72
+        },
+        {
+          "h": 65,
+          "v": 2228.62
+        },
+        {
+          "h": 86,
+          "v": 2228.73
+        },
+        {
+          "h": 107,
+          "v": 2228.77
+        },
+        {
+          "h": 129,
+          "v": 2228.74
+        },
+        {
+          "h": 150,
+          "v": 2228.57
+        },
+        {
+          "h": 171,
+          "v": 2228.62
+        }
+      ]
+    },
+    "maintenanceHistory": [
+      {
+        "date": "cycle #171 시점 예측",
+        "type": "예정",
+        "description": "RUL 예측 기반 — 잔존 약 10.1 사이클 소진 시 정비 권고 (90% 구간 0.0~17.0)",
+        "status": "scheduled"
+      }
+    ],
+    "status": "critical",
+    "health": 8
+  },
+  "engine-58": {
+    "equipmentInfo": {
+      "line": "터보팬 엔진 · C-MAPSS FD004 (운전조건 6종 · 고장모드 2종)",
+      "installedAt": "—(데이터에 없음)",
+      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
+      "team": "5조 감시자들",
+      "operatingCycles": 185,
+      "modelNo": "Turbofan (FD004)"
+    },
+    "predictedRulCycle": {
+      "median": 11.2,
+      "lower": 0.0,
+      "upper": 18.0
+    },
+    "survivalCurve": [
+      {
+        "cycle": 0,
+        "median": 0.941,
+        "lower": 0.9367,
+        "upper": 0.9451
+      },
+      {
+        "cycle": 10,
+        "median": 0.3379,
+        "lower": 0.3009,
+        "upper": 0.3768
+      },
+      {
+        "cycle": 20,
+        "median": 0.0352,
+        "lower": 0.0038,
+        "upper": 0.0711
+      },
+      {
+        "cycle": 30,
+        "median": 0.0314,
+        "lower": 0.0,
+        "upper": 0.0674
+      },
+      {
+        "cycle": 40,
+        "median": 0.0314,
+        "lower": 0.0,
+        "upper": 0.0674
+      },
+      {
+        "cycle": 60,
+        "median": 0.0314,
+        "lower": 0.0,
+        "upper": 0.0674
+      },
+      {
+        "cycle": 80,
+        "median": 0.0314,
+        "lower": 0.0,
+        "upper": 0.0674
+      },
+      {
+        "cycle": 100,
+        "median": 0.0314,
+        "lower": 0.0,
+        "upper": 0.0674
+      },
+      {
+        "cycle": 120,
+        "median": 0.0314,
+        "lower": 0.0,
+        "upper": 0.0674
+      },
+      {
+        "cycle": 140,
+        "median": 0.0314,
+        "lower": 0.0,
+        "upper": 0.0674
+      }
+    ],
+    "sensorTrend": {
+      "s3": [
+        {
+          "h": 1,
+          "v": 1410.61
+        },
+        {
+          "h": 24,
+          "v": 1414.85
+        },
+        {
+          "h": 47,
+          "v": 1414.77
+        },
+        {
+          "h": 70,
+          "v": 1420.43
+        },
+        {
+          "h": 93,
+          "v": 1410.78
+        },
+        {
+          "h": 116,
+          "v": 1413.34
+        },
+        {
+          "h": 139,
+          "v": 1424.09
+        },
+        {
+          "h": 162,
+          "v": 1423.49
+        },
+        {
+          "h": 185,
+          "v": 1429.0
+        }
+      ],
+      "s17": [
+        {
+          "h": 1,
+          "v": 346.97
+        },
+        {
+          "h": 24,
+          "v": 346.07
+        },
+        {
+          "h": 47,
+          "v": 346.6
+        },
+        {
+          "h": 70,
+          "v": 348.23
+        },
+        {
+          "h": 93,
+          "v": 347.6
+        },
+        {
+          "h": 116,
+          "v": 349.23
+        },
+        {
+          "h": 139,
+          "v": 348.23
+        },
+        {
+          "h": 162,
+          "v": 347.97
+        },
+        {
+          "h": 185,
+          "v": 352.13
+        }
+      ],
+      "s8": [
+        {
+          "h": 1,
+          "v": 2228.68
+        },
+        {
+          "h": 24,
+          "v": 2228.68
+        },
+        {
+          "h": 47,
+          "v": 2228.78
+        },
+        {
+          "h": 70,
+          "v": 2228.63
+        },
+        {
+          "h": 93,
+          "v": 2228.8
+        },
+        {
+          "h": 116,
+          "v": 2228.64
+        },
+        {
+          "h": 139,
+          "v": 2228.53
+        },
+        {
+          "h": 162,
+          "v": 2228.79
+        },
+        {
+          "h": 185,
+          "v": 2229.0
+        }
+      ]
+    },
+    "maintenanceHistory": [
+      {
+        "date": "cycle #185 시점 예측",
+        "type": "예정",
+        "description": "RUL 예측 기반 — 잔존 약 11.2 사이클 소진 시 정비 권고 (90% 구간 0.0~18.0)",
+        "status": "scheduled"
+      }
+    ],
+    "status": "critical",
+    "health": 9
+  },
+  "engine-70": {
+    "equipmentInfo": {
+      "line": "터보팬 엔진 · C-MAPSS FD004 (운전조건 6종 · 고장모드 2종)",
+      "installedAt": "—(데이터에 없음)",
+      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
+      "team": "5조 감시자들",
+      "operatingCycles": 190,
+      "modelNo": "Turbofan (FD004)"
+    },
+    "predictedRulCycle": {
+      "median": 40.5,
+      "lower": 25.0,
+      "upper": 63.8
+    },
+    "survivalCurve": [
+      {
+        "cycle": 0,
+        "median": 1.0,
+        "lower": 1.0,
+        "upper": 1.0
+      },
+      {
+        "cycle": 10,
+        "median": 1.0,
+        "lower": 1.0,
+        "upper": 1.0
+      },
+      {
+        "cycle": 20,
+        "median": 0.9906,
+        "lower": 0.9812,
+        "upper": 0.9976
+      },
+      {
+        "cycle": 30,
+        "median": 0.7762,
+        "lower": 0.7344,
+        "upper": 0.8166
+      },
+      {
+        "cycle": 40,
+        "median": 0.3842,
+        "lower": 0.3204,
+        "upper": 0.446
+      },
+      {
+        "cycle": 60,
+        "median": 0.0557,
+        "lower": 0.0038,
+        "upper": 0.1029
+      },
+      {
+        "cycle": 80,
+        "median": 0.0463,
+        "lower": 0.0,
+        "upper": 0.0897
+      },
+      {
+        "cycle": 100,
+        "median": 0.0429,
+        "lower": 0.0,
+        "upper": 0.0839
+      },
+      {
+        "cycle": 120,
+        "median": 0.0429,
+        "lower": 0.0,
+        "upper": 0.0839
+      },
+      {
+        "cycle": 140,
+        "median": 0.0429,
+        "lower": 0.0,
+        "upper": 0.0839
+      }
+    ],
+    "sensorTrend": {
+      "s3": [
+        {
+          "h": 1,
+          "v": 1418.6
+        },
+        {
+          "h": 25,
+          "v": 1416.93
+        },
+        {
+          "h": 48,
+          "v": 1409.86
+        },
+        {
+          "h": 72,
+          "v": 1414.27
+        },
+        {
+          "h": 95,
+          "v": 1414.79
+        },
+        {
+          "h": 119,
+          "v": 1414.01
+        },
+        {
+          "h": 143,
+          "v": 1416.73
+        },
+        {
+          "h": 166,
+          "v": 1418.71
+        },
+        {
+          "h": 190,
+          "v": 1420.04
+        }
+      ],
+      "s17": [
+        {
+          "h": 1,
+          "v": 346.97
+        },
+        {
+          "h": 25,
+          "v": 347.97
+        },
+        {
+          "h": 48,
+          "v": 345.97
+        },
+        {
+          "h": 72,
+          "v": 349.97
+        },
+        {
+          "h": 95,
+          "v": 347.23
+        },
+        {
+          "h": 119,
+          "v": 346.23
+        },
+        {
+          "h": 143,
+          "v": 348.23
+        },
+        {
+          "h": 166,
+          "v": 347.97
+        },
+        {
+          "h": 190,
+          "v": 349.07
+        }
+      ],
+      "s8": [
+        {
+          "h": 1,
+          "v": 2228.71
+        },
+        {
+          "h": 25,
+          "v": 2228.75
+        },
+        {
+          "h": 48,
+          "v": 2228.7
+        },
+        {
+          "h": 72,
+          "v": 2228.71
+        },
+        {
+          "h": 95,
+          "v": 2228.76
+        },
+        {
+          "h": 119,
+          "v": 2228.78
+        },
+        {
+          "h": 143,
+          "v": 2228.88
+        },
+        {
+          "h": 166,
+          "v": 2228.9
+        },
+        {
+          "h": 190,
+          "v": 2229.04
+        }
+      ]
+    },
+    "maintenanceHistory": [
+      {
+        "date": "cycle #190 시점 예측",
+        "type": "예정",
+        "description": "RUL 예측 기반 — 잔존 약 40.5 사이클 소진 시 정비 권고 (90% 구간 25.0~63.8)",
+        "status": "scheduled"
+      }
+    ],
+    "status": "warning",
+    "health": 32
+  },
+  "engine-185": {
+    "equipmentInfo": {
+      "line": "터보팬 엔진 · C-MAPSS FD004 (운전조건 6종 · 고장모드 2종)",
+      "installedAt": "—(데이터에 없음)",
+      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
+      "team": "5조 감시자들",
+      "operatingCycles": 203,
+      "modelNo": "Turbofan (FD004)"
+    },
+    "predictedRulCycle": {
+      "median": 40.7,
+      "lower": 25.0,
+      "upper": 63.0
+    },
+    "survivalCurve": [
+      {
+        "cycle": 0,
+        "median": 1.0,
+        "lower": 1.0,
+        "upper": 1.0
+      },
+      {
+        "cycle": 10,
+        "median": 1.0,
+        "lower": 1.0,
+        "upper": 1.0
+      },
+      {
+        "cycle": 20,
+        "median": 0.9914,
+        "lower": 0.9821,
+        "upper": 0.9982
+      },
+      {
+        "cycle": 30,
+        "median": 0.7819,
+        "lower": 0.7401,
+        "upper": 0.8208
+      },
+      {
+        "cycle": 40,
+        "median": 0.3901,
+        "lower": 0.325,
+        "upper": 0.451
+      },
+      {
+        "cycle": 60,
+        "median": 0.0547,
+        "lower": 0.0047,
+        "upper": 0.1001
+      },
+      {
+        "cycle": 80,
+        "median": 0.0445,
+        "lower": 0.0,
+        "upper": 0.0875
+      },
+      {
+        "cycle": 100,
+        "median": 0.0411,
+        "lower": 0.0,
+        "upper": 0.0793
+      },
+      {
+        "cycle": 120,
+        "median": 0.0411,
+        "lower": 0.0,
+        "upper": 0.0793
+      },
+      {
+        "cycle": 140,
+        "median": 0.0411,
+        "lower": 0.0,
+        "upper": 0.0793
+      }
+    ],
+    "sensorTrend": {
+      "s3": [
+        {
+          "h": 1,
+          "v": 1412.53
+        },
+        {
+          "h": 26,
+          "v": 1413.29
+        },
+        {
+          "h": 51,
+          "v": 1415.99
+        },
+        {
+          "h": 77,
+          "v": 1424.32
+        },
+        {
+          "h": 102,
+          "v": 1414.39
+        },
+        {
+          "h": 127,
+          "v": 1420.89
         },
         {
           "h": 153,
-          "v": 1588.56
+          "v": 1417.92
         },
         {
           "h": 178,
-          "v": 1594.82
+          "v": 1428.94
         },
         {
           "h": 203,
-          "v": 1600.38
+          "v": 1419.05
+        }
+      ],
+      "s17": [
+        {
+          "h": 1,
+          "v": 348.23
+        },
+        {
+          "h": 26,
+          "v": 347.13
+        },
+        {
+          "h": 51,
+          "v": 346.97
+        },
+        {
+          "h": 77,
+          "v": 348.23
+        },
+        {
+          "h": 102,
+          "v": 347.13
+        },
+        {
+          "h": 127,
+          "v": 346.23
+        },
+        {
+          "h": 153,
+          "v": 347.07
+        },
+        {
+          "h": 178,
+          "v": 349.13
+        },
+        {
+          "h": 203,
+          "v": 348.13
+        }
+      ],
+      "s8": [
+        {
+          "h": 1,
+          "v": 2228.71
+        },
+        {
+          "h": 26,
+          "v": 2228.72
+        },
+        {
+          "h": 51,
+          "v": 2228.72
+        },
+        {
+          "h": 77,
+          "v": 2228.71
+        },
+        {
+          "h": 102,
+          "v": 2228.81
+        },
+        {
+          "h": 127,
+          "v": 2228.7
+        },
+        {
+          "h": 153,
+          "v": 2228.72
+        },
+        {
+          "h": 178,
+          "v": 2228.82
+        },
+        {
+          "h": 203,
+          "v": 2228.89
         }
       ]
     },
@@ -529,838 +1754,26 @@ export const engineDetails: Record<string, EngineDetail> = {
       {
         "date": "cycle #203 시점 예측",
         "type": "예정",
-        "description": "RUL 예측 기반 — 잔존 약 9.5 사이클 소진 시 정비 권고 (90% 구간 1.0~24.1)",
+        "description": "RUL 예측 기반 — 잔존 약 40.7 사이클 소진 시 정비 권고 (90% 구간 25.0~63.0)",
         "status": "scheduled"
       }
     ],
-    "status": "critical",
-    "health": 8
+    "status": "warning",
+    "health": 33
   },
-  "engine-42": {
+  "engine-221": {
     "equipmentInfo": {
-      "line": "터보팬 엔진 · C-MAPSS FD001 (운전조건 1종)",
+      "line": "터보팬 엔진 · C-MAPSS FD004 (운전조건 6종 · 고장모드 2종)",
       "installedAt": "—(데이터에 없음)",
       "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
       "team": "5조 감시자들",
-      "operatingCycles": 156,
-      "modelNo": "Turbofan (FD001)"
+      "operatingCycles": 176,
+      "modelNo": "Turbofan (FD004)"
     },
     "predictedRulCycle": {
-      "median": 10.0,
-      "lower": 1.0,
-      "upper": 25.0
-    },
-    "survivalCurve": [
-      {
-        "cycle": 0,
-        "median": 0.9535,
-        "lower": 0.9486,
-        "upper": 0.9576
-      },
-      {
-        "cycle": 10,
-        "median": 0.4884,
-        "lower": 0.4344,
-        "upper": 0.5339
-      },
-      {
-        "cycle": 20,
-        "median": 0.1302,
-        "lower": 0.0761,
-        "upper": 0.1807
-      },
-      {
-        "cycle": 30,
-        "median": 0.0186,
-        "lower": 0.0,
-        "upper": 0.048
-      },
-      {
-        "cycle": 40,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 60,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 80,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 100,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 120,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 140,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      }
-    ],
-    "sensorTrend": {
-      "s4": [
-        {
-          "h": 1,
-          "v": 1401.03
-        },
-        {
-          "h": 20,
-          "v": 1399.05
-        },
-        {
-          "h": 40,
-          "v": 1394.26
-        },
-        {
-          "h": 59,
-          "v": 1395.43
-        },
-        {
-          "h": 79,
-          "v": 1406.66
-        },
-        {
-          "h": 98,
-          "v": 1397.51
-        },
-        {
-          "h": 117,
-          "v": 1405.5
-        },
-        {
-          "h": 137,
-          "v": 1412.28
-        },
-        {
-          "h": 156,
-          "v": 1425.12
-        }
-      ],
-      "s9": [
-        {
-          "h": 1,
-          "v": 9055.08
-        },
-        {
-          "h": 20,
-          "v": 9048.56
-        },
-        {
-          "h": 40,
-          "v": 9048.32
-        },
-        {
-          "h": 59,
-          "v": 9046.22
-        },
-        {
-          "h": 79,
-          "v": 9047.07
-        },
-        {
-          "h": 98,
-          "v": 9041.46
-        },
-        {
-          "h": 117,
-          "v": 9046.54
-        },
-        {
-          "h": 137,
-          "v": 9039.98
-        },
-        {
-          "h": 156,
-          "v": 9026.89
-        }
-      ],
-      "s3": [
-        {
-          "h": 1,
-          "v": 1586.33
-        },
-        {
-          "h": 20,
-          "v": 1589.14
-        },
-        {
-          "h": 40,
-          "v": 1590.99
-        },
-        {
-          "h": 59,
-          "v": 1590.66
-        },
-        {
-          "h": 79,
-          "v": 1589.98
-        },
-        {
-          "h": 98,
-          "v": 1583.73
-        },
-        {
-          "h": 117,
-          "v": 1594.99
-        },
-        {
-          "h": 137,
-          "v": 1591.07
-        },
-        {
-          "h": 156,
-          "v": 1599.55
-        }
-      ]
-    },
-    "maintenanceHistory": [
-      {
-        "date": "cycle #156 시점 예측",
-        "type": "예정",
-        "description": "RUL 예측 기반 — 잔존 약 10.0 사이클 소진 시 정비 권고 (90% 구간 1.0~25.0)",
-        "status": "scheduled"
-      }
-    ],
-    "status": "critical",
-    "health": 8
-  },
-  "engine-81": {
-    "equipmentInfo": {
-      "line": "터보팬 엔진 · C-MAPSS FD001 (운전조건 1종)",
-      "installedAt": "—(데이터에 없음)",
-      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
-      "team": "5조 감시자들",
-      "operatingCycles": 213,
-      "modelNo": "Turbofan (FD001)"
-    },
-    "predictedRulCycle": {
-      "median": 10.7,
-      "lower": 1.0,
-      "upper": 25.0
-    },
-    "survivalCurve": [
-      {
-        "cycle": 0,
-        "median": 0.966,
-        "lower": 0.9567,
-        "upper": 0.9747
-      },
-      {
-        "cycle": 10,
-        "median": 0.5147,
-        "lower": 0.463,
-        "upper": 0.5592
-      },
-      {
-        "cycle": 20,
-        "median": 0.1451,
-        "lower": 0.0887,
-        "upper": 0.1983
-      },
-      {
-        "cycle": 30,
-        "median": 0.0181,
-        "lower": 0.0,
-        "upper": 0.0467
-      },
-      {
-        "cycle": 40,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 60,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 80,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 100,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 120,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 140,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      }
-    ],
-    "sensorTrend": {
-      "s4": [
-        {
-          "h": 1,
-          "v": 1402.35
-        },
-        {
-          "h": 27,
-          "v": 1401.75
-        },
-        {
-          "h": 54,
-          "v": 1401.8
-        },
-        {
-          "h": 81,
-          "v": 1402.88
-        },
-        {
-          "h": 107,
-          "v": 1392.44
-        },
-        {
-          "h": 133,
-          "v": 1409.0
-        },
-        {
-          "h": 160,
-          "v": 1416.5
-        },
-        {
-          "h": 187,
-          "v": 1419.91
-        },
-        {
-          "h": 213,
-          "v": 1427.83
-        }
-      ],
-      "s9": [
-        {
-          "h": 1,
-          "v": 9065.91
-        },
-        {
-          "h": 27,
-          "v": 9063.92
-        },
-        {
-          "h": 54,
-          "v": 9065.22
-        },
-        {
-          "h": 81,
-          "v": 9065.01
-        },
-        {
-          "h": 107,
-          "v": 9071.65
-        },
-        {
-          "h": 133,
-          "v": 9063.52
-        },
-        {
-          "h": 160,
-          "v": 9077.21
-        },
-        {
-          "h": 187,
-          "v": 9066.9
-        },
-        {
-          "h": 213,
-          "v": 9075.26
-        }
-      ],
-      "s3": [
-        {
-          "h": 1,
-          "v": 1593.57
-        },
-        {
-          "h": 27,
-          "v": 1589.42
-        },
-        {
-          "h": 54,
-          "v": 1581.42
-        },
-        {
-          "h": 81,
-          "v": 1588.7
-        },
-        {
-          "h": 107,
-          "v": 1582.05
-        },
-        {
-          "h": 133,
-          "v": 1583.42
-        },
-        {
-          "h": 160,
-          "v": 1584.31
-        },
-        {
-          "h": 187,
-          "v": 1590.9
-        },
-        {
-          "h": 213,
-          "v": 1598.35
-        }
-      ]
-    },
-    "maintenanceHistory": [
-      {
-        "date": "cycle #213 시점 예측",
-        "type": "예정",
-        "description": "RUL 예측 기반 — 잔존 약 10.7 사이클 소진 시 정비 권고 (90% 구간 1.0~25.0)",
-        "status": "scheduled"
-      }
-    ],
-    "status": "critical",
-    "health": 9
-  },
-  "engine-76": {
-    "equipmentInfo": {
-      "line": "터보팬 엔진 · C-MAPSS FD001 (운전조건 1종)",
-      "installedAt": "—(데이터에 없음)",
-      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
-      "team": "5조 감시자들",
-      "operatingCycles": 205,
-      "modelNo": "Turbofan (FD001)"
-    },
-    "predictedRulCycle": {
-      "median": 10.9,
-      "lower": 1.0,
-      "upper": 26.0
-    },
-    "survivalCurve": [
-      {
-        "cycle": 0,
-        "median": 0.9664,
-        "lower": 0.9573,
-        "upper": 0.9749
-      },
-      {
-        "cycle": 10,
-        "median": 0.5224,
-        "lower": 0.4706,
-        "upper": 0.5674
-      },
-      {
-        "cycle": 20,
-        "median": 0.1502,
-        "lower": 0.0911,
-        "upper": 0.2058
-      },
-      {
-        "cycle": 30,
-        "median": 0.0179,
-        "lower": 0.0,
-        "upper": 0.0461
-      },
-      {
-        "cycle": 40,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 60,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 80,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 100,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 120,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 140,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      }
-    ],
-    "sensorTrend": {
-      "s4": [
-        {
-          "h": 1,
-          "v": 1395.95
-        },
-        {
-          "h": 27,
-          "v": 1398.03
-        },
-        {
-          "h": 52,
-          "v": 1398.51
-        },
-        {
-          "h": 77,
-          "v": 1403.38
-        },
-        {
-          "h": 103,
-          "v": 1401.18
-        },
-        {
-          "h": 129,
-          "v": 1404.09
-        },
-        {
-          "h": 154,
-          "v": 1408.39
-        },
-        {
-          "h": 179,
-          "v": 1418.3
-        },
-        {
-          "h": 205,
-          "v": 1420.07
-        }
-      ],
-      "s9": [
-        {
-          "h": 1,
-          "v": 9057.45
-        },
-        {
-          "h": 27,
-          "v": 9060.68
-        },
-        {
-          "h": 52,
-          "v": 9061.38
-        },
-        {
-          "h": 77,
-          "v": 9065.54
-        },
-        {
-          "h": 103,
-          "v": 9063.56
-        },
-        {
-          "h": 129,
-          "v": 9068.19
-        },
-        {
-          "h": 154,
-          "v": 9074.13
-        },
-        {
-          "h": 179,
-          "v": 9096.17
-        },
-        {
-          "h": 205,
-          "v": 9114.99
-        }
-      ],
-      "s3": [
-        {
-          "h": 1,
-          "v": 1583.52
-        },
-        {
-          "h": 27,
-          "v": 1586.12
-        },
-        {
-          "h": 52,
-          "v": 1576.04
-        },
-        {
-          "h": 77,
-          "v": 1581.95
-        },
-        {
-          "h": 103,
-          "v": 1589.78
-        },
-        {
-          "h": 129,
-          "v": 1582.11
-        },
-        {
-          "h": 154,
-          "v": 1590.15
-        },
-        {
-          "h": 179,
-          "v": 1595.51
-        },
-        {
-          "h": 205,
-          "v": 1603.48
-        }
-      ]
-    },
-    "maintenanceHistory": [
-      {
-        "date": "cycle #205 시점 예측",
-        "type": "예정",
-        "description": "RUL 예측 기반 — 잔존 약 10.9 사이클 소진 시 정비 권고 (90% 구간 1.0~26.0)",
-        "status": "scheduled"
-      }
-    ],
-    "status": "critical",
-    "health": 9
-  },
-  "engine-37": {
-    "equipmentInfo": {
-      "line": "터보팬 엔진 · C-MAPSS FD001 (운전조건 1종)",
-      "installedAt": "—(데이터에 없음)",
-      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
-      "team": "5조 감시자들",
-      "operatingCycles": 121,
-      "modelNo": "Turbofan (FD001)"
-    },
-    "predictedRulCycle": {
-      "median": 15.6,
-      "lower": 3.0,
-      "upper": 29.0
-    },
-    "survivalCurve": [
-      {
-        "cycle": 0,
-        "median": 0.9917,
-        "lower": 0.9846,
-        "upper": 0.9979
-      },
-      {
-        "cycle": 10,
-        "median": 0.6625,
-        "lower": 0.6164,
-        "upper": 0.7054
-      },
-      {
-        "cycle": 20,
-        "median": 0.2604,
-        "lower": 0.1991,
-        "upper": 0.3181
-      },
-      {
-        "cycle": 30,
-        "median": 0.0375,
-        "lower": 0.0108,
-        "upper": 0.0683
-      },
-      {
-        "cycle": 40,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 60,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 80,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 100,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 120,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 140,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      }
-    ],
-    "sensorTrend": {
-      "s4": [
-        {
-          "h": 1,
-          "v": 1396.14
-        },
-        {
-          "h": 16,
-          "v": 1393.71
-        },
-        {
-          "h": 31,
-          "v": 1398.58
-        },
-        {
-          "h": 46,
-          "v": 1404.38
-        },
-        {
-          "h": 61,
-          "v": 1397.56
-        },
-        {
-          "h": 76,
-          "v": 1405.52
-        },
-        {
-          "h": 91,
-          "v": 1409.21
-        },
-        {
-          "h": 106,
-          "v": 1413.67
-        },
-        {
-          "h": 121,
-          "v": 1413.38
-        }
-      ],
-      "s9": [
-        {
-          "h": 1,
-          "v": 9051.31
-        },
-        {
-          "h": 16,
-          "v": 9052.93
-        },
-        {
-          "h": 31,
-          "v": 9059.87
-        },
-        {
-          "h": 46,
-          "v": 9059.41
-        },
-        {
-          "h": 61,
-          "v": 9049.06
-        },
-        {
-          "h": 76,
-          "v": 9052.06
-        },
-        {
-          "h": 91,
-          "v": 9053.14
-        },
-        {
-          "h": 106,
-          "v": 9049.81
-        },
-        {
-          "h": 121,
-          "v": 9041.71
-        }
-      ],
-      "s3": [
-        {
-          "h": 1,
-          "v": 1591.3
-        },
-        {
-          "h": 16,
-          "v": 1583.34
-        },
-        {
-          "h": 31,
-          "v": 1586.18
-        },
-        {
-          "h": 46,
-          "v": 1591.41
-        },
-        {
-          "h": 61,
-          "v": 1585.43
-        },
-        {
-          "h": 76,
-          "v": 1583.69
-        },
-        {
-          "h": 91,
-          "v": 1587.53
-        },
-        {
-          "h": 106,
-          "v": 1585.11
-        },
-        {
-          "h": 121,
-          "v": 1593.15
-        }
-      ]
-    },
-    "maintenanceHistory": [
-      {
-        "date": "cycle #121 시점 예측",
-        "type": "예정",
-        "description": "RUL 예측 기반 — 잔존 약 15.6 사이클 소진 시 정비 권고 (90% 구간 3.0~29.0)",
-        "status": "scheduled"
-      }
-    ],
-    "status": "critical",
-    "health": 12
-  },
-  "engine-56": {
-    "equipmentInfo": {
-      "line": "터보팬 엔진 · C-MAPSS FD001 (운전조건 1종)",
-      "installedAt": "—(데이터에 없음)",
-      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
-      "team": "5조 감시자들",
-      "operatingCycles": 136,
-      "modelNo": "Turbofan (FD001)"
-    },
-    "predictedRulCycle": {
-      "median": 22.4,
-      "lower": 10.1,
-      "upper": 38.0
+      "median": 80.5,
+      "lower": 61.0,
+      "upper": 168.0
     },
     "survivalCurve": [
       {
@@ -1371,605 +1784,199 @@ export const engineDetails: Record<string, EngineDetail> = {
       },
       {
         "cycle": 10,
-        "median": 0.9482,
-        "lower": 0.9213,
-        "upper": 0.9727
+        "median": 1.0,
+        "lower": 1.0,
+        "upper": 1.0
       },
       {
         "cycle": 20,
-        "median": 0.5659,
-        "lower": 0.5067,
-        "upper": 0.6228
+        "median": 1.0,
+        "lower": 1.0,
+        "upper": 1.0
       },
       {
         "cycle": 30,
-        "median": 0.1749,
-        "lower": 0.1009,
-        "upper": 0.249
+        "median": 1.0,
+        "lower": 1.0,
+        "upper": 1.0
       },
       {
         "cycle": 40,
-        "median": 0.0346,
-        "lower": 0.0021,
-        "upper": 0.079
+        "median": 1.0,
+        "lower": 1.0,
+        "upper": 1.0
       },
       {
         "cycle": 60,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
+        "median": 0.9612,
+        "lower": 0.94,
+        "upper": 0.9782
       },
       {
         "cycle": 80,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
+        "median": 0.4877,
+        "lower": 0.4012,
+        "upper": 0.5741
       },
       {
         "cycle": 100,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
+        "median": 0.1373,
+        "lower": 0.0572,
+        "upper": 0.221
       },
       {
         "cycle": 120,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
+        "median": 0.0777,
+        "lower": 0.0027,
+        "upper": 0.1525
       },
       {
         "cycle": 140,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
+        "median": 0.0644,
+        "lower": 0.0027,
+        "upper": 0.1324
       }
     ],
     "sensorTrend": {
-      "s4": [
+      "s3": [
         {
           "h": 1,
+          "v": 1411.98
+        },
+        {
+          "h": 23,
+          "v": 1416.96
+        },
+        {
+          "h": 45,
+          "v": 1424.25
+        },
+        {
+          "h": 67,
+          "v": 1423.46
+        },
+        {
+          "h": 89,
+          "v": 1413.41
+        },
+        {
+          "h": 110,
+          "v": 1405.89
+        },
+        {
+          "h": 132,
+          "v": 1413.17
+        },
+        {
+          "h": 154,
+          "v": 1421.67
+        },
+        {
+          "h": 176,
           "v": 1412.08
-        },
-        {
-          "h": 18,
-          "v": 1404.65
-        },
-        {
-          "h": 35,
-          "v": 1409.11
-        },
-        {
-          "h": 52,
-          "v": 1408.47
-        },
-        {
-          "h": 69,
-          "v": 1417.11
-        },
-        {
-          "h": 85,
-          "v": 1414.74
-        },
-        {
-          "h": 102,
-          "v": 1413.6
-        },
-        {
-          "h": 119,
-          "v": 1419.39
-        },
-        {
-          "h": 136,
-          "v": 1416.85
         }
       ],
-      "s9": [
+      "s17": [
         {
           "h": 1,
-          "v": 9046.05
+          "v": 346.07
         },
         {
-          "h": 18,
-          "v": 9042.96
+          "h": 23,
+          "v": 346.98
         },
         {
-          "h": 35,
-          "v": 9045.08
+          "h": 45,
+          "v": 345.98
         },
         {
-          "h": 52,
-          "v": 9041.58
+          "h": 67,
+          "v": 347.98
         },
         {
-          "h": 69,
-          "v": 9045.47
+          "h": 89,
+          "v": 347.07
         },
         {
-          "h": 85,
-          "v": 9044.9
+          "h": 110,
+          "v": 346.07
         },
         {
-          "h": 102,
-          "v": 9046.23
+          "h": 132,
+          "v": 348.13
         },
         {
-          "h": 119,
-          "v": 9049.07
+          "h": 154,
+          "v": 347.6
         },
         {
-          "h": 136,
-          "v": 9035.55
+          "h": 176,
+          "v": 345.98
         }
       ],
-      "s3": [
+      "s8": [
         {
           "h": 1,
-          "v": 1586.68
+          "v": 2228.62
         },
         {
-          "h": 18,
-          "v": 1590.48
+          "h": 23,
+          "v": 2228.76
         },
         {
-          "h": 35,
-          "v": 1587.86
+          "h": 45,
+          "v": 2228.7
         },
         {
-          "h": 52,
-          "v": 1581.18
+          "h": 67,
+          "v": 2228.71
         },
         {
-          "h": 69,
-          "v": 1592.73
+          "h": 89,
+          "v": 2228.75
         },
         {
-          "h": 85,
-          "v": 1596.4
+          "h": 110,
+          "v": 2228.69
         },
         {
-          "h": 102,
-          "v": 1590.16
+          "h": 132,
+          "v": 2228.69
         },
         {
-          "h": 119,
-          "v": 1596.76
+          "h": 154,
+          "v": 2228.73
         },
         {
-          "h": 136,
-          "v": 1598.6
+          "h": 176,
+          "v": 2228.84
         }
       ]
     },
     "maintenanceHistory": [
       {
-        "date": "cycle #136 시점 예측",
+        "date": "cycle #176 시점 예측",
         "type": "예정",
-        "description": "RUL 예측 기반 — 잔존 약 22.4 사이클 소진 시 정비 권고 (90% 구간 10.1~38.0)",
-        "status": "scheduled"
-      }
-    ],
-    "status": "warning",
-    "health": 18
-  },
-  "engine-18": {
-    "equipmentInfo": {
-      "line": "터보팬 엔진 · C-MAPSS FD001 (운전조건 1종)",
-      "installedAt": "—(데이터에 없음)",
-      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
-      "team": "5조 감시자들",
-      "operatingCycles": 133,
-      "modelNo": "Turbofan (FD001)"
-    },
-    "predictedRulCycle": {
-      "median": 23.5,
-      "lower": 12.0,
-      "upper": 39.0
-    },
-    "survivalCurve": [
-      {
-        "cycle": 0,
-        "median": 1.0,
-        "lower": 1.0,
-        "upper": 1.0
-      },
-      {
-        "cycle": 10,
-        "median": 0.9716,
-        "lower": 0.9511,
-        "upper": 0.9887
-      },
-      {
-        "cycle": 20,
-        "median": 0.6288,
-        "lower": 0.5672,
-        "upper": 0.6894
-      },
-      {
-        "cycle": 30,
-        "median": 0.2227,
-        "lower": 0.1491,
-        "upper": 0.295
-      },
-      {
-        "cycle": 40,
-        "median": 0.0371,
-        "lower": 0.0044,
-        "upper": 0.0828
-      },
-      {
-        "cycle": 60,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 80,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 100,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 120,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      },
-      {
-        "cycle": 140,
-        "median": 0.0,
-        "lower": 0.0,
-        "upper": 0.0
-      }
-    ],
-    "sensorTrend": {
-      "s4": [
-        {
-          "h": 1,
-          "v": 1395.19
-        },
-        {
-          "h": 17,
-          "v": 1398.77
-        },
-        {
-          "h": 34,
-          "v": 1395.26
-        },
-        {
-          "h": 51,
-          "v": 1408.2
-        },
-        {
-          "h": 67,
-          "v": 1392.12
-        },
-        {
-          "h": 83,
-          "v": 1402.25
-        },
-        {
-          "h": 100,
-          "v": 1399.01
-        },
-        {
-          "h": 117,
-          "v": 1410.29
-        },
-        {
-          "h": 133,
-          "v": 1419.18
-        }
-      ],
-      "s9": [
-        {
-          "h": 1,
-          "v": 9074.23
-        },
-        {
-          "h": 17,
-          "v": 9061.88
-        },
-        {
-          "h": 34,
-          "v": 9060.28
-        },
-        {
-          "h": 51,
-          "v": 9061.96
-        },
-        {
-          "h": 67,
-          "v": 9063.69
-        },
-        {
-          "h": 83,
-          "v": 9059.28
-        },
-        {
-          "h": 100,
-          "v": 9057.78
-        },
-        {
-          "h": 117,
-          "v": 9062.13
-        },
-        {
-          "h": 133,
-          "v": 9056.09
-        }
-      ],
-      "s3": [
-        {
-          "h": 1,
-          "v": 1586.9
-        },
-        {
-          "h": 17,
-          "v": 1590.23
-        },
-        {
-          "h": 34,
-          "v": 1591.52
-        },
-        {
-          "h": 51,
-          "v": 1583.99
-        },
-        {
-          "h": 67,
-          "v": 1586.89
-        },
-        {
-          "h": 83,
-          "v": 1593.37
-        },
-        {
-          "h": 100,
-          "v": 1593.49
-        },
-        {
-          "h": 117,
-          "v": 1591.96
-        },
-        {
-          "h": 133,
-          "v": 1600.45
-        }
-      ]
-    },
-    "maintenanceHistory": [
-      {
-        "date": "cycle #133 시점 예측",
-        "type": "예정",
-        "description": "RUL 예측 기반 — 잔존 약 23.5 사이클 소진 시 정비 권고 (90% 구간 12.0~39.0)",
-        "status": "scheduled"
-      }
-    ],
-    "status": "warning",
-    "health": 19
-  },
-  "engine-43": {
-    "equipmentInfo": {
-      "line": "터보팬 엔진 · C-MAPSS FD001 (운전조건 1종)",
-      "installedAt": "—(데이터에 없음)",
-      "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
-      "team": "5조 감시자들",
-      "operatingCycles": 172,
-      "modelNo": "Turbofan (FD001)"
-    },
-    "predictedRulCycle": {
-      "median": 61.6,
-      "lower": 41.0,
-      "upper": 84.3
-    },
-    "survivalCurve": [
-      {
-        "cycle": 0,
-        "median": 1.0,
-        "lower": 1.0,
-        "upper": 1.0
-      },
-      {
-        "cycle": 10,
-        "median": 1.0,
-        "lower": 1.0,
-        "upper": 1.0
-      },
-      {
-        "cycle": 20,
-        "median": 1.0,
-        "lower": 1.0,
-        "upper": 1.0
-      },
-      {
-        "cycle": 30,
-        "median": 1.0,
-        "lower": 1.0,
-        "upper": 1.0
-      },
-      {
-        "cycle": 40,
-        "median": 0.9532,
-        "lower": 0.9106,
-        "upper": 0.9883
-      },
-      {
-        "cycle": 60,
-        "median": 0.3191,
-        "lower": 0.1942,
-        "upper": 0.444
-      },
-      {
-        "cycle": 80,
-        "median": 0.0596,
-        "lower": 0.0398,
-        "upper": 0.0808
-      },
-      {
-        "cycle": 100,
-        "median": 0.0468,
-        "lower": 0.0296,
-        "upper": 0.0658
-      },
-      {
-        "cycle": 120,
-        "median": 0.0468,
-        "lower": 0.0296,
-        "upper": 0.0658
-      },
-      {
-        "cycle": 140,
-        "median": 0.0468,
-        "lower": 0.0296,
-        "upper": 0.0658
-      }
-    ],
-    "sensorTrend": {
-      "s4": [
-        {
-          "h": 1,
-          "v": 1402.16
-        },
-        {
-          "h": 22,
-          "v": 1402.72
-        },
-        {
-          "h": 44,
-          "v": 1401.53
-        },
-        {
-          "h": 65,
-          "v": 1404.99
-        },
-        {
-          "h": 87,
-          "v": 1402.32
-        },
-        {
-          "h": 108,
-          "v": 1403.49
-        },
-        {
-          "h": 129,
-          "v": 1408.38
-        },
-        {
-          "h": 151,
-          "v": 1406.72
-        },
-        {
-          "h": 172,
-          "v": 1418.4
-        }
-      ],
-      "s9": [
-        {
-          "h": 1,
-          "v": 9047.72
-        },
-        {
-          "h": 22,
-          "v": 9047.82
-        },
-        {
-          "h": 44,
-          "v": 9052.74
-        },
-        {
-          "h": 65,
-          "v": 9050.76
-        },
-        {
-          "h": 87,
-          "v": 9053.0
-        },
-        {
-          "h": 108,
-          "v": 9049.12
-        },
-        {
-          "h": 129,
-          "v": 9052.88
-        },
-        {
-          "h": 151,
-          "v": 9059.19
-        },
-        {
-          "h": 172,
-          "v": 9052.93
-        }
-      ],
-      "s3": [
-        {
-          "h": 1,
-          "v": 1588.76
-        },
-        {
-          "h": 22,
-          "v": 1588.7
-        },
-        {
-          "h": 44,
-          "v": 1588.3
-        },
-        {
-          "h": 65,
-          "v": 1582.45
-        },
-        {
-          "h": 87,
-          "v": 1591.45
-        },
-        {
-          "h": 108,
-          "v": 1583.13
-        },
-        {
-          "h": 129,
-          "v": 1589.55
-        },
-        {
-          "h": 151,
-          "v": 1591.29
-        },
-        {
-          "h": 172,
-          "v": 1594.19
-        }
-      ]
-    },
-    "maintenanceHistory": [
-      {
-        "date": "cycle #172 시점 예측",
-        "type": "예정",
-        "description": "RUL 예측 기반 — 잔존 약 61.6 사이클 소진 시 정비 권고 (90% 구간 41.0~84.3)",
+        "description": "RUL 예측 기반 — 잔존 약 80.5 사이클 소진 시 정비 권고 (90% 구간 61.0~168.0)",
         "status": "scheduled"
       }
     ],
     "status": "good",
-    "health": 49
+    "health": 64
   },
-  "engine-47": {
+  "engine-10": {
     "equipmentInfo": {
-      "line": "터보팬 엔진 · C-MAPSS FD001 (운전조건 1종)",
+      "line": "터보팬 엔진 · C-MAPSS FD004 (운전조건 6종 · 고장모드 2종)",
       "installedAt": "—(데이터에 없음)",
       "lastMaintenance": "—(단일 run-to-failure 데이터, 실제 교체 이력 없음)",
       "team": "5조 감시자들",
-      "operatingCycles": 73,
-      "modelNo": "Turbofan (FD001)"
+      "operatingCycles": 23,
+      "modelNo": "Turbofan (FD004)"
     },
     "predictedRulCycle": {
       "median": 125.0,
-      "lower": 96.5,
-      "upper": 221.5
+      "lower": 125.0,
+      "upper": 368.0
     },
     "survivalCurve": [
       {
@@ -2010,150 +2017,150 @@ export const engineDetails: Record<string, EngineDetail> = {
       },
       {
         "cycle": 80,
-        "median": 0.9951,
-        "lower": 0.9892,
+        "median": 1.0,
+        "lower": 1.0,
         "upper": 1.0
       },
       {
         "cycle": 100,
-        "median": 0.9367,
-        "lower": 0.8894,
-        "upper": 0.98
+        "median": 0.993,
+        "lower": 0.9851,
+        "upper": 0.9988
       },
       {
         "cycle": 120,
-        "median": 0.8427,
-        "lower": 0.7492,
-        "upper": 0.9279
+        "median": 0.9639,
+        "lower": 0.9406,
+        "upper": 0.9812
       },
       {
         "cycle": 140,
-        "median": 0.6766,
-        "lower": 0.5513,
-        "upper": 0.7921
+        "median": 0.8944,
+        "lower": 0.8505,
+        "upper": 0.9311
       }
     ],
     "sensorTrend": {
-      "s4": [
-        {
-          "h": 1,
-          "v": 1415.87
-        },
-        {
-          "h": 10,
-          "v": 1418.18
-        },
-        {
-          "h": 19,
-          "v": 1413.49
-        },
-        {
-          "h": 28,
-          "v": 1411.35
-        },
-        {
-          "h": 37,
-          "v": 1410.57
-        },
-        {
-          "h": 46,
-          "v": 1415.89
-        },
-        {
-          "h": 55,
-          "v": 1408.82
-        },
-        {
-          "h": 64,
-          "v": 1402.61
-        },
-        {
-          "h": 73,
-          "v": 1402.79
-        }
-      ],
-      "s9": [
-        {
-          "h": 1,
-          "v": 9045.79
-        },
-        {
-          "h": 10,
-          "v": 9048.75
-        },
-        {
-          "h": 19,
-          "v": 9046.35
-        },
-        {
-          "h": 28,
-          "v": 9051.07
-        },
-        {
-          "h": 37,
-          "v": 9041.39
-        },
-        {
-          "h": 46,
-          "v": 9040.82
-        },
-        {
-          "h": 55,
-          "v": 9043.84
-        },
-        {
-          "h": 64,
-          "v": 9044.41
-        },
-        {
-          "h": 73,
-          "v": 9038.32
-        }
-      ],
       "s3": [
         {
           "h": 1,
-          "v": 1586.87
+          "v": 1408.34
         },
         {
-          "h": 10,
-          "v": 1592.77
+          "h": 4,
+          "v": 1417.98
         },
         {
-          "h": 19,
-          "v": 1593.85
+          "h": 7,
+          "v": 1419.55
         },
         {
-          "h": 28,
-          "v": 1593.51
+          "h": 9,
+          "v": 1414.21
         },
         {
-          "h": 37,
-          "v": 1595.63
+          "h": 12,
+          "v": 1417.04
         },
         {
-          "h": 46,
-          "v": 1591.5
+          "h": 15,
+          "v": 1412.1
         },
         {
-          "h": 55,
-          "v": 1584.69
+          "h": 17,
+          "v": 1411.2
         },
         {
-          "h": 64,
-          "v": 1584.39
+          "h": 20,
+          "v": 1412.74
         },
         {
-          "h": 73,
-          "v": 1587.09
+          "h": 23,
+          "v": 1423.67
+        }
+      ],
+      "s17": [
+        {
+          "h": 1,
+          "v": 346.98
+        },
+        {
+          "h": 4,
+          "v": 346.07
+        },
+        {
+          "h": 7,
+          "v": 347.07
+        },
+        {
+          "h": 9,
+          "v": 347.6
+        },
+        {
+          "h": 12,
+          "v": 345.6
+        },
+        {
+          "h": 15,
+          "v": 347.07
+        },
+        {
+          "h": 17,
+          "v": 347.07
+        },
+        {
+          "h": 20,
+          "v": 347.6
+        },
+        {
+          "h": 23,
+          "v": 348.13
+        }
+      ],
+      "s8": [
+        {
+          "h": 1,
+          "v": 2228.83
+        },
+        {
+          "h": 4,
+          "v": 2228.74
+        },
+        {
+          "h": 7,
+          "v": 2228.73
+        },
+        {
+          "h": 9,
+          "v": 2228.76
+        },
+        {
+          "h": 12,
+          "v": 2228.77
+        },
+        {
+          "h": 15,
+          "v": 2228.7
+        },
+        {
+          "h": 17,
+          "v": 2228.8
+        },
+        {
+          "h": 20,
+          "v": 2228.71
+        },
+        {
+          "h": 23,
+          "v": 2228.78
         }
       ]
     },
     "maintenanceHistory": [
       {
-        "date": "cycle #73 시점 예측",
+        "date": "cycle #23 시점 예측",
         "type": "예정",
-        "description": "RUL 예측 기반 — 잔존 약 125.0 사이클 소진 시 정비 권고 (90% 구간 96.5~221.5)",
+        "description": "RUL 예측 기반 — 잔존 약 125.0 사이클 소진 시 정비 권고 (90% 구간 125.0~368.0)",
         "status": "scheduled"
       }
     ],
@@ -2162,98 +2169,102 @@ export const engineDetails: Record<string, EngineDetail> = {
   }
 }
 
-export const DEFAULT_ENGINE_ID = 'engine-37'
+export const DEFAULT_ENGINE_ID = 'engine-198'
 
-export const trendMeta: Record<string, { unit: string; domain: [number, number] }> = {
-  "s4": {
-    "unit": "°R",
-    "domain": [
-      1376.3,
-      1447.4
-    ]
-  },
-  "s9": {
-    "unit": "rpm",
-    "domain": [
-      8999.4,
-      9266.9
-    ]
-  },
+/** 센서 추이 3종 (06번 RF 중요도 상위 센서) — 값은 운전조건 보정값 */
+export const trendMeta: Record<string, { unit: string; label: string; domain: [number, number] }> = {
   "s3": {
     "unit": "°R",
+    "label": "T30 · HPC outlet 온도 (s3)",
     "domain": [
-      1566.5,
-      1621.5
+      1391.1,
+      1450.7
+    ]
+  },
+  "s17": {
+    "unit": "",
+    "label": "htBleed · 블리드 엔탈피 (s17)",
+    "domain": [
+      340.9,
+      355.4
+    ]
+  },
+  "s8": {
+    "unit": "rpm",
+    "label": "Nf · 물리적 팬 속도 (s8)",
+    "domain": [
+      2227.2,
+      2231.2
     ]
   }
 }
 
-/** 위험 등급(RUL<20) 조기경보 성능 — LSTM 모델, 공식 test 100개 엔진 기준 실제 계산값
- *  (TP=11, FN=2, FP=4) */
+/** 위험 등급(RUL≤40) 조기경보 성능 — GRU 모델, 공식 test 248개 엔진 기준 실제 계산값
+ *  (TP=61, FN=8, FP=1) */
 export const classifierMetrics = {
-  "precision": 0.733,
-  "recall": 0.846,
-  "f1": 0.786,
-  "tp": 11,
-  "fn": 2,
-  "fp": 4
+  "precision": 0.984,
+  "recall": 0.884,
+  "f1": 0.931,
+  "tp": 61,
+  "fn": 8,
+  "fp": 1
 }
 
 /** RF 피처 중요도 상위 5개 센서(그룹 합산) */
 export const featureImportance = [
   {
-    "label": "LPT outlet 온도 (s4)",
-    "value": 0.58
+    "label": "T30 · HPC outlet 온도 (s3)",
+    "value": 0.504
   },
   {
-    "label": "물리적 코어 속도(N2) (s9)",
-    "value": 0.086
+    "label": "htBleed · 블리드 엔탈피 (s17)",
+    "value": 0.142
   },
   {
-    "label": "HPC outlet 온도 (s3)",
-    "value": 0.061
+    "label": "Nf · 물리적 팬 속도 (s8)",
+    "value": 0.112
   },
   {
-    "label": "HPC outlet 정압 (s11)",
-    "value": 0.049
+    "label": "Ps30 · HPC outlet 정압 (s11)",
+    "value": 0.039
   },
   {
-    "label": "LPT coolant bleed(2) (s21)",
-    "value": 0.031
+    "label": "T50 · LPT outlet 온도 (s4)",
+    "value": 0.03
   }
 ]
 
 /** AS-IS(사후 정비: 고장까지 운용) vs TO-BE(예지보전: RUL 기반 사전 정비) 비용 시뮬레이션.
- *  탐지/누락/오탐 건수는 LSTM 모델의 실제 test set 결과, 금액·시간 가정은 항공 엔진 정비
+ *  탐지/누락/오탐 건수는 GRU 모델의 실제 test set 결과, 금액·시간 가정은 항공 엔진 정비
  *  맥락의 illustrative 값입니다 (분석 레포 scripts/08_export_dashboard_ts.py 참고). */
 export const scenarioCompare = [
   {
     "metric": "평균 가동중단 시간 (시간/1,000대 환산)",
-    "asIs": 3120.0,
-    "toBe": 940.0
+    "asIs": 6677.4,
+    "toBe": 1760.1
   },
   {
     "metric": "정비 비용 (억원/1,000대 환산)",
-    "asIs": 31.2,
-    "toBe": 13.8
+    "asIs": 66.8,
+    "toBe": 27.4
   },
   {
     "metric": "가동중단 손실 (억원/1,000대 환산)",
-    "asIs": 312.0,
-    "toBe": 94.0
+    "asIs": 667.7,
+    "toBe": 176.0
   }
 ]
 
 export const savingsSummary = {
-  "perThousandEnginesEok": 235.4,
-  "savingRatePct": 68.6,
-  "dangerCaseReductionPct": 85,
-  "note": "테스트 엔진 100대 결과를 1,000대 규모로 환산한 값입니다. 정비 비용·가동중단 단가는 가정값이고, 탐지/누락/오탐 건수는 실제 모델 성능입니다."
+  "perThousandEnginesEok": 531.1,
+  "savingRatePct": 72.3,
+  "dangerCaseReductionPct": 88,
+  "note": "테스트 엔진 248대 결과를 1,000대 규모로 환산한 값입니다. 정비 비용·가동중단 단가는 가정값이고, 탐지/누락/오탐 건수는 실제 모델 성능입니다."
 }
 
 /** 시나리오 화면 슬라이더가 다시 계산할 때 쓰는 원본 가정치 (계산식은 분석 레포 compute_scenario()와 동일) */
 export const costModel = {
-  "nEngines": 100,
+  "nEngines": 248,
   "general": {
     "downtimeCostPerHour": 1000.0,
     "repairUnplannedRatio": 3.0,
@@ -2263,13 +2274,13 @@ export const costModel = {
   },
   "types": {
     "EngineRemoval": {
-      "episodes": 13,
-      "detected": 11,
-      "missed": 2,
-      "falseAlarms": 4,
-      "dangerCases": 13,
+      "episodes": 69,
+      "detected": 61,
+      "missed": 8,
+      "falseAlarms": 1,
+      "dangerCases": 69,
       "dangerCasesDetected": 0,
-      "dangerCasesMissed": 2,
+      "dangerCasesMissed": 8,
       "hoursPlanned": 4.0,
       "hoursUnplanned": 24.0,
       "repairPlanned": 800.0
