@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Badge } from '../components/Badge'
+import { EngineSwitcher } from '../components/EngineSwitcher'
 import { SurvivalCurveChart } from '../components/SurvivalCurveChart'
 import { MiniTrendChart } from '../components/MiniTrendChart'
 import {
@@ -217,9 +218,9 @@ function HistoryTab({ detail }: { detail: EngineDetail }) {
 
 export function Detail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const engineId = id && engineDetails[id] ? id : DEFAULT_ENGINE_ID
   const detail = engineDetails[engineId]
-  const displayName = equipmentRanking.find((e) => e.id === engineId)?.name ?? engineId
   const [tab, setTab] = useState<(typeof tabs)[number]['id']>('rul')
 
   // C-MAPSS는 엔진 1대당 1회 run-to-failure 기록이라 설치일·정비이력 같은 필드가 존재하지 않음 —
@@ -248,7 +249,12 @@ export function Detail() {
 
       <div>
         <div className="flex flex-row items-center gap-2.5">
-          <h1 className="m-0 text-xl font-semibold">{displayName}</h1>
+          <EngineSwitcher
+            engines={equipmentRanking}
+            selectedId={engineId}
+            onSelect={(newId) => navigate(`/equipment/${newId}`)}
+            size="lg"
+          />
           <Badge status={detail.status} />
         </div>
         <p className="mt-1.5 text-[13px]" style={{ color: 'var(--text-secondary)' }}>

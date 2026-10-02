@@ -3,14 +3,18 @@ import { Badge } from './Badge'
 import { Meter } from './Meter'
 import type { EquipmentRow } from '../data/mock'
 
+const SIZE_CLASS = { md: 'text-[15px]', lg: 'text-xl' } as const
+
 export function EngineSwitcher({
   engines,
   selectedId,
   onSelect,
+  size = 'md',
 }: {
   engines: EquipmentRow[]
   selectedId: string
   onSelect: (id: string) => void
+  size?: keyof typeof SIZE_CLASS
 }) {
   const [open, setOpen] = useState(false)
   const current = engines.find((e) => e.id === selectedId)
@@ -19,7 +23,7 @@ export function EngineSwitcher({
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="icon-btn flex flex-row items-center gap-1.5 px-1 py-0.5 text-[15px] font-semibold"
+        className={`icon-btn flex flex-row items-center gap-1.5 px-1 py-0.5 font-semibold ${SIZE_CLASS[size]}`}
         style={{ color: 'var(--text-primary)' }}
         aria-haspopup="listbox"
         aria-expanded={open}
