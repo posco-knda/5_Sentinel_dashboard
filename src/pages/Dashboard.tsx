@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { StatTile } from '../components/StatTile'
-import { SensorChart } from '../components/SensorChart'
+import { SurvivalCurveChart } from '../components/SurvivalCurveChart'
 import { RankedList } from '../components/RankedList'
 import { AlertsTable } from '../components/AlertsTable'
+import { EngineSwitcher } from '../components/EngineSwitcher'
+import { Badge } from '../components/Badge'
 import { Toast } from '../components/Toast'
-import { kpis, alertLog, dataMeta, riskThresholds, formatHour } from '../data/mock'
+import { kpis, alertLog, equipmentRanking, engineDetails, dataMeta, riskThresholds, formatHour } from '../data/mock'
 
 function Panel({ title, action, children }: { title?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -35,8 +38,11 @@ const LATEST_CYCLE = 24
 export function Dashboard() {
   const [sideTab, setSideTab] = useState<(typeof sideTabs)[number]['id']>('priority')
   const [toastDismissed, setToastDismissed] = useState(false)
+  const [selectedEngineId, setSelectedEngineId] = useState(equipmentRanking[0].id)
 
   const hasCriticalAlert = alertLog.some((a) => a.severity === 'critical')
+  const selected = equipmentRanking.find((e) => e.id === selectedEngineId) ?? equipmentRanking[0]
+  const selectedDetail = engineDetails[selectedEngineId]
 
   return (
     <div className="flex flex-col gap-5">
@@ -93,19 +99,24 @@ export function Dashboard() {
         transition={{ duration: 0.4, delay: 0.2 }}
       >
         <Panel
-          title={`예측 RUL · Engine #${dataMeta.featuredEngine}`}
+          title="예측 RUL · 생존곡선"
           action={
-            <span
-              className="border px-3 py-1.5 text-[12.5px]"
+            <Link
+              to={`/equipment/${selectedEngineId}`}
+              className="border px-3 py-1.5 text-[12.5px] no-underline"
               style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
             >
-              최근 25사이클
-            </span>
+              상세 보기 →
+            </Link>
           }
         >
-          <SensorChart />
+          <div className="mb-3 flex flex-row items-center gap-2.5">
+            <EngineSwitcher engines={equipmentRanking} selectedId={selectedEngineId} onSelect={setSelectedEngineId} />
+            <Badge status={selected.status} />
+          </div>
+          <SurvivalCurveChart data={selectedDetail.survivalCurve} predictedRul={selectedDetail.predictedRulCycle} />
           <p className="mt-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            Engine #{dataMeta.featuredEngine} 예측 RUL(cycle) 추이 · 붉은 띠는 위험 임계값(RUL ≤ {riskThresholds.dangerRul}) 이하 구간이며, 알림은 {dataMeta.model} 모델의 예측 기반입니다
+            현재 시점(cycle 0) 기준 앞으로 더 가동될 때 아직 고장나지 않을 확률이며, 점선은 {dataMeta.model} 모델이 예측한 RUL입니다
           </p>
         </Panel>
 

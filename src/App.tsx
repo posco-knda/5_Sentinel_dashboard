@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ThemeProvider } from './theme/ThemeContext'
 import { ThemeToggle } from './components/ThemeToggle'
@@ -7,7 +7,7 @@ import { Overview } from './pages/Overview'
 import { Dashboard } from './pages/Dashboard'
 import { Detail } from './pages/Detail'
 import { Simulation } from './pages/Simulation'
-import { DEFAULT_ENGINE_ID } from './data/mock'
+import { equipmentRanking } from './data/mock'
 
 function HomeIcon() {
   return (
@@ -63,11 +63,15 @@ function CloseIcon() {
   )
 }
 
+// '설비 상세'는 특정 엔진 하나에 고정된 페이지가 아니라 /equipment/:id 전체를 가리키는 섹션이다.
+// 사이드바에서 처음 들어갈 때는 지금 가장 위험한(헬스 스코어가 가장 낮은) 엔진으로 연다.
+const priorityEngineId = equipmentRanking[0].id
+
 const navItems = [
-  { to: '/', label: '홈', icon: HomeIcon },
-  { to: '/dashboard', label: '모니터링', icon: ActivityIcon },
-  { to: `/equipment/${DEFAULT_ENGINE_ID}`, label: '설비 상세', icon: CpuIcon },
-  { to: '/simulation', label: '시나리오 시뮬레이션', icon: SlidersIcon },
+  { to: '/', label: '홈', icon: HomeIcon, match: '/' },
+  { to: '/dashboard', label: '모니터링', icon: ActivityIcon, match: '/dashboard' },
+  { to: `/equipment/${priorityEngineId}`, label: '설비 상세', icon: CpuIcon, match: '/equipment' },
+  { to: '/simulation', label: '시나리오 시뮬레이션', icon: SlidersIcon, match: '/simulation' },
 ]
 
 function AnimatedRoutes() {
@@ -107,22 +111,23 @@ function Logo() {
 }
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  const location = useLocation()
   return (
     <nav className="flex flex-col gap-0.5">
       {navItems.map((item) => {
         const Icon = item.icon
+        const isActive = item.match === '/' ? location.pathname === '/' : location.pathname.startsWith(item.match)
         return (
-          <NavLink
-            key={item.to}
+          <Link
+            key={item.match}
             to={item.to}
-            end={item.to === '/'}
             onClick={onNavigate}
-            className={({ isActive }) => `sidebar-link flex flex-row items-center gap-2.5 px-2.5 py-2 text-[13.5px] font-medium ${isActive ? 'is-active' : ''}`}
-            style={({ isActive }) => (isActive ? { color: 'var(--text-primary)' } : { color: 'var(--text-muted)' })}
+            className={`sidebar-link flex flex-row items-center gap-2.5 px-2.5 py-2 text-[13.5px] font-medium ${isActive ? 'is-active' : ''}`}
+            style={isActive ? { color: 'var(--text-primary)' } : { color: 'var(--text-muted)' }}
           >
             <Icon />
             {item.label}
-          </NavLink>
+          </Link>
         )
       })}
     </nav>

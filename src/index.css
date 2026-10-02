@@ -183,6 +183,17 @@ input:focus-visible,
   color: var(--accent);
 }
 
+.dropdown-item {
+  border-radius: var(--radius-xs);
+  transition: background-color 0.15s ease;
+}
+.dropdown-item:hover {
+  background: var(--border-soft);
+}
+.dropdown-item.is-active {
+  background: var(--accent-dim);
+}
+
 .nav-link {
   border-radius: var(--radius-sm);
   transition:
