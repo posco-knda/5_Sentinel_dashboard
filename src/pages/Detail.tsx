@@ -222,12 +222,13 @@ export function Detail() {
   const displayName = equipmentRanking.find((e) => e.id === engineId)?.name ?? engineId
   const [tab, setTab] = useState<(typeof tabs)[number]['id']>('rul')
 
+  // C-MAPSS는 엔진 1대당 1회 run-to-failure 기록이라 설치일·정비이력 같은 필드가 존재하지 않음 —
+  // 빈 자리를 "데이터에 없음"으로 보여주는 대신, 이 데이터셋의 실제 특성(단일 가동 기록)을 그대로 보여줌
   const infoChips = [
     { label: '라인/공정', value: detail.equipmentInfo.line },
-    { label: '설치일', value: detail.equipmentInfo.installedAt },
     { label: '엔진 모델', value: detail.equipmentInfo.modelNo },
     { label: '누적 사이클', value: `${detail.equipmentInfo.operatingCycles.toLocaleString()} cycle` },
-    { label: '최근 정비 이력', value: detail.equipmentInfo.lastMaintenance },
+    { label: '가동 유형', value: 'Run-to-failure (단일 기록)' },
     { label: '담당팀', value: detail.equipmentInfo.team },
   ]
 
@@ -251,12 +252,12 @@ export function Detail() {
           <Badge status={detail.status} />
         </div>
         <p className="mt-1.5 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-          {detail.equipmentInfo.line} · 설치일 {detail.equipmentInfo.installedAt}
+          {detail.equipmentInfo.line} · 누적 {detail.equipmentInfo.operatingCycles.toLocaleString()} cycle 가동
         </p>
       </div>
 
       {/* 설비 기본 정보 칩 */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {infoChips.map((c) => (
           <div
             key={c.label}
