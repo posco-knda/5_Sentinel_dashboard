@@ -195,6 +195,9 @@ export function Simulation() {
               예지보전 · 사전 예측 대응
             </span>
           </div>
+          <p className="m-0 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+            test 엔진 {dataMeta.testEngines}대의 실제 탐지 결과를 1,000대 규모로 환산한 값입니다 (화면 상단의 모니터링 대상 9대와는 다른 표본)
+          </p>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {result.metrics.map((s, i) => (
@@ -211,7 +214,7 @@ export function Simulation() {
             style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
           >
             <span className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
-              예상 절감 효과 (1,000대 환산)
+              예상 절감 효과 (test {dataMeta.testEngines}대 → 1,000대 환산)
             </span>
             <span className="text-[34px] font-bold" style={{ color: 'var(--accent)' }}>
               {result.savingPer1000.toLocaleString()}억원 · 절감률 {result.savingRate}%
