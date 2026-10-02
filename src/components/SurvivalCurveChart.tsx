@@ -49,7 +49,7 @@ export function SurvivalCurveChart({ data, predictedRul }: { data: SurvivalPoint
   return (
     <div className="h-[220px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={chartData} margin={{ top: 12, right: 16, bottom: 4, left: 0 }}>
+        <ComposedChart data={chartData} margin={{ top: 28, right: 16, bottom: 4, left: 0 }}>
           <CartesianGrid stroke="var(--gridline)" vertical={false} />
           <XAxis
             dataKey="cycle"
