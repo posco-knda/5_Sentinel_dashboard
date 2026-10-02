@@ -8,7 +8,7 @@ import { AlertsTable } from '../components/AlertsTable'
 import { EngineSwitcher } from '../components/EngineSwitcher'
 import { Badge } from '../components/Badge'
 import { Toast } from '../components/Toast'
-import { kpis, alertLog, equipmentRanking, engineDetails, dataMeta, riskThresholds, formatHour } from '../data/mock'
+import { kpis, equipmentRanking, engineDetails, dataMeta, riskThresholds, formatHour } from '../data/mock'
 
 function Panel({ title, action, children }: { title?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -40,16 +40,20 @@ export function Dashboard() {
   const [toastDismissed, setToastDismissed] = useState(false)
   const [selectedEngineId, setSelectedEngineId] = useState(equipmentRanking[0].id)
 
-  const hasCriticalAlert = alertLog.some((a) => a.severity === 'critical')
   const selected = equipmentRanking.find((e) => e.id === selectedEngineId) ?? equipmentRanking[0]
   const selectedDetail = engineDetails[selectedEngineId]
+
+  // 경보 배너는 고정된 엔진이 아니라 지금 플릿에서 실제로 가장 위험한 엔진을 가리켜야 한다
+  const priorityEngine = equipmentRanking[0]
+  const priorityMedianRul = engineDetails[priorityEngine.id].predictedRulCycle.median
+  const hasCriticalAlert = priorityEngine.status === 'critical'
 
   return (
     <div className="flex flex-col gap-5">
       <Toast
         show={hasCriticalAlert && !toastDismissed}
-        title={`Engine #${dataMeta.featuredEngine} 위험 감지`}
-        body={`예측 RUL이 위험 임계값(${riskThresholds.dangerRul} cycle) 이하로 떨어졌습니다`}
+        title={`${priorityEngine.name} 위험 감지`}
+        body={`예측 RUL 약 ${priorityMedianRul}cycle · 위험 임계값(${riskThresholds.dangerRul} cycle) 이하로 떨어졌습니다`}
         onDismiss={() => setToastDismissed(true)}
       />
 
