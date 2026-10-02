@@ -1,14 +1,14 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { getAlertsUpToHour } from '../data/mock'
+import { alertLog } from '../data/mock'
 import { Badge } from './Badge'
 
-export function AlertsTable({ hour, compact = false }: { hour: number; compact?: boolean }) {
-  const rows = getAlertsUpToHour(hour)
+export function AlertsTable({ compact = false }: { compact?: boolean }) {
+  const rows = alertLog
 
   if (!rows.length) {
     return (
       <div className="py-10 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>
-        아직 이 시각까지 발생한 이상탐지 로그가 없습니다
+        발생한 이상탐지 로그가 없습니다
       </div>
     )
   }

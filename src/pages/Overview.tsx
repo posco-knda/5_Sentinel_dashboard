@@ -34,7 +34,7 @@ export function Overview() {
           className="cta-primary w-fit px-4 py-2.5 text-[13.5px] font-semibold no-underline"
           style={{ background: 'var(--accent)', color: 'var(--accent-ink)' }}
         >
-          타임라인 모니터링 →
+          실시간 모니터링 →
         </Link>
       </div>
 

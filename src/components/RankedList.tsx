@@ -1,19 +1,17 @@
 import { motion } from 'framer-motion'
-import { getEquipmentRankingAtHour } from '../data/mock'
+import { equipmentRanking } from '../data/mock'
 import { Badge } from './Badge'
 import { Meter } from './Meter'
 
-export function RankedList({ hour }: { hour: number }) {
-  const ranking = getEquipmentRankingAtHour(hour)
-
+export function RankedList() {
   return (
     <div className="flex flex-col">
-      {ranking.map((eq, i) => (
+      {equipmentRanking.map((eq, i) => (
         <motion.div
           key={eq.id}
           layout
           className="flex flex-row items-center gap-3 py-3"
-          style={{ borderBottom: i < ranking.length - 1 ? '1px solid var(--border-soft)' : 'none' }}
+          style={{ borderBottom: i < equipmentRanking.length - 1 ? '1px solid var(--border-soft)' : 'none' }}
           transition={{ duration: 0.35 }}
         >
           <span className="mono w-4 text-[13px]" style={{ color: 'var(--text-muted)' }}>

@@ -9,7 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { sensorSeries, anomalyWindow, getRulAtHour, formatHour } from '../data/mock'
+import { sensorSeries, anomalyWindow, formatHour } from '../data/mock'
 
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
@@ -31,20 +31,11 @@ function ChartTooltip({ active, payload, label }: any) {
   )
 }
 
-export function SensorChart({ hour }: { hour: number }) {
-  // hour까지의 확정된 포인트 + 현재 스크러버 위치의 보간값 하나를 이어붙여서
-  // 드래그할 때 끝점이 뚝뚝 끊기지 않고 부드럽게 따라오게 만듭니다.
-  const visible = sensorSeries.filter((p) => p.h <= hour)
-  const current = { h: hour, v: getRulAtHour(hour) }
-  const data = visible.length && visible[visible.length - 1].h === hour ? visible : [...visible, current]
-
-  const bandEnd = Math.min(hour, anomalyWindow.end)
-  const showBand = hour > anomalyWindow.start
-
+export function SensorChart() {
   return (
     <div className="h-[260px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 16, right: 16, bottom: 4, left: -8 }}>
+        <ComposedChart data={sensorSeries} margin={{ top: 16, right: 16, bottom: 4, left: -8 }}>
           <CartesianGrid stroke="var(--gridline)" vertical={false} />
           <XAxis
             dataKey="h"
@@ -64,15 +55,13 @@ export function SensorChart({ hour }: { hour: number }) {
             tickLine={false}
             width={32}
           />
-          {showBand && (
-            <ReferenceArea
-              x1={anomalyWindow.start}
-              x2={bandEnd}
-              fill="var(--status-critical)"
-              fillOpacity={0.12}
-              label={{ value: '위험 구간', position: 'insideTop', fill: 'var(--status-serious)', fontSize: 11, fontWeight: 600 }}
-            />
-          )}
+          <ReferenceArea
+            x1={anomalyWindow.start}
+            x2={anomalyWindow.end}
+            fill="var(--status-critical)"
+            fillOpacity={0.12}
+            label={{ value: '위험 구간', position: 'insideTop', fill: 'var(--status-serious)', fontSize: 11, fontWeight: 600 }}
+          />
           <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--axis)', strokeWidth: 1 }} />
           <Area
             type="monotone"

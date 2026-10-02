@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { StatTile } from '../components/StatTile'
 import { SensorChart } from '../components/SensorChart'
 import { RankedList } from '../components/RankedList'
 import { AlertsTable } from '../components/AlertsTable'
-import { Scrubber } from '../components/Scrubber'
 import { Toast } from '../components/Toast'
-import { getKpisAtHour, anomalyWindow, dataMeta, riskThresholds } from '../data/mock'
+import { kpis, alertLog, dataMeta, riskThresholds, formatHour } from '../data/mock'
 
 function Panel({ title, action, children }: { title?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -31,65 +30,30 @@ const sideTabs = [
   { id: 'alerts', label: '알림 로그' },
 ] as const
 
+const LATEST_CYCLE = 24
+
 export function Dashboard() {
-  const [hour, setHour] = useState(24)
-  const [playing, setPlaying] = useState(false)
   const [sideTab, setSideTab] = useState<(typeof sideTabs)[number]['id']>('priority')
-  const rafRef = useRef<number | null>(null)
-  const lastTsRef = useRef<number | null>(null)
+  const [toastDismissed, setToastDismissed] = useState(false)
 
-  // 재생 버튼: 0시부터 24시까지 자동으로 스크러버가 흘러갑니다 (약 6초 재생)
-  useEffect(() => {
-    if (!playing) {
-      lastTsRef.current = null
-      return
-    }
-    const HOURS_PER_SECOND = 24 / 6
-
-    const step = (ts: number) => {
-      if (lastTsRef.current == null) lastTsRef.current = ts
-      const dt = (ts - lastTsRef.current) / 1000
-      lastTsRef.current = ts
-      setHour((h) => {
-        const next = h + dt * HOURS_PER_SECOND
-        if (next >= 24) {
-          setPlaying(false)
-          return 24
-        }
-        return next
-      })
-      rafRef.current = requestAnimationFrame(step)
-    }
-    rafRef.current = requestAnimationFrame(step)
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    }
-  }, [playing])
-
-  const togglePlay = () => {
-    if (!playing && hour >= 24) setHour(0)
-    setPlaying((p) => !p)
-  }
-
-  const kpis = getKpisAtHour(hour)
-  const showAnomalyToast = hour >= anomalyWindow.start && hour <= anomalyWindow.end
+  const hasCriticalAlert = alertLog.some((a) => a.severity === 'critical')
 
   return (
     <div className="flex flex-col gap-5">
       <Toast
-        show={showAnomalyToast}
+        show={hasCriticalAlert && !toastDismissed}
         title={`Engine #${dataMeta.featuredEngine} 위험 감지`}
         body={`예측 RUL이 위험 임계값(${riskThresholds.dangerRul} cycle) 이하로 떨어졌습니다`}
+        onDismiss={() => setToastDismissed(true)}
       />
 
-      <div>
+      <div className="flex flex-row items-center justify-between">
         <h1 className="m-0 text-[22px] font-semibold tracking-[-0.01em]">실시간 모니터링</h1>
-        <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
-          타임라인을 움직여 사이클 25개 구간의 위험 조기경보 흐름을 재생해볼 수 있습니다
-        </p>
+        <span className="flex flex-row items-center gap-1.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+          <span className="led-dot led-dot--live" />
+          최근 갱신 · {formatHour(LATEST_CYCLE)}
+        </span>
       </div>
-
-      <Scrubber hour={hour} onChange={setHour} playing={playing} onTogglePlay={togglePlay} />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile
@@ -114,19 +78,11 @@ export function Dashboard() {
         />
         <StatTile label="평균 헬스 스코어" value={kpis.avgHealth} decimals={1} delay={0.1} foot="모니터링 엔진 평균" />
         <StatTile
-          label="구간 내 발생 알림"
+          label="누적 알림"
           value={kpis.todayAlerts}
           suffix="건"
           delay={0.15}
-          foot={
-            <>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--status-critical)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="19" x2="12" y2="5" />
-                <polyline points="5 12 12 5 19 12" />
-              </svg>
-              앞 12사이클 대비 {kpis.alertsDelta >= 0 ? '+' : ''}{kpis.alertsDelta}건
-            </>
-          }
+          foot="최근 25사이클 구간"
         />
       </div>
 
@@ -143,11 +99,11 @@ export function Dashboard() {
               className="border px-3 py-1.5 text-[12.5px]"
               style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
             >
-              사이클 25개 구간
+              최근 25사이클
             </span>
           }
         >
-          <SensorChart hour={hour} />
+          <SensorChart />
           <p className="mt-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
             Engine #{dataMeta.featuredEngine} 예측 RUL(cycle) 추이 · 붉은 띠는 위험 임계값(RUL ≤ {riskThresholds.dangerRul}) 이하 구간이며, 알림은 {dataMeta.model} 모델의 예측 기반입니다
           </p>
@@ -166,7 +122,7 @@ export function Dashboard() {
             ))}
           </div>
           <div className="pt-3.5">
-            {sideTab === 'priority' ? <RankedList hour={hour} /> : <AlertsTable hour={hour} compact />}
+            {sideTab === 'priority' ? <RankedList /> : <AlertsTable compact />}
           </div>
         </Panel>
       </motion.div>
