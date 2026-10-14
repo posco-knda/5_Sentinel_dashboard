@@ -138,6 +138,11 @@ export function Dashboard() {
           </div>
           <div className="pt-3.5">
             {sideTab === 'priority' ? <RankedList /> : <AlertsTable compact />}
+            {sideTab === 'alerts' && (
+              <Link to="/log" className="mt-3 inline-block text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>
+                전체 탐지 이력 보기 →
+              </Link>
+            )}
           </div>
         </Panel>
       </motion.div>

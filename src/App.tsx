@@ -6,6 +6,7 @@ import { ThemeToggle } from './components/ThemeToggle'
 import { Overview } from './pages/Overview'
 import { Dashboard } from './pages/Dashboard'
 import { Detail } from './pages/Detail'
+import { Log } from './pages/Log'
 import { Simulation } from './pages/Simulation'
 import { equipmentRanking } from './data/mock'
 
@@ -21,6 +22,18 @@ function ActivityIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+  )
+}
+function ListIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="9" y1="6" x2="21" y2="6" />
+      <line x1="9" y1="12" x2="21" y2="12" />
+      <line x1="9" y1="18" x2="21" y2="18" />
+      <circle cx="4.5" cy="6" r="1" fill="currentColor" />
+      <circle cx="4.5" cy="12" r="1" fill="currentColor" />
+      <circle cx="4.5" cy="18" r="1" fill="currentColor" />
     </svg>
   )
 }
@@ -70,6 +83,7 @@ const priorityEngineId = equipmentRanking[0].id
 const navItems = [
   { to: '/', label: '홈', icon: HomeIcon, match: '/' },
   { to: '/dashboard', label: '모니터링', icon: ActivityIcon, match: '/dashboard' },
+  { to: '/log', label: '탐지 이력', icon: ListIcon, match: '/log' },
   { to: `/equipment/${priorityEngineId}`, label: '설비 상세', icon: CpuIcon, match: '/equipment' },
   { to: '/simulation', label: '시나리오 시뮬레이션', icon: SlidersIcon, match: '/simulation' },
 ]
@@ -88,6 +102,7 @@ function AnimatedRoutes() {
         <Routes location={location}>
           <Route path="/" element={<Overview />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/log" element={<Log />} />
           <Route path="/equipment/:id" element={<Detail />} />
           <Route path="/simulation" element={<Simulation />} />
         </Routes>
