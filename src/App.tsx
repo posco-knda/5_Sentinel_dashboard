@@ -7,6 +7,7 @@ import { Overview } from './pages/Overview'
 import { Dashboard } from './pages/Dashboard'
 import { Detail } from './pages/Detail'
 import { Log } from './pages/Log'
+import { Policy } from './pages/Policy'
 import { Simulation } from './pages/Simulation'
 import { equipmentRanking } from './data/mock'
 
@@ -22,6 +23,14 @@ function ActivityIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+  )
+}
+function ShieldIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6z" />
+      <path d="m9 12 2.2 2.2L15.5 10" />
     </svg>
   )
 }
@@ -80,12 +89,23 @@ function CloseIcon() {
 // 사이드바에서 처음 들어갈 때는 지금 가장 위험한(헬스 스코어가 가장 낮은) 엔진으로 연다.
 const priorityEngineId = equipmentRanking[0].id
 
-const navItems = [
-  { to: '/', label: '홈', icon: HomeIcon, match: '/' },
-  { to: '/dashboard', label: '모니터링', icon: ActivityIcon, match: '/dashboard' },
-  { to: '/log', label: '탐지 이력', icon: ListIcon, match: '/log' },
-  { to: `/equipment/${priorityEngineId}`, label: '설비 상세', icon: CpuIcon, match: '/equipment' },
-  { to: '/simulation', label: '시나리오 시뮬레이션', icon: SlidersIcon, match: '/simulation' },
+const navGroups = [
+  {
+    title: '현황',
+    items: [
+      { to: '/', label: '홈', icon: HomeIcon, match: '/' },
+      { to: '/dashboard', label: '모니터링', icon: ActivityIcon, match: '/dashboard' },
+      { to: '/log', label: '탐지 이력', icon: ListIcon, match: '/log' },
+      { to: `/equipment/${priorityEngineId}`, label: '설비 상세', icon: CpuIcon, match: '/equipment' },
+    ],
+  },
+  {
+    title: '분석',
+    items: [
+      { to: '/policy', label: '경보 기준', icon: ShieldIcon, match: '/policy' },
+      { to: '/simulation', label: '시나리오 시뮬레이션', icon: SlidersIcon, match: '/simulation' },
+    ],
+  },
 ]
 
 function AnimatedRoutes() {
@@ -103,6 +123,7 @@ function AnimatedRoutes() {
           <Route path="/" element={<Overview />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/log" element={<Log />} />
+          <Route path="/policy" element={<Policy />} />
           <Route path="/equipment/:id" element={<Detail />} />
           <Route path="/simulation" element={<Simulation />} />
         </Routes>
@@ -128,23 +149,30 @@ function Logo() {
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation()
   return (
-    <nav className="flex flex-col gap-0.5">
-      {navItems.map((item) => {
-        const Icon = item.icon
-        const isActive = item.match === '/' ? location.pathname === '/' : location.pathname.startsWith(item.match)
-        return (
-          <Link
-            key={item.match}
-            to={item.to}
-            onClick={onNavigate}
-            className={`sidebar-link flex flex-row items-center gap-2.5 px-2.5 py-2 text-[13.5px] font-medium ${isActive ? 'is-active' : ''}`}
-            style={isActive ? { color: 'var(--text-primary)' } : { color: 'var(--text-muted)' }}
-          >
-            <Icon />
-            {item.label}
-          </Link>
-        )
-      })}
+    <nav className="flex flex-col gap-4">
+      {navGroups.map((group) => (
+        <div key={group.title} className="flex flex-col gap-0.5">
+          <span className="px-2.5 pb-1 text-[11px] font-medium tracking-[0.04em]" style={{ color: 'var(--text-muted)', opacity: 0.8 }}>
+            {group.title}
+          </span>
+          {group.items.map((item) => {
+            const Icon = item.icon
+            const isActive = item.match === '/' ? location.pathname === '/' : location.pathname.startsWith(item.match)
+            return (
+              <Link
+                key={item.match}
+                to={item.to}
+                onClick={onNavigate}
+                className={`sidebar-link flex flex-row items-center gap-2.5 px-2.5 py-2 text-[13.5px] font-medium ${isActive ? 'is-active' : ''}`}
+                style={isActive ? { color: 'var(--text-primary)' } : { color: 'var(--text-muted)' }}
+              >
+                <Icon />
+                {item.label}
+              </Link>
+            )
+          })}
+        </div>
+      ))}
     </nav>
   )
 }
