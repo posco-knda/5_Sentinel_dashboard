@@ -8,25 +8,8 @@ import { AlertsTable } from '../components/AlertsTable'
 import { EngineSwitcher } from '../components/EngineSwitcher'
 import { Badge } from '../components/Badge'
 import { Toast } from '../components/Toast'
+import { Panel } from '../components/Panel'
 import { kpis, equipmentRanking, engineDetails, dataMeta, riskThresholds, formatHour } from '../data/mock'
-
-function Panel({ title, action, children }: { title?: string; action?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      {(title || action) && (
-        <div className="mb-3.5 flex flex-row items-center justify-between">
-          {title && (
-            <p className="m-0 text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {title}
-            </p>
-          )}
-          {action}
-        </div>
-      )}
-      {children}
-    </div>
-  )
-}
 
 const sideTabs = [
   { id: 'priority', label: '정비 우선순위' },
