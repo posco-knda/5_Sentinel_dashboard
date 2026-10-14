@@ -12,7 +12,8 @@ import { UrgencyChip } from '../components/ops/UrgencyChip'
 import { partMeta } from '../data/partFlowMeta'
 import { actionText, ruleSummary } from '../lib/diagnosis'
 import { LEVEL, NOTABLE_Z, daysText, deadlineText, limitDate, requestDate, useFleet, type FleetEngine } from '../lib/fleet'
-import { STATUS_LABEL, usePlan } from '../lib/plan'
+import { ACTION_LABEL, usePlan } from '../lib/plan'
+import { ROLE_LABEL } from '../lib/auth'
 import { useSettings } from '../lib/settings'
 import { useEngineData, type EngineData } from '../lib/useEngine'
 import type { EquipmentRow } from '../data/mock'
@@ -167,25 +168,29 @@ function HistoryTab({ data }: { data: EngineData }) {
           </p>
         )}
       </Panel>
-      <Panel title="정비 처리 기록" sub="이 브라우저에 저장됩니다">
-        <div className="flex flex-col gap-3 text-[13px]">
-          <div className="flex flex-row items-center justify-between">
-            <span style={{ color: 'var(--text-muted)' }}>상태</span>
-            <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{STATUS_LABEL[item.status]}</span>
-          </div>
-          {item.date && (
-            <div className="flex flex-row items-center justify-between">
-              <span style={{ color: 'var(--text-muted)' }}>정비 예정일</span>
-              <span className="mono font-medium" style={{ color: 'var(--text-primary)' }}>{item.date}</span>
+      <Panel title="결재·처리 이력" sub="누가 언제 무엇을 판단했는지">
+        <div className="flex flex-col gap-4">
+          <PlanControl engine={engine} stacked />
+          {item.history.length ? (
+            <div className="flex flex-col">
+              {[...item.history].reverse().map((ev) => (
+                <div key={ev.at} className="flex flex-row items-start gap-3 py-3" style={{ borderTop: '1px solid var(--border-soft)' }}>
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: ev.action === 'reject' ? 'var(--status-critical)' : ev.action === 'approve' || ev.action === 'complete' ? 'var(--status-good)' : 'var(--accent)' }} />
+                  <div className="min-w-0">
+                    <div className="text-[13px]" style={{ color: 'var(--text-primary)' }}>
+                      <span className="font-medium">{ACTION_LABEL[ev.action]}</span>
+                      <span style={{ color: 'var(--text-muted)' }}> · {ev.by}({ROLE_LABEL[ev.role]})</span>
+                      {ev.date && <span className="mono" style={{ color: 'var(--text-secondary)' }}> · {ev.date.slice(5).replace('-', '/')} 정비</span>}
+                    </div>
+                    <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{new Date(ev.at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                    {ev.note && <div className="mt-1 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{ev.note}</div>}
+                  </div>
+                </div>
+              ))}
             </div>
+          ) : (
+            <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>아직 처리 이력이 없습니다. AI 권고를 검토하고 결재를 올리면 여기에 남습니다.</p>
           )}
-          {item.updated > 0 && (
-            <div className="flex flex-row items-center justify-between">
-              <span style={{ color: 'var(--text-muted)' }}>마지막 처리</span>
-              <span className="mono" style={{ color: 'var(--text-secondary)' }}>{new Date(item.updated).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
-            </div>
-          )}
-          <div className="pt-1"><PlanControl engine={engine} stacked /></div>
         </div>
       </Panel>
     </div>

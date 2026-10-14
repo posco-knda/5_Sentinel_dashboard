@@ -37,7 +37,7 @@ export function QueueTable({ engines, withDates = false, empty = '해당하는 �
               </td>
               {withDates && <td className="mono px-3 py-3 text-[12.5px]" style={{ ...cell, color: 'var(--text-secondary)' }}>{limitDate(e.daysLeft).slice(5).replace('-', '/')}</td>}
               <td className="px-3 py-3 text-[12.5px]" style={{ ...cell, color: e.topPart ? 'var(--text-secondary)' : 'var(--text-muted)' }}>{e.topPart ? e.topPart.label : '뚜렷한 변화 없음'}</td>
-              <td className="px-3 py-3" style={cell}><PlanControl engine={e} /></td>
+              <td className="px-3 py-3" style={cell}><PlanControl engine={e} compact /></td>
             </tr>
           ))}
           {!engines.length && (

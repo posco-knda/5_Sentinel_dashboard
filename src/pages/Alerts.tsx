@@ -8,6 +8,7 @@ import { buildAlertEvents, type AlertEvent } from '../lib/alerts'
 import { useCurves } from '../lib/curves'
 import { useSettings } from '../lib/settings'
 import { STATUS_LABEL, usePlan } from '../lib/plan'
+import { useAuth } from '../lib/auth'
 
 type Filter = 'all' | 'red' | 'warn' | 'new'
 const PAGE = 40
@@ -24,6 +25,7 @@ export function Alerts() {
   const curves = useCurves()
   const { settings } = useSettings()
   const plan = usePlan()
+  const isPlanner = useAuth().user?.role === 'planner'
   const [filter, setFilter] = useState<Filter>('all')
   const [shown, setShown] = useState(PAGE)
 
@@ -46,7 +48,7 @@ export function Alerts() {
 
   const unreadEngines = new Set((events ?? []).filter((ev) => unread(ev.unit)).map((ev) => ev.unit))
   const recent = (events ?? []).filter((ev) => ev.ago / settings.cyclesPerDay <= 7)
-  const ackAll = () => unreadEngines.forEach((u) => plan.set(u, { status: 'ack' }))
+  const ackAll = () => unreadEngines.forEach((u) => plan.act(u, 'review'))
   const chips: { id: Filter; label: string; n: number }[] = [
     { id: 'all', label: '전체', n: events?.length ?? 0 },
     { id: 'red', label: '위험', n: events?.filter((e) => e.kind === 'red').length ?? 0 },
@@ -101,9 +103,9 @@ export function Alerts() {
         <Panel
           title="알림 목록"
           action={
-            <button onClick={ackAll} disabled={!unreadEngines.size} className="border px-3 py-1.5 text-[12px] font-medium" style={{ borderColor: 'var(--border)', color: unreadEngines.size ? 'var(--text-primary)' : 'var(--text-muted)', borderRadius: 'var(--radius-pill)', opacity: unreadEngines.size ? 1 : 0.6 }}>
+            isPlanner && (<button onClick={ackAll} disabled={!unreadEngines.size} className="border px-3 py-1.5 text-[12px] font-medium" style={{ borderColor: 'var(--border)', color: unreadEngines.size ? 'var(--text-primary)' : 'var(--text-muted)', borderRadius: 'var(--radius-pill)', opacity: unreadEngines.size ? 1 : 0.6 }}>
               모두 확인
-            </button>
+            </button>)
           }
         >
           <div className="mb-3 flex flex-row flex-wrap gap-2">
@@ -140,8 +142,8 @@ export function Alerts() {
                         {ev.transient > 0 && <span style={{ color: 'var(--text-muted)' }}> · 앞서 일시 경보 {ev.transient}회</span>}
                       </div>
                     </div>
-                    {isNew ? (
-                      <button onClick={() => plan.set(ev.unit, { status: 'ack' })} className="shrink-0 border px-3 py-1 text-[12px] font-medium" style={{ borderColor: 'var(--border-strong)', color: 'var(--text-primary)', borderRadius: 'var(--radius-pill)' }}>
+                    {isNew && isPlanner ? (
+                      <button onClick={() => plan.act(ev.unit, 'review')} className="shrink-0 border px-3 py-1 text-[12px] font-medium" style={{ borderColor: 'var(--border-strong)', color: 'var(--text-primary)', borderRadius: 'var(--radius-pill)' }}>
                         확인
                       </button>
                     ) : (

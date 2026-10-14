@@ -4,7 +4,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, Pi
 import { LEVEL, PART_LABEL, daysText, deadlineText, type FleetEngine, type Urgency } from '../../lib/fleet'
 import { buildAlertEvents } from '../../lib/alerts'
 import { useCurves } from '../../lib/curves'
-import { STATUS_LABEL, STATUS_ORDER, type PlanItem, type PlanStatus } from '../../lib/plan'
+import { STATUS_COLOR, STATUS_LABEL, STATUS_ORDER, type PlanItem, type PlanStatus } from '../../lib/plan'
 import { partMeta } from '../../data/partFlowMeta'
 
 const TICK = { fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }
@@ -193,17 +193,10 @@ export function KpiTile({ label, value, unit, color, sub }: { label: string; val
   )
 }
 
-const STATUS_COLOR: Record<PlanStatus, string> = {
-  new: 'var(--text-muted)',
-  ack: 'var(--status-warning)',
-  scheduled: 'var(--accent)',
-  done: 'var(--status-good)',
-}
-
 /** 긴급도별 처리 현황 — 즉시·이번 주·이번 달 엔진이 미확인에서 완료까지 어디에 있는지 */
 export function ProgressChart({ engines, plan, height = 200 }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; height?: number }) {
   const data = useMemo(() => {
-    const rows = (['now', 'week', 'month'] as Urgency[]).map((u) => ({ u, name: FLEET_LABEL[u], new: 0, ack: 0, scheduled: 0, done: 0 }))
+    const rows = (['now', 'week', 'month'] as Urgency[]).map((u) => ({ u, name: FLEET_LABEL[u], new: 0, review: 0, submitted: 0, rejected: 0, scheduled: 0, done: 0 }))
     for (const e of engines) {
       const r = rows.find((x) => x.u === e.urgency)
       if (r) r[plan[e.unit]?.status ?? 'new']++

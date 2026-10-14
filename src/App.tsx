@@ -5,12 +5,16 @@ import { ThemeProvider } from './theme/ThemeContext'
 import { ThemeToggle } from './components/ThemeToggle'
 import { SettingsProvider } from './lib/SettingsProvider'
 import { PlanProvider } from './lib/PlanProvider'
+import { AuthProvider } from './lib/AuthProvider'
+import { ROLE_LABEL, useAuth } from './lib/auth'
 import { useFleet } from './lib/fleet'
 import { usePlan } from './lib/plan'
 import { Overview } from './pages/Overview'
 import { Plan } from './pages/Plan'
+import { Login } from './pages/Login'
 
 // 무거운 화면(차트·큰 데이터)은 처음 열 때 불러온다
+const Approvals = lazy(() => import('./pages/Approvals').then((m) => ({ default: m.Approvals })))
 const Alerts = lazy(() => import('./pages/Alerts').then((m) => ({ default: m.Alerts })))
 const Detail = lazy(() => import('./pages/Detail').then((m) => ({ default: m.Detail })))
 const Report = lazy(() => import('./pages/Report').then((m) => ({ default: m.Report })))
@@ -26,6 +30,7 @@ const HomeIcon = () => icon(<><path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 10v9a
 const CalendarIcon = () => icon(<><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /><path d="m9.5 15 1.8 1.8L15 13" /></>)
 const BellIcon = () => icon(<><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z" /><path d="M10 20a2 2 0 0 0 4 0" /></>)
 const CpuIcon = () => icon(<><rect x="6" y="6" width="12" height="12" rx="1.5" /><rect x="9.5" y="9.5" width="5" height="5" rx="0.5" /><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3" /></>)
+const CheckIcon = () => icon(<><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 13l2 2 4-4" /></>)
 const BarsIcon = () => icon(<><path d="M4 20V10" /><path d="M10 20V4" /><path d="M16 20v-7" /><path d="M22 20H2" /></>)
 const GearIcon = () => icon(<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></>)
 const MenuIcon = () => (
@@ -59,6 +64,7 @@ function AnimatedRoutes() {
           <Routes location={location}>
             <Route path="/" element={<Overview />} />
             <Route path="/plan" element={<Plan />} />
+            <Route path="/approvals" element={<Approvals />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/equipment" element={<Detail />} />
             <Route path="/equipment/:id" element={<Detail />} />
@@ -99,6 +105,9 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const plan = usePlan()
   const active = useMemo(() => fleet.filter((e) => plan.get(e.unit).status !== 'done'), [fleet, plan])
   const urgent = active.filter((e) => e.urgency === 'now').length
+  const { user } = useAuth()
+  // 운영 책임자에게는 결재 대기 건수, 정비 담당자에게는 반려된 건수를 알린다
+  const approvals = Object.values(plan.items).filter((i) => i.status === (user?.role === 'manager' ? 'submitted' : 'rejected')).length
   const firstUnit = (active[0] ?? fleet[0]).unit
 
   const groups = [
@@ -107,6 +116,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       items: [
         { to: '/', label: '현황', icon: HomeIcon, match: '/' },
         { to: '/plan', label: '정비 계획', icon: CalendarIcon, match: '/plan', badge: urgent },
+        { to: '/approvals', label: '결재함', icon: CheckIcon, match: '/approvals', badge: approvals, badgeColor: 'var(--accent)' },
         { to: '/alerts', label: '알림', icon: BellIcon, match: '/alerts' },
         { to: `/equipment/engine-${firstUnit}`, label: '엔진', icon: CpuIcon, match: '/equipment' },
       ],
@@ -141,7 +151,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                 <Icon />
                 {item.label}
                 {'badge' in item && item.badge ? (
-                  <span className="mono ml-auto px-1.5 text-[11px] font-semibold" style={{ background: 'var(--status-critical)', color: '#fff', borderRadius: 'var(--radius-pill)' }}>
+                  <span className="mono ml-auto px-1.5 text-[11px] font-semibold" style={{ background: 'badgeColor' in item && item.badgeColor ? item.badgeColor : 'var(--status-critical)', color: '#fff', borderRadius: 'var(--radius-pill)' }}>
                     {item.badge}
                   </span>
                 ) : null}
@@ -151,6 +161,21 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       ))}
     </nav>
+  )
+}
+
+function UserBox() {
+  const { user, logout } = useAuth()
+  if (!user) return null
+  return (
+    <div className="flex flex-row items-center gap-2.5 border px-2.5 py-2" style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)' }}>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[12px] font-semibold" style={{ background: 'var(--accent-dim)', color: 'var(--accent)', borderRadius: 'var(--radius-pill)' }}>{user.name.slice(0, 1)}</span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[12.5px] font-medium">{user.name}</div>
+        <div className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>{ROLE_LABEL[user.role]}</div>
+      </div>
+      <button onClick={logout} className="shrink-0 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>로그아웃</button>
+    </div>
   )
 }
 
@@ -176,6 +201,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
           <SidebarNav />
         </div>
         <div className="flex flex-col gap-3 px-2">
+          <UserBox />
           <FooterRow />
         </div>
       </aside>
@@ -203,6 +229,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                 <SidebarNav onNavigate={onClose} />
               </div>
               <div className="flex flex-col gap-3 px-2">
+                <UserBox />
                 <FooterRow />
               </div>
             </motion.aside>
@@ -242,15 +269,22 @@ function Shell() {
   )
 }
 
+function Gate() {
+  const { user } = useAuth()
+  return user ? <Shell /> : <Login />
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <SettingsProvider>
-        <PlanProvider>
-          <BrowserRouter>
-            <Shell />
-          </BrowserRouter>
-        </PlanProvider>
+        <AuthProvider>
+          <PlanProvider>
+            <BrowserRouter>
+              <Gate />
+            </BrowserRouter>
+          </PlanProvider>
+        </AuthProvider>
       </SettingsProvider>
     </ThemeProvider>
   )

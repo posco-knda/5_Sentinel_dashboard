@@ -5,7 +5,7 @@ import { DemandChart, LifeHistogram } from '../components/ops/OpsCharts'
 import { CumulativeDemand, FleetDonut, KpiTile, ModuleChart, ProgressChart, RecentAlerts, UrgentBars } from '../components/ops/FleetCharts'
 import { daysText, useFleet } from '../lib/fleet'
 import { useSettings } from '../lib/settings'
-import { usePlan } from '../lib/plan'
+import { usePlan, type PlanStatus } from '../lib/plan'
 import { sendEngineAlert } from '../lib/notify'
 import type { SendState } from '../lib/api'
 
@@ -21,7 +21,7 @@ export function Overview() {
   const nowCount = useMemo(() => active.filter((e) => e.urgency === 'now').length, [active])
   const top = queue[0]
   const stats = useMemo(() => {
-    const st = { new: 0, ack: 0, scheduled: 0, done: 0 }
+    const st: Record<PlanStatus, number> = { new: 0, review: 0, submitted: 0, rejected: 0, scheduled: 0, done: 0 }
     for (const e of fleet) st[plan.get(e.unit).status]++
     const live = active.length || 1
     const mean = active.reduce((a, e) => a + e.pred, 0) / live
@@ -72,8 +72,8 @@ export function Overview() {
         <KpiTile label="위험 구간" value={stats.red} unit="대" color="var(--status-serious)" sub={`주의 ${stats.warn}대`} />
         <KpiTile label="평균 남은 수명" value={stats.mean.toFixed(0)} unit="cycle" sub={daysText(stats.mean / settings.cyclesPerDay)} />
         <KpiTile label="가장 짧은 수명" value={stats.min ? stats.min.pred : '-'} unit="cycle" sub={stats.min?.name} />
-        <KpiTile label="미확인" value={stats.st.new} unit="대" sub={`확인 ${stats.st.ack}대`} />
-        <KpiTile label="정비 예정" value={stats.st.scheduled} unit="대" color="var(--accent)" sub={`완료 ${stats.st.done}대`} />
+        <KpiTile label="검토 필요" value={stats.st.new + stats.st.review} unit="대" sub={`검토 중 ${stats.st.review}대`} />
+        <KpiTile label="결재 대기" value={stats.st.submitted} unit="대" color="var(--accent)" sub={`정비 예정 ${stats.st.scheduled}대`} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[260px_1fr_1fr]">

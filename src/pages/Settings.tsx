@@ -221,9 +221,9 @@ export function Settings() {
       </Panel>
 
       <Panel title="데이터 관리">
-        <Row title="정비 처리 기록" desc={`확인·정비 예정·완료로 표시한 엔진 ${marked}대 (완료 ${doneCount}대)`}>
+        <Row title="결재·처리 기록 초기화" desc={`검토·결재·정비 이력이 있는 엔진 ${marked}대 (완료 ${doneCount}대)`}>
           <button
-            onClick={() => window.confirm('저장된 정비 처리 기록을 모두 지울까요?') && plan.clearAll()}
+            onClick={() => window.confirm('결재 요청·승인 이력을 포함한 모든 처리 기록을 지울까요? 시연을 처음부터 다시 할 때만 사용하세요.') && plan.clearAll()}
             disabled={!marked}
             className="border px-3 py-1.5 text-[12px] font-medium"
             style={{ borderColor: 'var(--border)', color: marked ? 'var(--status-critical)' : 'var(--text-muted)', borderRadius: 'var(--radius-pill)', opacity: marked ? 1 : 0.6 }}

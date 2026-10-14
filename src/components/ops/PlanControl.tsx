@@ -1,60 +1,69 @@
-import { limitDate, requestDate, type FleetEngine } from '../../lib/fleet'
-import { STATUS_LABEL, STATUS_ORDER, todayStr, usePlan, type PlanStatus } from '../../lib/plan'
+import { useState } from 'react'
+import { limitDate, type FleetEngine } from '../../lib/fleet'
+import { useAuth } from '../../lib/auth'
+import { ACTION_LABEL, canAct, usePlan, type PlanAction } from '../../lib/plan'
+import { DecisionDialog, type DecisionMode } from './DecisionDialog'
+import { StatusChip } from './StatusChip'
 
-const STATUS_COLOR: Record<PlanStatus, string> = {
-  new: 'var(--status-critical)',
-  ack: 'var(--text-secondary)',
-  scheduled: 'var(--accent)',
-  done: 'var(--status-good)',
-}
+const md = (d: string) => d.slice(5).replace('-', '/')
 
-const field = {
-  background: 'var(--surface-2)',
-  borderColor: 'var(--border)',
-  color: 'var(--text-primary)',
-  borderRadius: 'var(--radius-xs)',
-} as const
-
-/** 엔진 하나의 정비 처리 상태(미확인·확인·정비 예정·완료)와 예정일을 바꾸는 컨트롤 */
-export function PlanControl({ engine, stacked = false }: { engine: Pick<FleetEngine, 'unit' | 'requestIn' | 'daysLeft'>; stacked?: boolean }) {
+/**
+ * 엔진 하나의 처리 상태와, 지금 로그인한 역할이 할 수 있는 다음 단계 버튼.
+ * 담당자: 검토 시작 → 결재 요청 → (승인 뒤) 정비 완료 / 책임자: 승인·반려
+ */
+export function PlanControl({ engine, stacked = false, compact = false }: { engine: FleetEngine; stacked?: boolean; compact?: boolean }) {
   const plan = usePlan()
+  const { user } = useAuth()
+  const [dlg, setDlg] = useState<DecisionMode | null>(null)
   const item = plan.get(engine.unit)
-  const tooLate = item.status === 'scheduled' && !!item.date && item.date > limitDate(engine.daysLeft)
+  const can = (a: PlanAction) => canAct(user?.role, a, item.status)
+  const tooLate = (item.status === 'scheduled' || item.status === 'submitted') && !!item.date && item.date > limitDate(engine.daysLeft)
+
+  const pill = (label: string, onClick: () => void, primary = false, danger = false) => (
+    <button
+      key={label}
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick()
+      }}
+      className="whitespace-nowrap border px-2.5 py-1 text-[12px] font-medium"
+      style={{
+        borderColor: primary ? 'var(--accent)' : danger ? 'color-mix(in oklab, var(--status-critical) 55%, transparent)' : 'var(--border-strong)',
+        background: primary ? 'var(--accent)' : 'transparent',
+        color: primary ? 'var(--accent-ink)' : danger ? 'var(--status-critical)' : 'var(--text-primary)',
+        borderRadius: 'var(--radius-pill)',
+      }}
+    >
+      {label}
+    </button>
+  )
+
+  const buttons = [
+    can('review') && pill(ACTION_LABEL.review, () => plan.act(engine.unit, 'review')),
+    can('submit') && !(compact && item.status === 'new') && pill(ACTION_LABEL.submit, () => setDlg('submit'), true),
+    can('withdraw') && pill(ACTION_LABEL.withdraw, () => plan.act(engine.unit, 'withdraw')),
+    can('approve') && pill(ACTION_LABEL.approve, () => setDlg('approve'), true),
+    can('reject') && pill(ACTION_LABEL.reject, () => setDlg('reject'), false, true),
+    can('complete') && pill(ACTION_LABEL.complete, () => plan.act(engine.unit, 'complete'), true),
+  ].filter(Boolean)
 
   return (
     <div className={`flex ${stacked ? 'flex-col items-start' : 'flex-row flex-wrap items-center'} gap-2`} onClick={(e) => e.stopPropagation()}>
-      <select
-        aria-label="정비 처리 상태"
-        value={item.status}
-        onChange={(e) => {
-          const status = e.target.value as PlanStatus
-          plan.set(engine.unit, { status, date: status === 'scheduled' ? (item.date ?? requestDate(engine.requestIn)) : undefined })
-        }}
-        className="border px-2 py-1 text-[12px] font-medium"
-        style={{ ...field, color: STATUS_COLOR[item.status] }}
-      >
-        {STATUS_ORDER.map((s) => (
-          <option key={s} value={s}>
-            {STATUS_LABEL[s]}
-          </option>
-        ))}
-      </select>
-      {item.status === 'scheduled' && (
-        <input
-          type="date"
-          aria-label="정비 예정일"
-          min={todayStr()}
-          value={item.date ?? ''}
-          onChange={(e) => e.target.value && plan.set(engine.unit, { status: 'scheduled', date: e.target.value })}
-          className="mono border px-2 py-1 text-[12px]"
-          style={field}
-        />
-      )}
-      {tooLate && (
-        <span className="text-[11px]" style={{ color: 'var(--status-critical)' }}>
-          남은 수명보다 늦은 일정
-        </span>
-      )}
+      <div className="flex flex-row flex-wrap items-center gap-2">
+        <StatusChip status={item.status} />
+        {item.date && item.status !== 'new' && item.status !== 'review' && item.status !== 'rejected' && (
+          <span className="mono text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+            {item.status === 'submitted' ? `희망 ${md(item.date)}` : `${md(item.date)} 정비`}
+          </span>
+        )}
+        {tooLate && (
+          <span className="text-[11px]" style={{ color: 'var(--status-critical)' }}>
+            남은 수명보다 늦은 일정
+          </span>
+        )}
+      </div>
+      {buttons.length > 0 && <div className="flex flex-row flex-wrap items-center gap-1.5">{buttons}</div>}
+      {dlg && <DecisionDialog mode={dlg} engine={engine} onClose={() => setDlg(null)} />}
     </div>
   )
 }

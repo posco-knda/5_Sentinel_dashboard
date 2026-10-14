@@ -5,7 +5,8 @@ import { QueueTable } from '../components/ops/QueueTable'
 import { DemandChart } from '../components/ops/OpsCharts'
 import { URGENCY, useFleet, type Urgency } from '../lib/fleet'
 import { useSettings } from '../lib/settings'
-import { usePlan } from '../lib/plan'
+import { STATUS_COLOR, STATUS_LABEL, STATUS_ORDER, usePlan, type PlanStatus } from '../lib/plan'
+import { useAuth } from '../lib/auth'
 
 type Filter = 'todo' | Urgency | 'done'
 
@@ -13,6 +14,7 @@ export function Plan() {
   const fleet = useFleet()
   const { settings } = useSettings()
   const plan = usePlan()
+  const isPlanner = useAuth().user?.role === 'planner'
   const [filter, setFilter] = useState<Filter>('todo')
   const [query, setQuery] = useState('')
 
@@ -29,8 +31,8 @@ export function Plan() {
   }, [fleet, todo, done, items])
 
   const status = useMemo(() => {
-    const s = { new: 0, ack: 0, scheduled: 0 }
-    for (const e of todo) s[(items[e.unit]?.status ?? 'new') as 'new' | 'ack' | 'scheduled']++
+    const s: Record<PlanStatus, number> = { new: 0, review: 0, submitted: 0, rejected: 0, scheduled: 0, done: 0 }
+    for (const e of todo) s[items[e.unit]?.status ?? 'new']++
     return s
   }, [todo, items])
 
@@ -40,7 +42,7 @@ export function Plan() {
     return base.filter((e) => !q || String(e.unit).includes(q))
   }, [filter, query, todo, done, fleet, items])
 
-  const ackAll = () => todo.forEach((e) => stateOf(e.unit) === 'new' && plan.set(e.unit, { status: 'ack' }))
+  const startAll = () => todo.forEach((e) => stateOf(e.unit) === 'new' && plan.act(e.unit, 'review'))
   const chips: { id: Filter; label: string }[] = [
     { id: 'todo', label: '조치 필요' },
     { id: 'now', label: URGENCY.now.label },
@@ -55,15 +57,15 @@ export function Plan() {
       <div className="flex flex-col gap-1">
         <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">정비 계획</h1>
         <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          정비 요청 기한 = 예측 남은 수명(일) − 부품·인력 준비 {settings.prepDays}일 · 처리 상태는 이 브라우저에 저장됩니다
+          정비 요청 기한 = 예측 남은 수명(일) − 부품·인력 준비 {settings.prepDays}일 · 담당자가 검토해 결재를 올리면 운영 책임자가 승인합니다
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile label="미확인" value={status.new} suffix="대" foot="아직 담당자가 확인하지 않음" />
-        <StatTile label="확인" value={status.ack} suffix="대" delay={0.05} foot="확인했고 일정은 미정" />
-        <StatTile label="정비 예정" value={status.scheduled} suffix="대" delay={0.1} foot="정비 일정이 잡힘" />
-        <StatTile label="완료" value={done.length} suffix="대" delay={0.15} foot="정비를 마쳐 목록에서 제외" />
+        <StatTile label="검토 필요" value={status.new + status.review} suffix="대" foot={`미검토 ${status.new} · 검토 중 ${status.review}`} />
+        <StatTile label="결재 대기" value={status.submitted} suffix="대" delay={0.05} foot="운영 책임자 승인을 기다림" />
+        <StatTile label="반려" value={status.rejected} suffix="대" delay={0.1} foot="사유를 보고 다시 검토" />
+        <StatTile label="정비 예정" value={status.scheduled} suffix="대" delay={0.15} foot={`승인됨 · 완료 ${done.length}대`} />
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.4fr_1fr]">
@@ -72,11 +74,7 @@ export function Plan() {
         </Panel>
         <Panel title="처리 현황" sub={`조치 필요 ${todo.length}대 중`}>
           <div className="flex flex-col gap-3.5">
-            {([
-              ['미확인', status.new, 'var(--status-critical)'],
-              ['확인', status.ack, 'var(--text-secondary)'],
-              ['정비 예정', status.scheduled, 'var(--accent)'],
-            ] as const).map(([label, n, color]) => (
+            {STATUS_ORDER.filter((k) => k !== 'done').map((k) => [STATUS_LABEL[k], status[k], STATUS_COLOR[k]] as const).map(([label, n, color]) => (
               <div key={label} className="grid grid-cols-[72px_1fr_34px] items-center gap-3 text-[12.5px]">
                 <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
                 <div className="h-2.5" style={{ background: 'var(--surface-2)', borderRadius: 3 }}>
@@ -85,14 +83,14 @@ export function Plan() {
                 <span className="mono text-right font-semibold" style={{ color: 'var(--text-primary)' }}>{n}</span>
               </div>
             ))}
-            <button
-              onClick={ackAll}
+            {isPlanner && <button
+              onClick={startAll}
               disabled={status.new === 0}
               className="mt-1 w-fit border px-3.5 py-1.5 text-[12.5px] font-medium"
               style={{ borderColor: 'var(--border)', color: status.new ? 'var(--text-primary)' : 'var(--text-muted)', borderRadius: 'var(--radius-pill)', opacity: status.new ? 1 : 0.6 }}
             >
-              미확인 {status.new}대 모두 확인
-            </button>
+              검토 필요 {status.new}대 모두 검토 시작
+            </button>}
           </div>
         </Panel>
       </div>
