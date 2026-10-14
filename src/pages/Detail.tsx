@@ -1,322 +1,300 @@
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Badge } from '../components/Badge'
 import { EngineSwitcher } from '../components/EngineSwitcher'
+import { EngineRulChart } from '../components/EngineRulChart'
+import { Panel } from '../components/Panel'
 import { SurvivalCurveChart } from '../components/SurvivalCurveChart'
-import { DiagnosisFlow } from '../components/flow/DiagnosisFlow'
-import { MiniTrendChart } from '../components/MiniTrendChart'
-import {
-  featureImportance,
-  classifierMetrics,
-  trendMeta,
-  engineDetails,
-  equipmentRanking,
-  DEFAULT_ENGINE_ID,
-  riskThresholds,
-  dataMeta,
-  type EngineDetail,
-} from '../data/mock'
+import { DiagnosisFlow, SensorTrendCard } from '../components/flow/DiagnosisFlow'
+import { PlanControl } from '../components/ops/PlanControl'
+import { UrgencyChip } from '../components/ops/UrgencyChip'
+import { partMeta } from '../data/partFlowMeta'
+import { actionText, ruleSummary } from '../lib/diagnosis'
+import { LEVEL, NOTABLE_Z, daysText, deadlineText, limitDate, requestDate, useFleet, type FleetEngine } from '../lib/fleet'
+import { STATUS_LABEL, usePlan } from '../lib/plan'
+import { useSettings } from '../lib/settings'
+import { useEngineData, type EngineData } from '../lib/useEngine'
+import type { EquipmentRow } from '../data/mock'
 
-// 센서 이름·단위는 데이터셋마다 달라서(FD004: s3·s17·s8) mock.ts의 trendMeta에서 읽고, 색은 순서대로 배정
-const SERIES_COLORS = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)']
-
-const tabs = [
-  { id: 'rul', label: 'RUL 예측' },
+const TABS = [
+  { id: 'overview', label: '개요' },
   { id: 'diagnosis', label: '고장 진단' },
-  { id: 'model', label: '위험 조기경보 요인' },
-  { id: 'sensors', label: '센서 추이' },
-  { id: 'history', label: '정비 권고' },
+  { id: 'sensors', label: '센서' },
+  { id: 'history', label: '이력' },
 ] as const
+type TabId = (typeof TABS)[number]['id']
 
-function RulTab({ detail }: { detail: EngineDetail }) {
-  const rul = detail.predictedRulCycle
+const mdy = (s: string) => s.slice(5).replace('-', '/')
+
+function OverviewTab({ data }: { data: EngineData }) {
+  const { settings } = useSettings()
+  const { engine, facts, survival, interval, curve, runs } = data
+  if (!engine || !facts) return null
+  const cpd = settings.cyclesPerDay
+  const color = LEVEL[engine.level].color
   return (
-    <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <p className="m-0 mb-3.5 text-[14px] font-semibold">엔진 잔존수명 예측 (RUL) · {dataMeta.model} Seq2Seq 회귀 + 생존곡선</p>
-      <div className="flex flex-row items-baseline gap-2.5">
-        <span className="text-[40px] font-bold leading-none">
-          약 <span className="mono">{rul.median}</span> cycle
-        </span>
-        <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-          90% 구간 {rul.lower}–{rul.upper} cycle
-        </span>
-      </div>
-      <p className="mt-2 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-        지금까지 관측된 센서 이력으로 남은 사이클 수를 회귀 예측합니다. 90% 구간과 생존곡선("앞으로 이만큼 더
-        가동해도 아직 고장나지 않을 확률")은 검증 엔진에서 모델이 비슷한 값을 예측했던 순간들의 실제 잔존수명
-        분포로 계산합니다 (음영 = 검증 엔진 단위 부트스트랩 90% 구간)
-      </p>
-
-      <div className="mt-4">
-        <SurvivalCurveChart data={detail.survivalCurve} predictedRul={rul} />
-      </div>
-
-      <div
-        className="mt-2 flex flex-row gap-3 border p-4"
-        style={{
-          background: 'var(--status-warning-wash)',
-          borderColor: 'color-mix(in oklab, var(--status-warning) 40%, transparent)',
-          borderRadius: 'var(--radius-sm)',
-        }}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--status-warning)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        <div>
-          <div className="mb-1 text-[13px] font-semibold" style={{ color: 'var(--status-warning)' }}>
-            권장 조치
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.5fr_1fr]">
+      <div className="flex flex-col gap-5">
+        <Panel title="예측 남은 수명" sub="남은 수명 = 앞으로 더 비행할 수 있는 횟수(cycle) · 음영은 예측의 불확실성 범위">
+          <div className="flex flex-row flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-[40px] font-bold leading-none" style={{ color }}>
+              약 <span className="mono">{engine.pred}</span> cycle
+            </span>
+            <span className="text-[14px]" style={{ color: 'var(--text-secondary)' }}>{daysText(engine.daysLeft)} (하루 {cpd}회 비행 기준)</span>
           </div>
-          <div className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-            {rul.median <= riskThresholds.dangerRul
-              ? '잔존수명 소진이 임박했습니다. 엔진 정비 일정을 지금 수립하세요.'
-              : `아직 여유가 있습니다(예측 RUL 약 ${rul.median} cycle). 예측 RUL 추이를 주기적으로 확인하며, 위험 임계값(${riskThresholds.dangerRul} cycle) 근접 시 즉시 대응하세요.`}
-          </div>
+          {interval && (
+            <p className="m-0 mt-2 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+              90% 구간 {interval[0]}~{interval[1]} cycle ({daysText(interval[0] / cpd)}~{daysText(interval[1] / cpd)} 사이)
+            </p>
+          )}
+          {survival && interval && (
+            <div className="mt-4">
+              <SurvivalCurveChart data={survival} predictedRul={{ median: engine.pred, lower: interval[0], upper: interval[1] }} />
+            </div>
+          )}
+        </Panel>
+        <Panel title="예측 남은 수명 추이" sub="비행할수록 줄어드는 과정 · 색 구간은 위험·주의">
+          {curve ? <EngineRulChart curve={curve} runs={runs} dangerN={settings.dangerN} /> : <p className="m-0 text-[13px]" style={{ color: 'var(--text-secondary)' }}>경보 구간에 들어간 적이 없어 추이를 따로 보여 줄 필요가 없습니다.</p>}
+        </Panel>
+      </div>
+
+      <Panel title="요약과 권고">
+        <div className="mb-3 flex flex-row flex-wrap items-center gap-2">
+          <UrgencyChip urgency={engine.urgency} />
+          <span className="text-[12.5px]" style={{ color: engine.requestIn <= 0 ? 'var(--status-critical)' : 'var(--text-secondary)' }}>
+            정비 요청 기한 {engine.requestIn <= 0 ? '지남' : deadlineText(engine.requestIn)}
+          </span>
         </div>
-      </div>
+        <p className="m-0 text-[13.5px] font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>{actionText(facts)}</p>
+        <ul className="m-0 mt-4 flex list-disc flex-col gap-1.5 pl-5 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          {ruleSummary(facts).slice(0, -2).map((s) => (
+            <li key={s}>{s}</li>
+          ))}
+        </ul>
+        <Link to={`/report/engine-${engine.unit}`} className="mt-4 inline-block border px-3.5 py-1.5 text-[12.5px] font-medium no-underline" style={{ borderColor: 'var(--border-strong)', color: 'var(--text-primary)', borderRadius: 'var(--radius-pill)' }}>
+          진단 리포트 열기 (PDF 저장)
+        </Link>
+      </Panel>
     </div>
   )
 }
 
-function DiagnosisTab({ unit }: { unit: number }) {
+function SensorsTab({ data }: { data: EngineData }) {
+  const { flow } = data
+  if (!flow) return <div className="flex h-[200px] items-center justify-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>불러오는 중…</div>
   return (
-    <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <p className="m-0 mb-4 text-[14px] font-semibold">고장 진단 플로우 · 어떤 센서가 변했고, 모델이 언제 알아챘는가</p>
-      <DiagnosisFlow unit={unit} />
-    </div>
-  )
-}
-
-function ModelTab() {
-  const maxImportance = Math.max(...featureImportance.map((f) => f.value))
-  return (
-    <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <p className="m-0 mb-3.5 text-[14px] font-semibold">위험 조기경보 기여 요인 (모델 설명)</p>
-      <div className="flex flex-col gap-2">
-        {featureImportance.map((f, i) => (
-          <div key={f.label} className="flex flex-row items-center gap-3">
-            <span className="w-[104px] shrink-0 truncate text-[12.5px] sm:w-[200px]" style={{ color: 'var(--text-secondary)' }} title={f.label}>
-              {f.label}
-            </span>
-            <div className="h-[3px] flex-1 overflow-hidden" style={{ background: 'color-mix(in oklab, var(--accent) 16%, transparent)' }}>
-              <motion.div
-                className="h-full"
-                style={{ background: 'var(--accent)' }}
-                initial={{ width: 0 }}
-                animate={{ width: `${(f.value / maxImportance) * 100}%` }}
-                transition={{ duration: 0.7, delay: i * 0.08 }}
-              />
-            </div>
-            <span className="mono w-11 text-right text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-              {f.value.toFixed(2)}
-            </span>
-          </div>
-        ))}
-      </div>
-      <p className="mt-2.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-        RUL 예측(Random Forest)에 대한 센서별 기여도 (피처 종류별 합산)
-      </p>
-
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {[
-          ['Precision', classifierMetrics.precision],
-          ['Recall', classifierMetrics.recall],
-          ['F1-score', classifierMetrics.f1],
-        ].map(([m, v]) => (
-          <div
-            key={m as string}
-            className="border p-3.5"
-            style={{ background: 'var(--page)', borderColor: 'var(--border-soft)', borderRadius: 'var(--radius-xs)' }}
-          >
-            <div className="mono text-[11px] uppercase tracking-[0.06em]" style={{ color: 'var(--text-muted)' }}>
-              {m}
-            </div>
-            <div className="mono text-xl font-semibold">{(v as number).toFixed(2)}</div>
-          </div>
-        ))}
-      </div>
-      <p className="mt-2 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-        ※ {dataMeta.model} 회귀로 예측한 RUL이 {riskThresholds.dangerRul} cycle 이하면 '위험'으로 보는 조기경보 규칙의 성능입니다.
-        공식 test {dataMeta.testEngines}개 엔진({dataMeta.dataset}) 기준 실제 결과입니다 (TP={classifierMetrics.tp}, FN={classifierMetrics.fn}, FP={classifierMetrics.fp}).
-        C-MAPSS는 시뮬레이션 데이터라 실제 현장보다 쉬운 문제일 수 있습니다.
-      </p>
-    </div>
-  )
-}
-
-function SensorsTab({ detail }: { detail: EngineDetail }) {
-  const trendCards = Object.entries(detail.sensorTrend).map(([key, data], i) => ({
-    key,
-    label: trendMeta[key]?.label ?? key,
-    unit: trendMeta[key]?.unit ?? '',
-    color: SERIES_COLORS[i % SERIES_COLORS.length],
-    domain: trendMeta[key]?.domain ?? ([0, 1] as [number, number]),
-    data,
-  }))
-  return (
-    <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <p className="m-0 mb-3.5 text-[14px] font-semibold">센서별 관측 이력 추이 (전체 관측 사이클, 9구간 샘플 · {dataMeta.sensorValues})</p>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {trendCards.map((c) => {
-          const last = c.data[c.data.length - 1]?.v ?? 0
-          return (
-            <div
-              key={c.key}
-              className="border p-3.5"
-              style={{ background: 'var(--page)', borderColor: 'var(--border)', borderRadius: 'var(--radius-xs)' }}
-            >
-              <div className="flex flex-row items-center justify-between">
-                <span className="flex flex-row items-center gap-1.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                  <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
-                  {c.label}
-                </span>
-                <span className="mono text-[13.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {last.toFixed(1)} {c.unit}
-                </span>
+    <div className="flex flex-col gap-5">
+      <Panel title="모듈별 센서 변화" sub={`처음 ${partMeta.baselineCycles}사이클 평균 대비 최근 ${partMeta.recentCycles}사이클 평균 · ×N = 평소 흔들림의 N배, 빨강은 ×${NOTABLE_Z} 이상`}>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {partMeta.parts.map((p) => {
+            const score = p.sensors.reduce((s, x) => s + Math.abs(flow.z[x.id]), 0) / p.sensors.length
+            return (
+              <div key={p.id} className="border p-4" style={{ background: 'var(--page)', borderColor: 'var(--border-soft)', borderRadius: 'var(--radius-xs)' }}>
+                <div className="mb-2.5 flex flex-row items-center justify-between">
+                  <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{p.label}</span>
+                  <span className="mono text-[12px]" style={{ color: score >= NOTABLE_Z ? 'var(--status-critical)' : 'var(--text-muted)' }}>×{score.toFixed(1)}</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {p.sensors.map((s) => {
+                    const z = flow.z[s.id]
+                    const hot = Math.abs(z) >= NOTABLE_Z
+                    return (
+                      <div key={s.id} className="flex flex-col gap-1">
+                        <div className="flex flex-row items-center justify-between gap-2 text-[11.5px]">
+                          <span className="min-w-0 truncate" style={{ color: 'var(--text-secondary)' }} title={s.name}>{s.name}</span>
+                          <span className="mono shrink-0" style={{ color: hot ? 'var(--status-critical)' : 'var(--text-muted)' }}>{z >= 0 ? '↑' : '↓'} ×{Math.abs(z).toFixed(1)}</span>
+                        </div>
+                        <div className="h-1.5" style={{ background: 'var(--surface-2)', borderRadius: 2 }}>
+                          <div className="h-full" style={{ width: `${Math.min(100, (Math.abs(z) / 10) * 100)}%`, background: hot ? 'var(--status-critical)' : 'var(--text-muted)', borderRadius: 2 }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-              <div className="mt-1.5">
-                <MiniTrendChart data={c.data} color={c.color} unit={c.unit} domain={c.domain} />
-              </div>
-            </div>
-          )
-        })}
-      </div>
-      <p className="mt-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-        열화가 진행되면 이 센서들이 정상 수준에서 서서히 벗어납니다 —
-        이 변화가 RUL 예측 모델의 핵심 입력입니다 (RF 피처 중요도 상위 센서, 비행 조건 차이를 뺀 운전조건 보정값)
-      </p>
+            )
+          })}
+        </div>
+      </Panel>
+      <Panel title="가장 크게 변한 센서 3개" sub="점선은 초기 평균">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {flow.trend.map((t) => (
+            <SensorTrendCard key={t.s} id={t.s} z={flow.z[t.s]} series={t} />
+          ))}
+        </div>
+        <p className="mb-0 mt-3 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+          센서값은 비행 조건(고도·속도·스로틀) 차이를 보정한 값입니다.
+        </p>
+      </Panel>
     </div>
   )
 }
 
-function HistoryTab({ detail }: { detail: EngineDetail }) {
+function HistoryTab({ data }: { data: EngineData }) {
+  const { settings } = useSettings()
+  const plan = usePlan()
+  const { engine, runs, facts } = data
+  if (!engine || !facts) return null
+  const item = plan.get(engine.unit)
+  const cpd = settings.cyclesPerDay
+  const ago = (c: number) => `${c} cycle(${daysText(c / cpd)}) 전`
+  const events = [
+    runs?.dangerSince != null && { label: '위험 구간 진입', color: 'var(--status-critical)', cycle: runs.dangerSince, ago: runs.lastCycle - runs.dangerSince },
+    runs?.warnSince != null && { label: '주의 구간 진입', color: 'var(--status-warning)', cycle: runs.warnSince, ago: runs.lastCycle - runs.warnSince },
+  ].filter(Boolean) as { label: string; color: string; cycle: number; ago: number }[]
   return (
-    <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-      <p className="m-0 mb-3.5 text-[14px] font-semibold">정비 권고 (RUL 예측 기반)</p>
-      <p className="mb-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-        C-MAPSS는 엔진 1대당 1회 run-to-failure(가동 시작~고장)만 기록된 데이터라 실제 교체 이력은 없습니다.
-        아래는 현재 예측을 바탕으로 한 향후 정비 권고입니다.
-      </p>
-      <div className="flex flex-col">
-        {detail.maintenanceHistory.map((m, i) => (
-          <div key={m.date + m.type} className="flex flex-row gap-3 pb-3.5" style={{ borderLeft: i < detail.maintenanceHistory.length - 1 ? '1px solid var(--border-soft)' : '1px solid transparent', marginLeft: 5 }}>
-            <div
-              className="-ml-[5px] mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full border-2"
-              style={{
-                background: m.status === 'scheduled' ? 'var(--status-warning)' : 'var(--status-good)',
-                borderColor: 'var(--surface-1)',
-              }}
-            />
-            <div className="min-w-0 flex-1 pl-1.5">
-              <div className="flex flex-row items-center gap-2 text-[12.5px]">
-                <span className="mono font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {m.date}
-                </span>
-                <span style={{ color: 'var(--text-muted)' }}>{m.type}</span>
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+      <Panel title="경보 이력" sub="시스템이 알린 시점 · 최근 것부터">
+        {events.length ? (
+          <div className="flex flex-col">
+            {events.map((ev) => (
+              <div key={ev.label} className="flex flex-row items-start gap-3 py-3" style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: ev.color }} />
+                <div>
+                  <div className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>{ev.label}</div>
+                  <div className="text-[12px]" style={{ color: 'var(--text-muted)' }}><span className="mono">cycle #{ev.cycle}</span> · {ago(ev.ago)}</div>
+                </div>
               </div>
-              <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
-                {m.description}
-              </p>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        ) : (
+          <p className="m-0 text-[13px]" style={{ color: 'var(--text-secondary)' }}>경보 구간에 들어간 적이 없습니다.</p>
+        )}
+        {facts.transientDanger + facts.transientWarn > 0 && (
+          <p className="mb-0 mt-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+            앞서 경보가 켜졌다가 꺼진 일시 경보가 위험 {facts.transientDanger}회·주의 {facts.transientWarn}회 있었습니다.
+          </p>
+        )}
+      </Panel>
+      <Panel title="정비 처리 기록" sub="이 브라우저에 저장됩니다">
+        <div className="flex flex-col gap-3 text-[13px]">
+          <div className="flex flex-row items-center justify-between">
+            <span style={{ color: 'var(--text-muted)' }}>상태</span>
+            <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{STATUS_LABEL[item.status]}</span>
+          </div>
+          {item.date && (
+            <div className="flex flex-row items-center justify-between">
+              <span style={{ color: 'var(--text-muted)' }}>정비 예정일</span>
+              <span className="mono font-medium" style={{ color: 'var(--text-primary)' }}>{item.date}</span>
+            </div>
+          )}
+          {item.updated > 0 && (
+            <div className="flex flex-row items-center justify-between">
+              <span style={{ color: 'var(--text-muted)' }}>마지막 처리</span>
+              <span className="mono" style={{ color: 'var(--text-secondary)' }}>{new Date(item.updated).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+            </div>
+          )}
+          <div className="pt-1"><PlanControl engine={engine} stacked /></div>
+        </div>
+      </Panel>
     </div>
   )
 }
 
-export function Detail() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const engineId = id && engineDetails[id] ? id : DEFAULT_ENGINE_ID
-  const detail = engineDetails[engineId]
-  // 탭은 주소(?tab=)에 담아서 엔진을 바꿔도 같은 탭이 유지되고, 다른 화면에서 특정 탭으로 바로 연결할 수 있다
-  const location = useLocation()
+function EngineView({ unit }: { unit: number }) {
+  const nav = useNavigate()
+  const fleet = useFleet()
   const [params, setParams] = useSearchParams()
-  const tabParam = params.get('tab')
-  const tab = (tabs.find((t) => t.id === tabParam)?.id ?? 'rul') as (typeof tabs)[number]['id']
-  const setTab = (id: (typeof tabs)[number]['id']) => setParams(id === 'rul' ? {} : { tab: id }, { replace: true })
+  const [jump, setJump] = useState('')
+  const data = useEngineData(unit)
+  const engine = data.engine as FleetEngine
+  const tab = (TABS.find((t) => t.id === params.get('tab'))?.id ?? 'overview') as TabId
+  const setTab = (id: TabId) => setParams(id === 'overview' ? {} : { tab: id }, { replace: true })
 
-  // C-MAPSS는 엔진 1대당 1회 run-to-failure 기록이라 설치일·정비이력 같은 필드가 존재하지 않음 —
-  // 빈 자리를 "데이터에 없음"으로 보여주는 대신, 이 데이터셋의 실제 특성(단일 가동 기록)을 그대로 보여줌
-  const infoChips = [
-    { label: '라인/공정', value: detail.equipmentInfo.line },
-    { label: '엔진 모델', value: detail.equipmentInfo.modelNo },
-    { label: '누적 사이클', value: `${detail.equipmentInfo.operatingCycles.toLocaleString()} cycle` },
-    { label: '가동 유형', value: 'Run-to-failure (단일 기록)' },
-    { label: '담당팀', value: detail.equipmentInfo.team },
+  const rows = useMemo<EquipmentRow[]>(() => fleet.map((e) => ({ id: `engine-${e.unit}`, name: e.name, health: e.health, status: LEVEL[e.level].badge })), [fleet])
+  const search = params.toString() ? `?${params.toString()}` : ''
+  const go = () => {
+    const n = Number(jump.replace('#', ''))
+    if (fleet.some((e) => e.unit === n)) {
+      nav(`/equipment/engine-${n}${search}`)
+      setJump('')
+    }
+  }
+
+  const chips = [
+    { label: '예측 남은 수명', value: `${engine.pred} cycle`, sub: daysText(engine.daysLeft) },
+    { label: '정비 요청 기한', value: engine.requestIn <= 0 ? '기한 지남' : deadlineText(engine.requestIn), sub: requestDate(engine.requestIn).slice(5).replace('-', '/') },
+    { label: '가동 한계 예상', value: mdy(limitDate(engine.daysLeft)), sub: '남은 수명이 다하는 날' },
+    { label: '점검 예상 모듈', value: engine.topPart ? engine.topPart.label : '뚜렷한 변화 없음', sub: engine.topPart ? `센서 변화 ×${engine.topPart.score.toFixed(1)}` : '' },
+    { label: '최근 관측', value: data.facts?.cycles != null ? `cycle #${data.facts.cycles}` : '—', sub: '비행 후 데이터' },
   ]
 
   return (
     <div className="flex flex-col gap-5">
-      <Link
-        to="/dashboard"
-        className="back-link flex flex-row items-center gap-1.5 text-[13px] no-underline"
-        style={{ color: 'var(--text-muted)' }}
-      >
+      <Link to="/plan" className="back-link flex flex-row items-center gap-1.5 text-[13px] no-underline" style={{ color: 'var(--text-muted)' }}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="19" y1="12" x2="5" y2="12" />
           <polyline points="12 19 5 12 12 5" />
         </svg>
-        전체 엔진
+        정비 계획
       </Link>
 
-      <div>
-        <div className="flex flex-row items-center gap-2.5">
-          <EngineSwitcher
-            engines={equipmentRanking}
-            selectedId={engineId}
-            onSelect={(newId) => navigate(`/equipment/${newId}${location.search}`)}
-            size="lg"
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-row flex-wrap items-center gap-2.5">
+          <EngineSwitcher engines={rows} selectedId={`engine-${unit}`} onSelect={(id) => nav(`/equipment/${id}${search}`)} size="lg" />
+          <Badge status={LEVEL[engine.level].badge} />
+          <UrgencyChip urgency={engine.urgency} />
+        </div>
+        <div className="flex flex-row flex-wrap items-center gap-3">
+          <PlanControl engine={engine} />
+          <input
+            value={jump}
+            onChange={(e) => setJump(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && go()}
+            placeholder="번호로 이동"
+            inputMode="numeric"
+            aria-label="엔진 번호로 이동"
+            className="mono w-28 border px-3 py-1.5 text-[12.5px]"
+            style={{ borderColor: 'var(--border)', background: 'var(--surface-2)', color: 'var(--text-primary)', borderRadius: 'var(--radius-pill)' }}
           />
-          <Badge status={detail.status} />
-          <Link
-            to={`/report/${engineId}`}
-            className="ml-auto border px-3 py-1.5 text-[12.5px] no-underline"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
-          >
+          <Link to={`/report/engine-${unit}`} className="border px-3 py-1.5 text-[12.5px] no-underline" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}>
             진단 리포트
           </Link>
         </div>
-        <p className="mt-1.5 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-          {detail.equipmentInfo.line} · 누적 {detail.equipmentInfo.operatingCycles.toLocaleString()} cycle 가동
-        </p>
       </div>
 
-      {/* 설비 기본 정보 칩 */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {infoChips.map((c) => (
-          <div
-            key={c.label}
-            className="border p-3"
-            style={{ background: 'var(--surface-1)', borderColor: 'var(--border)', borderRadius: 'var(--radius-xs)' }}
-          >
-            <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              {c.label}
-            </div>
-            <div className="mt-0.5 truncate text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }} title={c.value}>
-              {c.value}
-            </div>
+        {chips.map((c) => (
+          <div key={c.label} className="border p-3" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)', borderRadius: 'var(--radius-xs)' }}>
+            <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{c.label}</div>
+            <div className="mt-0.5 truncate text-[13.5px] font-semibold" style={{ color: 'var(--text-primary)' }} title={c.value}>{c.value}</div>
+            {c.sub && <div className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{c.sub}</div>}
           </div>
         ))}
       </div>
 
       <div className="flex flex-row gap-5 overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
-        {tabs.map((t) => (
+        {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)} className={`tab-btn shrink-0 ${tab === t.id ? 'is-active' : ''}`}>
             {t.label}
           </button>
         ))}
       </div>
 
-      <motion.div key={tab + engineId} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-        {tab === 'rul' && <RulTab detail={detail} />}
-        {tab === 'diagnosis' && <DiagnosisTab unit={Number(engineId.split('-')[1])} />}
-        {tab === 'model' && <ModelTab />}
-        {tab === 'sensors' && <SensorsTab detail={detail} />}
-        {tab === 'history' && <HistoryTab detail={detail} />}
+      <motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+        {tab === 'overview' && <OverviewTab data={data} />}
+        {tab === 'diagnosis' && (
+          <Panel title="고장 진단 플로우" sub="어떤 센서가 변했고, 어느 모듈을 점검해야 하며, 시스템이 언제 알렸는가">
+            <DiagnosisFlow data={data} />
+          </Panel>
+        )}
+        {tab === 'sensors' && <SensorsTab data={data} />}
+        {tab === 'history' && <HistoryTab data={data} />}
       </motion.div>
     </div>
   )
+}
+
+export function Detail() {
+  const { id } = useParams<{ id: string }>()
+  const fleet = useFleet()
+  const plan = usePlan()
+  const unit = Number((id ?? '').replace('engine-', ''))
+  if (!fleet.some((e) => e.unit === unit)) {
+    // 주소가 없거나 잘못되면 지금 가장 급한 엔진으로 연다
+    const first = fleet.find((e) => plan.get(e.unit).status !== 'done') ?? fleet[0]
+    return <Navigate to={`/equipment/engine-${first.unit}`} replace />
+  }
+  return <EngineView key={unit} unit={unit} />
 }
