@@ -9,6 +9,8 @@ import { EngineSwitcher } from '../components/EngineSwitcher'
 import { Badge } from '../components/Badge'
 import { Toast } from '../components/Toast'
 import { Panel } from '../components/Panel'
+import { callApi, notifyState, type SendState } from '../lib/api'
+import { buildFacts, toPayload } from '../lib/diagnosis'
 import { kpis, equipmentRanking, engineDetails, dataMeta, riskThresholds, formatHour } from '../data/mock'
 
 const sideTabs = [
@@ -22,6 +24,7 @@ export function Dashboard() {
   const [sideTab, setSideTab] = useState<(typeof sideTabs)[number]['id']>('priority')
   const [toastDismissed, setToastDismissed] = useState(false)
   const [selectedEngineId, setSelectedEngineId] = useState(equipmentRanking[0].id)
+  const [slack, setSlack] = useState<SendState>({ state: 'idle' })
 
   const selected = equipmentRanking.find((e) => e.id === selectedEngineId) ?? equipmentRanking[0]
   const selectedDetail = engineDetails[selectedEngineId]
@@ -31,6 +34,14 @@ export function Dashboard() {
   const priorityMedianRul = engineDetails[priorityEngine.id].predictedRulCycle.median
   const hasCriticalAlert = priorityEngine.status === 'critical'
 
+  const sendSlack = async () => {
+    setSlack({ state: 'loading' })
+    const unit = Number(priorityEngine.id.split('-')[1])
+    const { partFlow } = await import('../data/partFlow')
+    const facts = buildFacts(unit, partFlow[unit] ?? null)
+    setSlack(facts ? notifyState(await callApi('/api/notify', { facts: toPayload(facts) })) : { state: 'error' })
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <Toast
@@ -38,7 +49,35 @@ export function Dashboard() {
         title={`${priorityEngine.name} 위험 감지`}
         body={`예측 RUL 약 ${priorityMedianRul}cycle · 위험 임계값(${riskThresholds.dangerRul} cycle) 이하로 떨어졌습니다`}
         onDismiss={() => setToastDismissed(true)}
-      />
+      >
+        <div className="flex flex-row flex-wrap items-center gap-2">
+          <Link
+            to={`/equipment/${priorityEngine.id}?tab=diagnosis`}
+            className="border px-2.5 py-1 text-[12px] font-medium no-underline"
+            style={{ borderColor: 'var(--border-strong)', color: 'var(--text-primary)', borderRadius: 'var(--radius-pill)' }}
+          >
+            고장 진단 보기 →
+          </Link>
+          <button
+            onClick={sendSlack}
+            disabled={slack.state === 'loading' || slack.state === 'done'}
+            className="border px-2.5 py-1 text-[12px] font-medium"
+            style={{ borderColor: 'var(--border-strong)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
+          >
+            {slack.state === 'loading' ? '전송 중…' : slack.state === 'done' ? 'Slack 전송됨' : 'Slack 전송 (시연)'}
+          </button>
+        </div>
+        {slack.state === 'off' && (
+          <p className="m-0 mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            Slack 연동은 배포 환경에서 서버 함수와 SLACK_WEBHOOK_URL을 설정하면 동작합니다
+          </p>
+        )}
+        {slack.state === 'error' && (
+          <p className="m-0 mt-1.5 text-[11px]" style={{ color: 'var(--status-critical)' }}>
+            전송에 실패했습니다{slack.text ? ` — ${slack.text}` : ''}
+          </p>
+        )}
+      </Toast>
 
       <div className="flex flex-row items-center justify-between">
         <h1 className="m-0 text-[22px] font-semibold tracking-[-0.01em]">실시간 모니터링</h1>

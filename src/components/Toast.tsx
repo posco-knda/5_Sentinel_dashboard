@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 
 export function Toast({
@@ -5,11 +6,13 @@ export function Toast({
   title,
   body,
   onDismiss,
+  children,
 }: {
   show: boolean
   title: string
   body: string
   onDismiss?: () => void
+  children?: ReactNode
 }) {
   return (
     <div className="pointer-events-none fixed right-6 top-20 z-50 w-[320px]">
@@ -51,6 +54,7 @@ export function Toast({
               <div className="mt-1 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
                 {body}
               </div>
+              {children && <div className="mt-2.5">{children}</div>}
             </div>
             {onDismiss && (
               <button

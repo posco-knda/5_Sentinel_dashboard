@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { Badge } from '../components/Badge'
 import { EngineRulChart, type Curve } from '../components/EngineRulChart'
 import { SurvivalCurveChart } from '../components/SurvivalCurveChart'
+import { callApi, notifyState } from '../lib/api'
 import { buildFacts, ruleSummary, toPayload, LEVEL_LABEL, NOTABLE_Z, type DiagnosisFacts } from '../lib/diagnosis'
 import { engineDetails, dataMeta, riskThresholds } from '../data/mock'
 import { logRows } from '../data/detectionLog'
@@ -10,18 +11,6 @@ import { partMeta } from '../data/partFlowMeta'
 import type { PartFlow } from '../data/partFlow'
 
 type Remote = { state: 'idle' | 'loading' | 'done' | 'off' | 'error'; text?: string; model?: string }
-
-/** 서버 함수(/api/*)를 부른다. 개발 서버처럼 함수가 없는 곳은 HTML이 돌아오므로 JSON이 아니면 "서버 기능 없음"으로 본다. */
-async function callApi(path: string, body: unknown): Promise<{ ok: boolean; status: number; data: Record<string, unknown> | null }> {
-  try {
-    const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
-    const ct = r.headers.get('content-type') ?? ''
-    if (!ct.includes('json')) return { ok: false, status: 404, data: null }
-    return { ok: r.ok, status: r.status, data: (await r.json()) as Record<string, unknown> }
-  } catch {
-    return { ok: false, status: 0, data: null }
-  }
-}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -93,10 +82,7 @@ export function Report() {
 
   const sendSlack = async () => {
     setSlack({ state: 'loading' })
-    const r = await callApi('/api/notify', { facts: toPayload(facts) })
-    if (r.ok) setSlack({ state: 'done' })
-    else if (r.status === 503 || r.status === 404) setSlack({ state: 'off' })
-    else setSlack({ state: 'error', text: r.status === 429 ? '잠시 후 다시 시도해 주세요' : undefined })
+    setSlack(notifyState(await callApi('/api/notify', { facts: toPayload(facts) })))
   }
 
   const iv = facts.interval
