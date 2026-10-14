@@ -1,9 +1,9 @@
-import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Badge } from '../components/Badge'
 import { EngineSwitcher } from '../components/EngineSwitcher'
 import { SurvivalCurveChart } from '../components/SurvivalCurveChart'
+import { DiagnosisFlow } from '../components/flow/DiagnosisFlow'
 import { MiniTrendChart } from '../components/MiniTrendChart'
 import {
   featureImportance,
@@ -22,6 +22,7 @@ const SERIES_COLORS = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)']
 
 const tabs = [
   { id: 'rul', label: 'RUL 예측' },
+  { id: 'diagnosis', label: '고장 진단' },
   { id: 'model', label: '위험 조기경보 요인' },
   { id: 'sensors', label: '센서 추이' },
   { id: 'history', label: '정비 권고' },
@@ -74,6 +75,15 @@ function RulTab({ detail }: { detail: EngineDetail }) {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function DiagnosisTab({ unit }: { unit: number }) {
+  return (
+    <div className="surface-card flex flex-col border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
+      <p className="m-0 mb-4 text-[14px] font-semibold">고장 진단 플로우 · 어떤 센서가 변했고, 모델이 언제 알아챘는가</p>
+      <DiagnosisFlow unit={unit} />
     </div>
   )
 }
@@ -221,7 +231,12 @@ export function Detail() {
   const navigate = useNavigate()
   const engineId = id && engineDetails[id] ? id : DEFAULT_ENGINE_ID
   const detail = engineDetails[engineId]
-  const [tab, setTab] = useState<(typeof tabs)[number]['id']>('rul')
+  // 탭은 주소(?tab=)에 담아서 엔진을 바꿔도 같은 탭이 유지되고, 다른 화면에서 특정 탭으로 바로 연결할 수 있다
+  const location = useLocation()
+  const [params, setParams] = useSearchParams()
+  const tabParam = params.get('tab')
+  const tab = (tabs.find((t) => t.id === tabParam)?.id ?? 'rul') as (typeof tabs)[number]['id']
+  const setTab = (id: (typeof tabs)[number]['id']) => setParams(id === 'rul' ? {} : { tab: id }, { replace: true })
 
   // C-MAPSS는 엔진 1대당 1회 run-to-failure 기록이라 설치일·정비이력 같은 필드가 존재하지 않음 —
   // 빈 자리를 "데이터에 없음"으로 보여주는 대신, 이 데이터셋의 실제 특성(단일 가동 기록)을 그대로 보여줌
@@ -252,7 +267,7 @@ export function Detail() {
           <EngineSwitcher
             engines={equipmentRanking}
             selectedId={engineId}
-            onSelect={(newId) => navigate(`/equipment/${newId}`)}
+            onSelect={(newId) => navigate(`/equipment/${newId}${location.search}`)}
             size="lg"
           />
           <Badge status={detail.status} />
@@ -290,6 +305,7 @@ export function Detail() {
 
       <motion.div key={tab + engineId} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
         {tab === 'rul' && <RulTab detail={detail} />}
+        {tab === 'diagnosis' && <DiagnosisTab unit={Number(engineId.split('-')[1])} />}
         {tab === 'model' && <ModelTab />}
         {tab === 'sensors' && <SensorsTab detail={detail} />}
         {tab === 'history' && <HistoryTab detail={detail} />}
