@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { PART_LABEL, deadlineText, type FleetEngine, type Urgency } from '../../lib/fleet'
-import type { PlanItem } from '../../lib/plan'
 import { partMeta } from '../../data/partFlowMeta'
 
 const TICK = { fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }
@@ -53,45 +52,6 @@ export function FleetDonut({ engines }: { engines: FleetEngine[] }) {
             <span className="mono ml-auto font-semibold" style={{ color: 'var(--text-primary)' }}>{counts[u]}</span>
           </div>
         ))}
-      </div>
-    </div>
-  )
-}
-
-/** 플릿 지도 — 엔진 한 대가 칸 하나. 색은 긴급도, 누르면 그 엔진으로 이동 */
-export function FleetMap({ engines, plan }: { engines: FleetEngine[]; plan: Record<number, PlanItem> }) {
-  const [hover, setHover] = useState<FleetEngine | null>(null)
-  const sorted = useMemo(() => [...engines].sort((a, b) => a.unit - b.unit), [engines])
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="grid gap-[3px]" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(15px, 1fr))' }} onMouseLeave={() => setHover(null)}>
-        {sorted.map((e) => {
-          const done = plan[e.unit]?.status === 'done'
-          return (
-            <Link
-              key={e.unit}
-              to={`/equipment/engine-${e.unit}`}
-              aria-label={`${e.name} ${e.pred} cycle`}
-              onMouseEnter={() => setHover(e)}
-              onFocus={() => setHover(e)}
-              className="aspect-square"
-              style={{ background: FLEET_COLOR[e.urgency], opacity: done ? 0.22 : 1, borderRadius: 3, outlineOffset: 1 }}
-            />
-          )
-        })}
-      </div>
-      <div className="flex min-h-[20px] flex-row items-center justify-between gap-3 text-[12.5px]">
-        <div className="flex flex-row flex-wrap items-center gap-x-4 gap-y-1" style={{ color: 'var(--text-muted)' }}>
-          {ORDER.map((u) => (
-            <span key={u} className="flex flex-row items-center gap-1.5 text-[11.5px]">
-              <span className="h-2 w-2 rounded-[2px]" style={{ background: FLEET_COLOR[u] }} />
-              {FLEET_LABEL[u]}
-            </span>
-          ))}
-        </div>
-        <span className="mono truncate" style={{ color: 'var(--text-primary)' }}>
-          {hover ? `${hover.name} · ${hover.pred} cycle · ${deadlineText(hover.requestIn)}` : ''}
-        </span>
       </div>
     </div>
   )

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Panel } from '../components/Panel'
 import { DemandChart, LifeHistogram } from '../components/ops/OpsCharts'
-import { CumulativeDemand, FleetDonut, FleetMap, ModuleChart, UrgentBars } from '../components/ops/FleetCharts'
+import { CumulativeDemand, FleetDonut, ModuleChart, UrgentBars } from '../components/ops/FleetCharts'
 import { useFleet } from '../lib/fleet'
 import { useSettings } from '../lib/settings'
 import { usePlan } from '../lib/plan'
@@ -63,8 +63,8 @@ export function Overview() {
         <Panel title="엔진 상태">
           <FleetDonut engines={active} />
         </Panel>
-        <Panel title="엔진 지도" sub="칸 하나가 엔진 한 대 · 누르면 상세">
-          <FleetMap engines={fleet} plan={plan.items} />
+        <Panel title="누적 정비 요청" sub="앞으로 60일, 기한이 도래하는 엔진 수">
+          <CumulativeDemand engines={active} />
         </Panel>
       </div>
 
@@ -82,17 +82,12 @@ export function Overview() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <Panel title="누적 정비 요청" sub="앞으로 60일, 기한이 도래하는 엔진 수">
-          <CumulativeDemand engines={active} />
-        </Panel>
-        <Panel
-          title="가장 급한 엔진"
-          action={<Link to="/plan" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 →</Link>}
-        >
-          <UrgentBars engines={queue} dangerN={settings.dangerN} />
-        </Panel>
-      </div>
+      <Panel
+        title="가장 급한 엔진"
+        action={<Link to="/plan" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 →</Link>}
+      >
+        <UrgentBars engines={queue} dangerN={settings.dangerN} />
+      </Panel>
     </div>
   )
 }
