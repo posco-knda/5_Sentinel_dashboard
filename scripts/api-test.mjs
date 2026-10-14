@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 const root = new URL('..', import.meta.url).href.replace(/\/$/, '')
 const mkRes = () => { const r = { code: 0, body: null, headers: {}, status(c) { r.code = c; return r }, json(b) { r.body = b }, setHeader(k, v) { r.headers[k] = v } }; return r }
 const call = async (h, req) => { const res = mkRes(); await h({ headers: { host: 'demo.example.app' }, ...req }, res); return res }
-const facts = { unit: 31, name: 'Engine #31', level: 'red', levelLabel: '위험', predRul: 8.9, dangerSince: 104, leadDanger: 36, topPart: '고압압축기(HPC)', topSensor: { name: 'Ps30 · HPC outlet 정압', z: 5 }, action: '다음 정비 슬롯에 배정' }
+const facts = { unit: 31, name: 'Engine #31', level: 'red', levelLabel: '위험', urgencyLabel: '즉시', predRul: 8.9, daysText: '약 3일', dangerAgo: 30, requestText: '기한 지남', topPart: '고압압축기(HPC)', topSensor: { name: 'Ps30 · HPC outlet 정압', z: 5 }, action: '다음 정비 슬롯에 배정' }
 let passed = 0
 const t = async (name, fn) => { await fn(); passed++; console.log('  ok  ', name) }
 
@@ -21,6 +21,11 @@ const notify2 = (await import(root + '/api/notify.ts?b')).default
 await t('notify: 잘못된 입력(등급 없음)은 400이고 Slack으로 안 보냄', async () => { const r = await call(notify2, { method: 'POST', body: { facts: { unit: 31, level: 'x' } } }); assert.equal(r.code, 400); assert.equal(sent.length, 0) })
 await t('notify: 정상 입력은 200, 웹훅으로 1회 전송', async () => { const r = await call(notify2, { method: 'POST', body: { facts } }); assert.equal(r.code, 200); assert.equal(sent.length, 1); assert.equal(sent[0].url, 'https://hooks.slack.test/T/B/x') })
 await t('notify: 메시지에 [시연] 표시와 진단 링크가 있음', async () => { const b = sent[0].body; assert.match(b.text, /^\[시연\] Engine #31 위험 감지$/); const btn = b.blocks.at(-1).elements[0]; assert.equal(btn.url, 'https://demo.example.app/equipment/engine-31?tab=diagnosis') })
+await t('notify: 메시지에 현장에서 아는 값만 있고 정답 기반 문구("고장 N사이클 전")가 없음', async () => {
+  const dump = JSON.stringify(sent[0].body)
+  assert.ok(dump.includes('정비 요청 기한') && dump.includes('기한 지남') && dump.includes('30 cycle 전부터') && dump.includes('고압압축기(HPC)'), dump)
+  assert.ok(!/고장 \d+사이클 전/.test(dump) && !dump.includes('leadDanger'), dump)
+})
 await t('notify: 연달아 보내면 429', async () => { const r = await call(notify2, { method: 'POST', body: { facts } }); assert.equal(r.code, 429); assert.equal(sent.length, 1) })
 
 const notify3 = (await import(root + '/api/notify.ts?c')).default
@@ -44,6 +49,16 @@ await t('notify: Slack이 오류를 주면 502 (내용은 숨김)', async () => 
 })
 const notify6 = (await import(root + '/api/notify.ts?f')).default
 await t('notify: 네트워크 실패는 504', async () => { globalThis.fetch = async () => { throw new Error('boom') }; const r = await call(notify6, { method: 'POST', body: { facts } }); assert.equal(r.code, 504) })
+
+// ---- status
+const status = (await import(root + '/api/status.ts')).default
+await t('status: 설정 여부만 true/false로 알려 주고 값은 노출하지 않음', async () => {
+  process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/secret'; process.env.ANTHROPIC_API_KEY = 'sk-secret'
+  const on = mkRes(); status({}, on); assert.deepEqual(on.body, { slack: true, ai: true }); assert.ok(!JSON.stringify(on.body).includes('secret'))
+  delete process.env.SLACK_WEBHOOK_URL; delete process.env.ANTHROPIC_API_KEY
+  const off = mkRes(); status({}, off); assert.deepEqual(off.body, { slack: false, ai: false })
+  process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/x'
+})
 
 // ---- summary
 delete process.env.ANTHROPIC_API_KEY

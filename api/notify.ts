@@ -58,23 +58,25 @@ export default async function handler(req: Req, res: Res) {
 
   const level = LEVELS[f.level]
   const pred = num(f.predRul)
-  const lead = num(f.leadDanger)
+  const dangerAgo = num(f.dangerAgo)
   const base = origin(req)
   const link = base ? `${base}/equipment/engine-${unit}?tab=diagnosis` : null
   const part = typeof f.topPart === 'string' ? esc(f.topPart, 40) : null
   const sensor = isObj(f.topSensor) && typeof f.topSensor.name === 'string' ? esc(f.topSensor.name, 60) : null
 
   const fields = [
-    { type: 'mrkdwn', text: `*등급*\n${level}` },
-    { type: 'mrkdwn', text: `*예측 남은 수명*\n${pred == null ? '—' : `${pred} cycle`}` },
-    { type: 'mrkdwn', text: `*위험 경보 시작*\n${num(f.dangerSince) == null ? '—' : `cycle #${num(f.dangerSince)}${lead != null ? ` · 고장 ${lead}사이클 전` : ''}`}` },
-    { type: 'mrkdwn', text: `*관련 부품(추정)*\n${part ?? '뚜렷한 변화 없음'}${sensor ? `\n${sensor}` : ''}` },
+    { type: 'mrkdwn', text: `*등급*\n${level}${typeof f.urgencyLabel === 'string' ? ` · ${esc(f.urgencyLabel, 12)}` : ''}` },
+    { type: 'mrkdwn', text: `*예측 남은 수명*\n${pred == null ? '—' : `${pred} cycle`}${typeof f.daysText === 'string' ? ` (${esc(f.daysText, 16)})` : ''}` },
+    { type: 'mrkdwn', text: `*정비 요청 기한*\n${typeof f.requestText === 'string' ? esc(f.requestText, 16) : '—'}` },
+    { type: 'mrkdwn', text: `*점검 예상 모듈(추정)*\n${part ?? '뚜렷한 변화 없음'}${sensor ? `\n${sensor}` : ''}` },
   ]
+  if (dangerAgo != null) fields.push({ type: 'mrkdwn', text: `*위험 구간 체류*\n${dangerAgo} cycle 전부터` })
+
   const blocks: unknown[] = [
     { type: 'header', text: { type: 'plain_text', text: `[시연] Engine #${unit} ${level} 감지` } },
     { type: 'section', fields },
-    { type: 'section', text: { type: 'mrkdwn', text: `*권고*  ${esc(f.action, 220)}` } },
-    { type: 'context', elements: [{ type: 'mrkdwn', text: 'NASA C-MAPSS FD004 시뮬레이션 데이터 · 실제 항공기 알림이 아닙니다' }] },
+    { type: 'section', text: { type: 'mrkdwn', text: `*권고*  ${esc(f.action, 260)}` } },
+    { type: 'context', elements: [{ type: 'mrkdwn', text: 'NASA C-MAPSS 시뮬레이션 데이터 · 실제 항공기 알림이 아닙니다' }] },
   ]
   if (link) blocks.push({ type: 'actions', elements: [{ type: 'button', text: { type: 'plain_text', text: '고장 진단 열기' }, url: link }] })
 
