@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Panel } from '../components/Panel'
 import { DemandChart, LifeHistogram } from '../components/ops/OpsCharts'
-import { CumulativeDemand, FleetDonut, ModuleChart, UrgentBars } from '../components/ops/FleetCharts'
-import { useFleet } from '../lib/fleet'
+import { CumulativeDemand, FleetDonut, KpiTile, ModuleChart, ProgressChart, RecentAlerts, UrgentBars } from '../components/ops/FleetCharts'
+import { daysText, useFleet } from '../lib/fleet'
 import { useSettings } from '../lib/settings'
 import { usePlan } from '../lib/plan'
 import { sendEngineAlert } from '../lib/notify'
@@ -20,6 +20,14 @@ export function Overview() {
   const queue = useMemo(() => active.filter((e) => e.urgency !== 'watch'), [active])
   const nowCount = useMemo(() => active.filter((e) => e.urgency === 'now').length, [active])
   const top = queue[0]
+  const stats = useMemo(() => {
+    const st = { new: 0, ack: 0, scheduled: 0, done: 0 }
+    for (const e of fleet) st[plan.get(e.unit).status]++
+    const live = active.length || 1
+    const mean = active.reduce((a, e) => a + e.pred, 0) / live
+    const min = active.reduce((m, e) => (e.pred < m.pred ? e : m), active[0])
+    return { st, mean, min, red: active.filter((e) => e.level === 'red').length, warn: active.filter((e) => e.level === 'warn').length }
+  }, [fleet, active, plan])
 
   const send = async () => {
     if (!top) return
@@ -28,7 +36,7 @@ export function Overview() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-row items-end justify-between gap-3">
         <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">현황</h1>
         <Link to="/plan" className="text-[13px] font-medium no-underline" style={{ color: 'var(--accent)' }}>정비 계획 →</Link>
@@ -59,35 +67,51 @@ export function Overview() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[300px_1fr]">
-        <Panel title="엔진 상태">
-          <FleetDonut engines={active} />
-        </Panel>
-        <Panel title="누적 정비 요청" sub="앞으로 60일, 기한이 도래하는 엔진 수">
-          <CumulativeDemand engines={active} />
-        </Panel>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <KpiTile label="즉시 조치" value={nowCount} unit="대" color="var(--status-critical)" sub={`전체의 ${Math.round((100 * nowCount) / fleet.length)}%`} />
+        <KpiTile label="위험 구간" value={stats.red} unit="대" color="var(--status-serious)" sub={`주의 ${stats.warn}대`} />
+        <KpiTile label="평균 남은 수명" value={stats.mean.toFixed(0)} unit="cycle" sub={daysText(stats.mean / settings.cyclesPerDay)} />
+        <KpiTile label="가장 짧은 수명" value={stats.min ? stats.min.pred : '-'} unit="cycle" sub={stats.min?.name} />
+        <KpiTile label="미확인" value={stats.st.new} unit="대" sub={`확인 ${stats.st.ack}대`} />
+        <KpiTile label="정비 예정" value={stats.st.scheduled} unit="대" color="var(--accent)" sub={`완료 ${stats.st.done}대`} />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
-        <Panel title="주별 정비 요청">
-          <DemandChart engines={fleet} plan={plan.items} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[260px_1fr_1fr]">
+        <Panel dense title="엔진 상태">
+          <FleetDonut engines={active} />
         </Panel>
-        <Panel title="남은 수명 분포">
-          <LifeHistogram engines={fleet} dangerN={settings.dangerN} />
+        <Panel dense title="누적 정비 요청" sub="앞으로 60일, 기한이 도래하는 엔진 수">
+          <CumulativeDemand engines={active} height={228} />
         </Panel>
         <div className="lg:col-span-2 xl:col-span-1">
-          <Panel title="점검 예상 모듈" sub="위험·주의 엔진 기준 추정">
-            <ModuleChart engines={active} />
+          <Panel dense title="처리 현황" sub="긴급도별 미확인 → 완료">
+            <ProgressChart engines={fleet} plan={plan.items} height={190} />
           </Panel>
         </div>
       </div>
 
-      <Panel
-        title="가장 급한 엔진"
-        action={<Link to="/plan" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 →</Link>}
-      >
-        <UrgentBars engines={queue} dangerN={settings.dangerN} />
-      </Panel>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <Panel dense title="주별 정비 요청">
+          <DemandChart engines={fleet} plan={plan.items} height={210} />
+        </Panel>
+        <Panel dense title="남은 수명 분포">
+          <LifeHistogram engines={fleet} dangerN={settings.dangerN} height={210} />
+        </Panel>
+        <div className="lg:col-span-2 xl:col-span-1">
+          <Panel dense title="점검 예상 모듈" sub="위험·주의 엔진 기준 추정">
+            <ModuleChart engines={active} height={210} />
+          </Panel>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.4fr_1fr]">
+        <Panel dense title="가장 급한 엔진" action={<Link to="/plan" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 →</Link>}>
+          <UrgentBars engines={queue} dangerN={settings.dangerN} />
+        </Panel>
+        <Panel dense title="최근 알림" action={<Link to="/alerts" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 →</Link>}>
+          <RecentAlerts engines={fleet} dangerN={settings.dangerN} cyclesPerDay={settings.cyclesPerDay} plan={plan.items} />
+        </Panel>
+      </div>
     </div>
   )
 }

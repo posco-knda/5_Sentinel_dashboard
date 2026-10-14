@@ -8,7 +8,7 @@ const TICK = { fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-
 const tipBox = { background: 'var(--surface-raised)', borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-xs)' }
 
 /** 주별 정비 요청 도래 — 정비 요청 기한이 어느 주에 오는지, 이미 일정이 배정된 엔진은 몇 대인지 */
-export function DemandChart({ engines, plan }: { engines: FleetEngine[]; plan: Record<number, PlanItem> }) {
+export function DemandChart({ engines, plan, height = 250 }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; height?: number }) {
   const data = useMemo(() => {
     const rows = WEEK_LABEL.slice(0, MAX_WEEK).map((label, i) => ({ label, open: 0, scheduled: 0, now: i === 0 }))
     for (const e of engines) {
@@ -23,7 +23,7 @@ export function DemandChart({ engines, plan }: { engines: FleetEngine[]; plan: R
   }, [engines, plan])
   return (
     <div>
-      <div className="h-[250px] w-full">
+      <div className="w-full" style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 10, right: 8, bottom: 4, left: -10 }} barCategoryGap={10}>
             <CartesianGrid stroke="var(--gridline)" vertical={false} />
@@ -71,7 +71,7 @@ export function DemandChart({ engines, plan }: { engines: FleetEngine[]; plan: R
 const BIN = 10
 
 /** 플릿 전체의 예측 남은 수명 분포 — 위험·주의 구간이 어디까지인지 색으로 보여 준다 */
-export function LifeHistogram({ engines, dangerN }: { engines: FleetEngine[]; dangerN: number }) {
+export function LifeHistogram({ engines, dangerN, height = 250 }: { engines: FleetEngine[]; dangerN: number; height?: number }) {
   const data = useMemo(() => {
     const bins = Array.from({ length: 13 }, (_, i) => ({ lo: i * BIN, n: 0 }))
     for (const e of engines) bins[Math.min(12, Math.floor(e.pred / BIN))].n++
@@ -80,7 +80,7 @@ export function LifeHistogram({ engines, dangerN }: { engines: FleetEngine[]; da
   const color = (lo: number) => (lo + BIN - 1 <= dangerN ? 'var(--status-critical)' : lo < WARN_N ? 'var(--status-warning)' : 'var(--status-good)')
   return (
     <div>
-      <div className="h-[250px] w-full">
+      <div className="w-full" style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 10, right: 8, bottom: 20, left: -10 }} barCategoryGap={2}>
             <CartesianGrid stroke="var(--gridline)" vertical={false} />

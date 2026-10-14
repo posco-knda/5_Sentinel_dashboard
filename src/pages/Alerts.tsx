@@ -3,23 +3,11 @@ import { Link } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Panel } from '../components/Panel'
 import { StatTile } from '../components/StatTile'
-import { LEVEL, alertRuns, daysText, useFleet, type Level } from '../lib/fleet'
+import { LEVEL, daysText, useFleet, type Level } from '../lib/fleet'
+import { buildAlertEvents, type AlertEvent } from '../lib/alerts'
 import { useCurves } from '../lib/curves'
 import { useSettings } from '../lib/settings'
 import { STATUS_LABEL, usePlan } from '../lib/plan'
-
-interface AlertEvent {
-  unit: number
-  kind: 'red' | 'warn'
-  /** 경보가 켜진 사이클 */
-  cycle: number
-  /** 마지막 관측으로부터 몇 cycle 전인가 */
-  ago: number
-  /** 켜질 당시의 예측 남은 수명 */
-  predThen: number
-  predNow: number
-  transient: number
-}
 
 type Filter = 'all' | 'red' | 'warn' | 'new'
 const PAGE = 40
@@ -39,20 +27,7 @@ export function Alerts() {
   const [filter, setFilter] = useState<Filter>('all')
   const [shown, setShown] = useState(PAGE)
 
-  const events = useMemo<AlertEvent[] | null>(() => {
-    if (!curves) return null
-    const out: AlertEvent[] = []
-    for (const e of fleet) {
-      const curve = curves[e.unit]
-      if (!curve) continue
-      const r = alertRuns(curve, settings.dangerN)
-      const at = (since: number) => curve.p[curve.c.indexOf(since)]
-      const base = { unit: e.unit, predNow: e.pred, transient: r.transientDanger + r.transientWarn }
-      if (r.dangerSince != null) out.push({ ...base, kind: 'red', cycle: r.dangerSince, ago: r.lastCycle - r.dangerSince, predThen: at(r.dangerSince) })
-      if (r.warnSince != null) out.push({ ...base, kind: 'warn', cycle: r.warnSince, ago: r.lastCycle - r.warnSince, predThen: at(r.warnSince) })
-    }
-    return out.sort((a, b) => a.ago - b.ago || (a.kind === 'red' ? -1 : 1))
-  }, [curves, fleet, settings.dangerN])
+  const events = useMemo<AlertEvent[] | null>(() => (curves ? buildAlertEvents(fleet, curves, settings.dangerN) : null), [curves, fleet, settings.dangerN])
 
   const unread = (u: number) => plan.get(u).status === 'new'
   const visible = useMemo(() => {

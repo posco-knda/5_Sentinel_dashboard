@@ -1,7 +1,10 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { PART_LABEL, deadlineText, type FleetEngine, type Urgency } from '../../lib/fleet'
+import { LEVEL, PART_LABEL, daysText, deadlineText, type FleetEngine, type Urgency } from '../../lib/fleet'
+import { buildAlertEvents } from '../../lib/alerts'
+import { useCurves } from '../../lib/curves'
+import { STATUS_LABEL, STATUS_ORDER, type PlanItem, type PlanStatus } from '../../lib/plan'
 import { partMeta } from '../../data/partFlowMeta'
 
 const TICK = { fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }
@@ -28,8 +31,8 @@ export function FleetDonut({ engines }: { engines: FleetEngine[] }) {
   }, [engines])
   const data = ORDER.map((u) => ({ u, n: counts[u] }))
   return (
-    <div className="flex flex-col gap-4">
-      <div className="relative h-[190px] w-full">
+    <div className="flex flex-col gap-3">
+      <div className="relative h-[160px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie data={data} dataKey="n" innerRadius="66%" outerRadius="96%" paddingAngle={2} stroke="none" startAngle={90} endAngle={-270} animationDuration={700}>
@@ -58,14 +61,14 @@ export function FleetDonut({ engines }: { engines: FleetEngine[] }) {
 }
 
 /** 점검 예상 모듈 — 위험·주의 엔진에서 센서가 가장 크게 변한 모듈별 엔진 수 */
-export function ModuleChart({ engines }: { engines: FleetEngine[] }) {
+export function ModuleChart({ engines, height = 250 }: { engines: FleetEngine[]; height?: number }) {
   const data = useMemo(() => {
     const m = new Map<string, number>()
     for (const e of engines) if (e.level !== 'ok' && e.topPart) m.set(e.topPart.id, (m.get(e.topPart.id) ?? 0) + 1)
     return partMeta.parts.map((p) => ({ id: p.id, name: SHORT_PART[p.id] ?? p.label, n: m.get(p.id) ?? 0 })).sort((a, b) => b.n - a.n)
   }, [engines])
   return (
-    <div className="h-[250px] w-full">
+    <div className="w-full" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 4, right: 30, bottom: 4, left: 4 }} barCategoryGap={10}>
           <XAxis type="number" hide />
@@ -97,7 +100,7 @@ export function ModuleChart({ engines }: { engines: FleetEngine[] }) {
 const HORIZON = 60
 
 /** 누적 정비 요청 — 앞으로 N일 안에 정비 요청 기한이 오는 엔진이 몇 대까지 쌓이는지 */
-export function CumulativeDemand({ engines }: { engines: FleetEngine[] }) {
+export function CumulativeDemand({ engines, height = 250 }: { engines: FleetEngine[]; height?: number }) {
   const data = useMemo(() => {
     const due = engines.map((e) => Math.max(0, Math.ceil(e.requestIn))).sort((a, b) => a - b)
     const rows: { day: number; n: number }[] = []
@@ -109,7 +112,7 @@ export function CumulativeDemand({ engines }: { engines: FleetEngine[] }) {
     return rows
   }, [engines])
   return (
-    <div className="h-[250px] w-full">
+    <div className="w-full" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 14, right: 12, bottom: 4, left: -10 }}>
           <defs>
@@ -169,6 +172,103 @@ export function UrgentBars({ engines, dangerN, limit = 8 }: { engines: FleetEngi
         <span className="inline-block h-3" style={{ borderLeft: '1.5px dashed var(--text-primary)' }} />
         위험 기준 {dangerN} cycle
       </p>
+    </div>
+  )
+}
+
+/** 상단 요약 숫자 — 작게, 한 줄에 여섯 개 */
+export function KpiTile({ label, value, unit, color, sub }: { label: string; value: number | string; unit?: string; color?: string; sub?: string }) {
+  return (
+    <div className="surface-card flex flex-col gap-1 border px-4 py-3" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
+      <span className="flex flex-row items-center gap-1.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+        {color && <span className="h-2 w-2 rounded-full" style={{ background: color }} />}
+        {label}
+      </span>
+      <span className="flex flex-row items-baseline gap-1.5">
+        <span className="mono text-[26px] font-semibold leading-none" style={{ color: 'var(--text-primary)' }}>{value}</span>
+        {unit && <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>{unit}</span>}
+      </span>
+      {sub && <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{sub}</span>}
+    </div>
+  )
+}
+
+const STATUS_COLOR: Record<PlanStatus, string> = {
+  new: 'var(--text-muted)',
+  ack: 'var(--status-warning)',
+  scheduled: 'var(--accent)',
+  done: 'var(--status-good)',
+}
+
+/** 긴급도별 처리 현황 — 즉시·이번 주·이번 달 엔진이 미확인에서 완료까지 어디에 있는지 */
+export function ProgressChart({ engines, plan, height = 200 }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; height?: number }) {
+  const data = useMemo(() => {
+    const rows = (['now', 'week', 'month'] as Urgency[]).map((u) => ({ u, name: FLEET_LABEL[u], new: 0, ack: 0, scheduled: 0, done: 0 }))
+    for (const e of engines) {
+      const r = rows.find((x) => x.u === e.urgency)
+      if (r) r[plan[e.unit]?.status ?? 'new']++
+    }
+    return rows
+  }, [engines, plan])
+  return (
+    <div>
+      <div className="w-full" style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ top: 4, right: 12, bottom: 0, left: 4 }} barCategoryGap={14}>
+            <XAxis type="number" hide />
+            <YAxis type="category" dataKey="name" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={false} tickLine={false} width={72} />
+            <Tooltip
+              cursor={{ fill: 'var(--border-soft)' }}
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null
+                const d = payload[0].payload as Record<PlanStatus, number>
+                return (
+                  <div className="border px-3 py-2 text-[12px]" style={tipBox}>
+                    <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</div>
+                    <div style={{ color: 'var(--text-muted)' }}>
+                      {STATUS_ORDER.map((k) => `${STATUS_LABEL[k]} ${d[k]}`).join(' · ')}
+                    </div>
+                  </div>
+                )
+              }}
+            />
+            {STATUS_ORDER.map((k, i) => (
+              <Bar key={k} dataKey={k} stackId="a" fill={STATUS_COLOR[k]} radius={i === STATUS_ORDER.length - 1 ? [0, 4, 4, 0] : 0} animationDuration={600} />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex flex-row flex-wrap gap-x-4 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+        {STATUS_ORDER.map((k) => (
+          <span key={k} className="flex flex-row items-center gap-1.5">
+            <span className="h-2 w-2 rounded-[2px]" style={{ background: STATUS_COLOR[k] }} />
+            {STATUS_LABEL[k]}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** 최근 알림 — 위험·주의 구간에 막 들어온 엔진 */
+export function RecentAlerts({ engines, dangerN, cyclesPerDay, plan, limit = 8 }: { engines: FleetEngine[]; dangerN: number; cyclesPerDay: number; plan: Record<number, PlanItem>; limit?: number }) {
+  const curves = useCurves()
+  const events = useMemo(() => (curves ? buildAlertEvents(engines, curves, dangerN).slice(0, limit) : null), [curves, engines, dangerN, limit])
+  if (!events) return <p className="m-0 py-6 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>불러오는 중…</p>
+  return (
+    <div className="flex flex-col">
+      {events.map((ev) => {
+        const isNew = (plan[ev.unit]?.status ?? 'new') === 'new'
+        return (
+          <Link key={`${ev.unit}-${ev.kind}`} to={`/equipment/engine-${ev.unit}?tab=diagnosis`} className="flex flex-row items-center gap-2.5 py-[7px] text-[12.5px] no-underline" style={{ borderBottom: '1px solid var(--border-soft)' }}>
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: LEVEL[ev.kind].color }} />
+            <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Engine #{ev.unit}</span>
+            <span style={{ color: LEVEL[ev.kind].color }}>{ev.kind === 'red' ? '위험' : '주의'}</span>
+            <span className="mono ml-auto" style={{ color: 'var(--text-muted)' }}>{daysText(ev.ago / cyclesPerDay)} 전</span>
+            {isNew && <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--accent)' }} title="미확인" />}
+          </Link>
+        )
+      })}
     </div>
   )
 }
