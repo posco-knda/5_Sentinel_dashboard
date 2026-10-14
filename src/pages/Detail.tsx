@@ -271,6 +271,13 @@ export function Detail() {
             size="lg"
           />
           <Badge status={detail.status} />
+          <Link
+            to={`/report/${engineId}`}
+            className="ml-auto border px-3 py-1.5 text-[12.5px] no-underline"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
+          >
+            진단 리포트
+          </Link>
         </div>
         <p className="mt-1.5 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
           {detail.equipmentInfo.line} · 누적 {detail.equipmentInfo.operatingCycles.toLocaleString()} cycle 가동

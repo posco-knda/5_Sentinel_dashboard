@@ -60,7 +60,8 @@
     "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
-:root[data-theme="light"] {
+:root[data-theme="light"],
+.force-light {
   color-scheme: light;
 
   --page: #fafafa;
@@ -351,5 +352,39 @@ input:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .led-dot--live {
     animation: none;
+  }
+}
+
+/* 진단 리포트 인쇄 — 사이드바·버튼은 숨기고 시트만 A4에 맞춰 찍는다 */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+@media print {
+  aside,
+  .no-print {
+    display: none !important;
+  }
+  html,
+  body,
+  #root {
+    height: auto !important;
+    background: #fff !important;
+  }
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  .report-sheet {
+    border: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  .avoid-break {
+    break-inside: avoid;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

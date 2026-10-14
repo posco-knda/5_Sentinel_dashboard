@@ -9,6 +9,7 @@ import { Detail } from './pages/Detail'
 import { Log } from './pages/Log'
 import { Policy } from './pages/Policy'
 import { Evidence } from './pages/Evidence'
+import { Report } from './pages/Report'
 import { Simulation } from './pages/Simulation'
 import { equipmentRanking } from './data/mock'
 
@@ -137,6 +138,7 @@ function AnimatedRoutes() {
           <Route path="/log" element={<Log />} />
           <Route path="/policy" element={<Policy />} />
           <Route path="/evidence" element={<Evidence />} />
+          <Route path="/report/:id" element={<Report />} />
           <Route path="/equipment/:id" element={<Detail />} />
           <Route path="/simulation" element={<Simulation />} />
         </Routes>
@@ -263,7 +265,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
 function MobileTopBar({ onMenuClick }: { onMenuClick: () => void }) {
   return (
     <header
-      className="sticky top-0 z-30 flex flex-row items-center justify-between px-4 py-3 md:hidden"
+      className="no-print sticky top-0 z-30 flex flex-row items-center justify-between px-4 py-3 md:hidden"
       style={{ borderBottom: '1px solid var(--border)', background: 'color-mix(in oklab, var(--surface-1) 92%, transparent)', backdropFilter: 'blur(6px)' }}
     >
       <Logo />
