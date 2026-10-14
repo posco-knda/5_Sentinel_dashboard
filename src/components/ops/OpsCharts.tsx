@@ -27,7 +27,7 @@ export function DemandChart({ engines, plan }: { engines: FleetEngine[]; plan: R
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 10, right: 8, bottom: 4, left: -10 }} barCategoryGap={10}>
             <CartesianGrid stroke="var(--gridline)" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill: 'var(--text-secondary)', fontSize: 11.5 }} axisLine={{ stroke: 'var(--axis)' }} tickLine={false} />
+            <XAxis dataKey="label" interval={0} tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} axisLine={{ stroke: 'var(--axis)' }} tickLine={false} />
             <YAxis allowDecimals={false} tick={TICK} axisLine={false} tickLine={false} width={34} />
             <Tooltip
               cursor={{ fill: 'var(--border-soft)' }}
@@ -63,7 +63,6 @@ export function DemandChart({ engines, plan }: { engines: FleetEngine[]; plan: R
           <span className="h-2 w-2 rounded-full" style={{ background: 'var(--accent)' }} />
           정비 예정
         </span>
-        <span>6주 이후와 완료 처리한 엔진은 제외</span>
       </div>
     </div>
   )
