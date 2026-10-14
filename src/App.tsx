@@ -8,6 +8,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Detail } from './pages/Detail'
 import { Log } from './pages/Log'
 import { Policy } from './pages/Policy'
+import { Evidence } from './pages/Evidence'
 import { Simulation } from './pages/Simulation'
 import { equipmentRanking } from './data/mock'
 
@@ -23,6 +24,16 @@ function ActivityIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+  )
+}
+function BarsIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20V10" />
+      <path d="M10 20V4" />
+      <path d="M16 20v-7" />
+      <path d="M22 20H2" />
     </svg>
   )
 }
@@ -103,6 +114,7 @@ const navGroups = [
     title: '분석',
     items: [
       { to: '/policy', label: '경보 기준', icon: ShieldIcon, match: '/policy' },
+      { to: '/evidence', label: '모델 · 근거', icon: BarsIcon, match: '/evidence' },
       { to: '/simulation', label: '시나리오 시뮬레이션', icon: SlidersIcon, match: '/simulation' },
     ],
   },
@@ -124,6 +136,7 @@ function AnimatedRoutes() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/log" element={<Log />} />
           <Route path="/policy" element={<Policy />} />
+          <Route path="/evidence" element={<Evidence />} />
           <Route path="/equipment/:id" element={<Detail />} />
           <Route path="/simulation" element={<Simulation />} />
         </Routes>
