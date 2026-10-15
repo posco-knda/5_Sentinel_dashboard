@@ -1,13 +1,12 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { LEVEL, PART_LABEL, daysText, deadlineText, type FleetEngine, type Urgency } from '../../lib/fleet'
 import { buildAlertEvents } from '../../lib/alerts'
 import { useCurves } from '../../lib/curves'
 import { STATUS_COLOR, STATUS_LABEL, STATUS_ORDER, type PlanItem, type PlanStatus } from '../../lib/plan'
 import { partMeta } from '../../data/partFlowMeta'
 
-const TICK = { fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }
 const tipBox = { background: 'var(--surface-raised)', borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-xs)' }
 
 /** 플릿 현황에서 쓰는 4단계 색 — 정상은 초록 */
@@ -97,57 +96,6 @@ export function ModuleChart({ engines, height = 250 }: { engines: FleetEngine[];
   )
 }
 
-const HORIZON = 60
-
-/** 누적 정비 요청 — 앞으로 N일 안에 정비 요청 기한이 오는 엔진이 몇 대까지 쌓이는지 */
-export function CumulativeDemand({ engines, height = 250 }: { engines: FleetEngine[]; height?: number }) {
-  const data = useMemo(() => {
-    const due = engines.map((e) => Math.max(0, Math.ceil(e.requestIn))).sort((a, b) => a - b)
-    const rows: { day: number; n: number }[] = []
-    let i = 0
-    for (let d = 0; d <= HORIZON; d++) {
-      while (i < due.length && due[i] <= d) i++
-      rows.push({ day: d, n: i })
-    }
-    return rows
-  }, [engines])
-  return (
-    <div className="w-full" style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 14, right: 12, bottom: 4, left: -10 }}>
-          <defs>
-            <linearGradient id="cumFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.45} />
-              <stop offset="100%" stopColor="var(--accent)" stopOpacity={0.03} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid stroke="var(--gridline)" vertical={false} />
-          <XAxis dataKey="day" type="number" domain={[0, HORIZON]} ticks={[0, 10, 20, 30, 40, 50, 60]} tickFormatter={(v) => (v === 0 ? '오늘' : `${v}일`)} tick={TICK} axisLine={{ stroke: 'var(--axis)' }} tickLine={false} />
-          <YAxis allowDecimals={false} tick={TICK} axisLine={false} tickLine={false} width={38} />
-          <ReferenceLine x={7} stroke="var(--text-muted)" strokeDasharray="4 3" label={{ value: '1주', position: 'top', fill: 'var(--text-muted)', fontSize: 11 }} />
-          <ReferenceLine x={30} stroke="var(--text-muted)" strokeDasharray="4 3" label={{ value: '30일', position: 'top', fill: 'var(--text-muted)', fontSize: 11 }} />
-          <Tooltip
-            cursor={{ stroke: 'var(--text-muted)', strokeDasharray: '3 3' }}
-            content={({ active, payload }) => {
-              if (!active || !payload?.length) return null
-              const d = payload[0].payload as { day: number; n: number }
-              return (
-                <div className="border px-3 py-2 text-[12px]" style={tipBox}>
-                  <div style={{ color: 'var(--text-muted)' }}>{d.day === 0 ? '오늘까지' : `${d.day}일 안에`}</div>
-                  <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    정비 요청 <span className="mono">{d.n}</span>대
-                  </div>
-                </div>
-              )
-            }}
-          />
-          <Area type="stepAfter" dataKey="n" stroke="var(--accent)" strokeWidth={2} fill="url(#cumFill)" animationDuration={800} />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  )
-}
-
 /** 가장 급한 엔진 — 남은 수명을 막대로 비교하고 위험 기준선을 함께 보여 준다 */
 export function UrgentBars({ engines, dangerN, limit = 8 }: { engines: FleetEngine[]; dangerN: number; limit?: number }) {
   const rows = engines.slice(0, limit)
@@ -194,7 +142,7 @@ export function KpiTile({ label, value, unit, color, sub }: { label: string; val
 }
 
 /** 긴급도별 처리 현황 — 즉시·이번 주·이번 달 엔진이 미확인에서 완료까지 어디에 있는지 */
-export function ProgressChart({ engines, plan, height = 200 }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; height?: number }) {
+export function ProgressChart({ engines, plan, height = 200 }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; height?: number | 'fill' }) {
   const data = useMemo(() => {
     const rows = (['now', 'week', 'month'] as Urgency[]).map((u) => ({ u, name: FLEET_LABEL[u], new: 0, review: 0, submitted: 0, rejected: 0, scheduled: 0, done: 0 }))
     for (const e of engines) {
@@ -204,8 +152,8 @@ export function ProgressChart({ engines, plan, height = 200 }: { engines: FleetE
     return rows
   }, [engines, plan])
   return (
-    <div>
-      <div className="w-full" style={{ height }}>
+    <div className={height === 'fill' ? 'flex min-h-0 flex-1 flex-col' : ''}>
+      <div className={height === 'fill' ? 'min-h-[120px] w-full flex-1' : 'w-full'} style={height === 'fill' ? undefined : { height }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 12, bottom: 0, left: 4 }} barCategoryGap={14}>
             <XAxis type="number" hide />

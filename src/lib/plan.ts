@@ -84,6 +84,8 @@ export interface PlanContextValue {
   /** 현재 로그인한 사람의 권한으로 상태를 바꾼다. 권한이 없거나 순서가 맞지 않으면 거부한다. */
   act: (unit: number, action: PlanAction, payload?: ActPayload) => ActResult
   clearAll: () => void
+  /** 처음 열었을 때의 운영 이력으로 되돌린다 */
+  restoreSeed: () => void
 }
 
 export const PlanContext = createContext<PlanContextValue | null>(null)

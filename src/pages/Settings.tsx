@@ -122,6 +122,8 @@ function Metric({
 type Link = {
   state: "checking" | "ok" | "dev";
   slack: boolean;
+  /** 결재 알림 채널: 별도 웹훅이면 separate, 정비 알림 채널과 같으면 shared */
+  approvals: "separate" | "shared" | null;
   ai: boolean;
   provider?: string;
 };
@@ -265,6 +267,7 @@ export function Settings() {
   const [link, setLink] = useState<Link>({
     state: "checking",
     slack: false,
+    approvals: null,
     ai: false,
   });
 
@@ -276,17 +279,19 @@ export function Settings() {
           throw new Error("no-api");
         const d = (await r.json()) as {
           slack?: boolean;
+          slackApprovals?: "separate" | "shared" | null;
           ai?: boolean;
           aiProvider?: string;
         };
         return {
           state: "ok",
           slack: !!d.slack,
+          approvals: d.slackApprovals ?? null,
           ai: !!d.ai,
           provider: d.aiProvider,
         } as Link;
       })
-      .catch((): Link => ({ state: "dev", slack: false, ai: false }));
+      .catch((): Link => ({ state: "dev", slack: false, approvals: null, ai: false }));
 
   useEffect(() => {
     let alive = true;
@@ -466,6 +471,15 @@ export function Settings() {
             max={LIMITS.prepDays[1]}
             format={(v) => `${v}일`}
           />
+          <Slider
+            label="하루 정비 가능 대수"
+            hint="같은 날 정비 예정으로 잡을 수 있는 엔진 수. 가득 찬 날은 예약할 수 없고, 정비는 다음 주부터 평일에만 잡습니다"
+            value={settings.slotsPerDay}
+            onChange={(v) => update({ slotsPerDay: v })}
+            min={LIMITS.slotsPerDay[0]}
+            max={LIMITS.slotsPerDay[1]}
+            format={(v) => `${v}대/일`}
+          />
         </div>
       </Panel>
 
@@ -487,8 +501,8 @@ export function Settings() {
         }
       >
         <Row
-          title="Slack 알림"
-          desc="엔진 진단을 Slack 채널로 보냅니다 · SLACK_WEBHOOK_URL"
+          title="Slack 정비 알림"
+          desc="엔진 위험 감지와 신규 즉시 조치를 이 채널로 보냅니다 · SLACK_WEBHOOK_URL"
         >
           {link.state === "checking" ? (
             <span
@@ -506,6 +520,32 @@ export function Settings() {
                   : link.state === "dev"
                     ? "서버 기능 없음 (개발 모드)"
                     : "미연결"
+              }
+            />
+          )}
+        </Row>
+        <Row
+          title="Slack 결재 알림"
+          desc="결재 요청·승인·반려·정비 완료를 보냅니다 · SLACK_APPROVAL_WEBHOOK_URL (없으면 정비 알림 채널로 함께 보냄)"
+        >
+          {link.state === "checking" ? (
+            <span
+              className="text-[12.5px]"
+              style={{ color: "var(--text-muted)" }}
+            >
+              확인 중…
+            </span>
+          ) : (
+            <Status
+              on={link.approvals !== null}
+              label={
+                link.approvals === "separate"
+                  ? "연결됨 · 별도 채널"
+                  : link.approvals === "shared"
+                    ? "정비 알림 채널과 같은 곳으로 전송"
+                    : link.state === "dev"
+                      ? "서버 기능 없음 (개발 모드)"
+                      : "미연결"
               }
             />
           )}
@@ -542,7 +582,7 @@ export function Settings() {
       >
         <Row
           title="결재 알림"
-          desc="결재 요청, 승인, 반려, 정비 완료가 처리될 때 채널로 알립니다"
+          desc="결재 요청, 승인, 반려, 정비 완료가 처리될 때 결재 알림 채널로 알립니다"
         >
           <Switch
             on={settings.notifyWorkflow}
@@ -552,7 +592,7 @@ export function Settings() {
         </Row>
         <Row
           title="신규 즉시 조치 알림"
-          desc="엔진이 새로 '즉시 조치'가 되면 한 건으로 묶어 알립니다. 이미 알린 엔진은 다시 보내지 않습니다"
+          desc="엔진이 새로 '즉시 조치'가 되면 정비 알림 채널로 한 건으로 묶어 알립니다. 이미 알린 엔진은 다시 보내지 않습니다"
         >
           <Switch
             on={settings.notifyUrgent}
@@ -585,7 +625,27 @@ export function Settings() {
 
       <Panel title="데이터 관리">
         <Row
-          title="결재·처리 기록 초기화"
+          title="운영 이력을 처음 상태로"
+          desc="검토·결재·정비 이력을 처음 열었을 때의 상태로 되돌립니다. 지금까지 처리한 내용은 사라집니다"
+        >
+          <button
+            onClick={() =>
+              window.confirm(
+                "검토·결재·정비 이력을 처음 열었을 때의 상태로 되돌릴까요? 지금까지 처리한 내용은 사라집니다.",
+              ) && plan.restoreSeed()
+            }
+            className="border px-3 py-1.5 text-[12px] font-medium"
+            style={{
+              borderColor: "var(--border)",
+              color: "var(--text-secondary)",
+              borderRadius: "var(--radius-pill)",
+            }}
+          >
+            되돌리기
+          </button>
+        </Row>
+        <Row
+          title="결재·처리 기록 모두 지우기"
           desc={`검토·결재·정비 이력이 있는 엔진 ${marked}대 (완료 ${doneCount}대)`}
         >
           <button
@@ -624,7 +684,7 @@ export function Settings() {
         </Row>
         <Row
           title="설정 기본값으로"
-          desc={`민감도 ≤${DEFAULT_SETTINGS.dangerN} · 하루 ${DEFAULT_SETTINGS.cyclesPerDay}회 · 준비 ${DEFAULT_SETTINGS.prepDays}일`}
+          desc={`민감도 ≤${DEFAULT_SETTINGS.dangerN} · 하루 ${DEFAULT_SETTINGS.cyclesPerDay}회 · 준비 ${DEFAULT_SETTINGS.prepDays}일 · 하루 정비 ${DEFAULT_SETTINGS.slotsPerDay}대`}
         >
           <button
             onClick={reset}

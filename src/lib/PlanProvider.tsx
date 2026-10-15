@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from './auth'
+import { buildFleet } from './fleet'
+import { buildSeed } from './seed'
+import { problem } from './schedule'
+import { useSettings, type Settings } from './settings'
 import { ACTION_FROM, ACTION_LABEL, ACTION_ROLE, ACTION_TO, PlanContext, STATUS_ORDER, todayStr, type ActPayload, type ActResult, type PlanAction, type PlanEvent, type PlanItem } from './plan'
 
 const KEY = 'sentinel-plan-v2'
@@ -39,9 +43,29 @@ function write(items: Record<number, PlanItem>) {
 
 const EMPTY: PlanItem = { status: 'new', updated: 0, history: [] }
 
+/** 처음 열었을 때의 운영 이력: 지금 시각과 오늘 날짜를 기준으로 만든다 */
+function makeSeed(s: Settings): Record<number, PlanItem> {
+  return buildSeed(buildFleet(s), { now: Date.now(), today: todayStr(), prepDays: s.prepDays, slotsPerDay: s.slotsPerDay })
+}
+
+/** 저장된 기록이 아예 없는 처음 상태인가 (기록을 일부러 비운 경우는 빈 목록이 저장돼 있으므로 해당하지 않는다) */
+function isFirstRun(): boolean {
+  try {
+    return localStorage.getItem(KEY) === null
+  } catch {
+    return true
+  }
+}
+
 export function PlanProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
-  const [items, setItems] = useState<Record<number, PlanItem>>(() => read() ?? {})
+  const { settings } = useSettings()
+  const [items, setItems] = useState<Record<number, PlanItem>>(() => {
+    if (!isFirstRun()) return read() ?? {}
+    const seeded = makeSeed(settings)
+    write(seeded)
+    return seeded
+  })
   const ref = useRef(items)
   useEffect(() => {
     ref.current = items
@@ -70,7 +94,9 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       if (action === 'submit' || action === 'approve') {
         const d = payload.date ?? cur.date
         if (!d || !DATE.test(d)) return { ok: false, error: '정비 일정을 입력해 주세요' }
-        if (d < todayStr()) return { ok: false, error: '정비 일정은 오늘 이후여야 합니다' }
+        // 주간 계획 규칙: 이번 주·준비 기간·주말 불가, 하루 정비 수용 능력 초과 불가 (승인 때도 다시 검사한다)
+        const why = problem(d, { today: todayStr(), prepDays: settings.prepDays, slotsPerDay: settings.slotsPerDay }, prev, unit)
+        if (why) return { ok: false, error: why }
         date = d
       }
       if (action === 'submit' && !note) return { ok: false, error: '판단 사유를 입력해 주세요' }
@@ -86,7 +112,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       setItems(all)
       return { ok: true }
     },
-    [user],
+    [user, settings.prepDays, settings.slotsPerDay],
   )
 
   const clearAll = useCallback(() => {
@@ -94,7 +120,13 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     setItems({})
   }, [])
 
+  const restoreSeed = useCallback(() => {
+    const seeded = makeSeed(settings)
+    write(seeded)
+    setItems(seeded)
+  }, [settings])
+
   const get = useCallback((unit: number) => items[unit] ?? EMPTY, [items])
-  const value = useMemo(() => ({ items, get, act, clearAll }), [items, get, act, clearAll])
+  const value = useMemo(() => ({ items, get, act, clearAll, restoreSeed }), [items, get, act, clearAll, restoreSeed])
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>
 }

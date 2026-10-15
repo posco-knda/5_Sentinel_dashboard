@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Panel } from '../components/Panel'
+import { MaintenanceCalendar } from '../components/ops/MaintenanceCalendar'
 import { DemandChart, LifeHistogram } from '../components/ops/OpsCharts'
-import { CumulativeDemand, FleetDonut, KpiTile, ModuleChart, ProgressChart, RecentAlerts, UrgentBars } from '../components/ops/FleetCharts'
+import { FleetDonut, KpiTile, ModuleChart, ProgressChart, RecentAlerts, UrgentBars } from '../components/ops/FleetCharts'
 import { daysText, useFleet } from '../lib/fleet'
 import { useSettings } from '../lib/settings'
-import { usePlan, type PlanStatus } from '../lib/plan'
+import { todayStr, usePlan, type PlanStatus } from '../lib/plan'
 import { sendEngineAlert } from '../lib/notify'
 import type { SendState } from '../lib/api'
 
@@ -22,7 +23,12 @@ export function Overview() {
   const top = queue[0]
   const stats = useMemo(() => {
     const st: Record<PlanStatus, number> = { new: 0, review: 0, submitted: 0, rejected: 0, scheduled: 0, done: 0 }
-    for (const e of fleet) st[plan.get(e.unit).status]++
+    for (const e of fleet) {
+      const s = plan.get(e.unit).status
+      // 정상 엔진은 조치할 일이 없으므로 '검토 필요'에 세지 않는다 (직접 처리한 건만 센다)
+      if (s === 'new' && e.urgency === 'watch') continue
+      st[s]++
+    }
     const live = active.length || 1
     const mean = active.reduce((a, e) => a + e.pred, 0) / live
     const min = active.reduce((m, e) => (e.pred < m.pred ? e : m), active[0])
@@ -38,8 +44,13 @@ export function Overview() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-row items-end justify-between gap-3">
-        <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">현황</h1>
-        <Link to="/plan" className="text-[13px] font-medium no-underline" style={{ color: 'var(--accent)' }}>정비 계획 →</Link>
+        <div className="flex flex-col gap-1">
+          <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">현황</h1>
+          <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+            엔진 {fleet.length}대 · 예측은 각 엔진의 가장 최근 비행 직후 기준이고, 정비 요청 기한은 오늘({todayStr().slice(5).replace('-', '/')})부터 셉니다
+          </p>
+        </div>
+        <Link to="/plan" className="shrink-0 text-[13px] font-medium no-underline" style={{ color: 'var(--accent)' }}>정비 계획 →</Link>
       </div>
 
       {nowCount > 0 && top && (
@@ -76,18 +87,18 @@ export function Overview() {
         <KpiTile label="결재 대기" value={stats.st.submitted} unit="대" color="var(--accent)" sub={`정비 예정 ${stats.st.scheduled}대`} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[260px_1fr_1fr]">
-        <Panel dense title="엔진 상태">
-          <FleetDonut engines={active} />
-        </Panel>
-        <Panel dense title="누적 정비 요청" sub="앞으로 60일, 기한이 도래하는 엔진 수">
-          <CumulativeDemand engines={active} height={228} />
-        </Panel>
-        <div className="lg:col-span-2 xl:col-span-1">
-          <Panel dense title="처리 현황" sub="긴급도별 미확인 → 완료">
-            <ProgressChart engines={fleet} plan={plan.items} height={190} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[300px_1fr]">
+        <div className="flex flex-col gap-4">
+          <Panel dense title="엔진 상태">
+            <FleetDonut engines={active} />
+          </Panel>
+          <Panel dense fill title="처리 현황" sub="긴급도별 미확인 → 완료">
+            <ProgressChart engines={fleet} plan={plan.items} height="fill" />
           </Panel>
         </div>
+        <Panel dense title="정비 일정" sub="날짜를 누르면 그날의 엔진을 볼 수 있습니다">
+          <MaintenanceCalendar engines={fleet} plan={plan.items} prepDays={settings.prepDays} slotsPerDay={settings.slotsPerDay} />
+        </Panel>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">

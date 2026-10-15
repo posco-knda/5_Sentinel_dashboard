@@ -3,6 +3,7 @@ import { daysText, deadlineText, limitDate, requestDate, type FleetEngine } from
 import { useAuth } from '../../lib/auth'
 import { announceWorkflow } from '../../lib/notify'
 import { lastSubmit, todayStr, usePlan } from '../../lib/plan'
+import { availableDays, label as dayLabel, problem, used } from '../../lib/schedule'
 import { useSettings } from '../../lib/settings'
 
 export type DecisionMode = 'submit' | 'approve' | 'reject'
@@ -22,11 +23,19 @@ export function DecisionDialog({ mode, engine, onClose }: { mode: DecisionMode; 
   const { settings } = useSettings()
   const item = plan.get(engine.unit)
   const req = lastSubmit(item)
-  const [date, setDate] = useState(item.date ?? requestDate(engine.requestIn))
+  const rules = { today: todayStr(), prepDays: settings.prepDays, slotsPerDay: settings.slotsPerDay }
+  // 처음 보여 줄 날짜: 원하는 날(요청 기한·희망일)이 가능하면 그대로, 아니면 그 뒤로 가장 가까운 가능한 날
+  const [date, setDate] = useState(() => {
+    const want = item.date ?? requestDate(engine.requestIn)
+    return problem(want, rules, plan.items, engine.unit) === null ? want : (availableDays(want, 1, rules, plan.items, engine.unit)[0]?.date ?? want)
+  })
   const [note, setNote] = useState('')
   const [err, setErr] = useState('')
   const needDate = mode !== 'reject'
   const tooLate = needDate && !!date && date > limitDate(engine.daysLeft)
+  const issue = needDate ? problem(date, rules, plan.items, engine.unit) : null
+  const left = date ? settings.slotsPerDay - used(plan.items, date, engine.unit) : 0
+  const picks = needDate ? availableDays(rules.today, 5, rules, plan.items, engine.unit) : []
 
   useEffect(() => {
     const on = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -35,6 +44,7 @@ export function DecisionDialog({ mode, engine, onClose }: { mode: DecisionMode; 
   }, [onClose])
 
   const confirm = () => {
+    if (issue) return setErr(issue)
     const r = plan.act(engine.unit, mode, { note, date: needDate ? date : undefined })
     if (r.ok) {
       if (settings.notifyWorkflow && user) void announceWorkflow(engine, mode, user, { note, date: needDate ? date : undefined })
@@ -80,11 +90,26 @@ export function DecisionDialog({ mode, engine, onClose }: { mode: DecisionMode; 
         )}
 
         {needDate && (
-          <label className="mt-4 flex flex-col gap-1.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-            {mode === 'submit' ? '희망 정비일' : '확정 정비일'}
-            <input type="date" min={todayStr()} value={date} onChange={(e) => setDate(e.target.value)} className="mono w-fit border px-2.5 py-1.5 text-[13px]" style={field} />
+          <div className="mt-4 flex flex-col gap-1.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+            <label htmlFor="plan-date">{mode === 'submit' ? '희망 정비일' : '확정 정비일'}</label>
+            <input id="plan-date" type="date" value={date} onChange={(e) => { setDate(e.target.value); setErr('') }} className="mono w-fit border px-2.5 py-1.5 text-[13px]" style={{ ...field, borderColor: issue ? 'var(--status-critical)' : 'var(--border)' }} />
+            {issue ? (
+              <span role="alert" style={{ color: 'var(--status-critical)' }}>{issue}</span>
+            ) : (
+              <span>정비 가능 자리 <span className="mono" style={{ color: 'var(--text-primary)' }}>{left}/{settings.slotsPerDay}</span>대 · 주간 계획이라 다음 주부터, 월~금</span>
+            )}
             {tooLate && <span style={{ color: 'var(--status-critical)' }}>남은 수명이 다하는 날({md(limitDate(engine.daysLeft))})보다 늦은 일정입니다</span>}
-          </label>
+            {picks.length > 0 && (
+              <div className="flex flex-row flex-wrap items-center gap-1.5 pt-0.5">
+                <span title="규칙에 맞는 날 중 가장 빠른 순서로 보여 줍니다">추천 날짜</span>
+                {picks.map((d) => (
+                  <button key={d.date} type="button" onClick={() => { setDate(d.date); setErr('') }} className="border px-2.5 py-1 text-[11.5px]" style={{ borderColor: d.date === date ? 'var(--accent)' : 'var(--border)', background: d.date === date ? 'var(--accent-dim)' : 'transparent', color: d.date === date ? 'var(--accent)' : 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}>
+                    {dayLabel(d.date)} <span className="mono" style={{ opacity: 0.7 }}>{d.left}자리</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         <label className="mt-4 flex flex-col gap-1.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
@@ -116,7 +141,7 @@ export function DecisionDialog({ mode, engine, onClose }: { mode: DecisionMode; 
           <button onClick={onClose} className="border px-4 py-1.5 text-[13px]" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}>
             취소
           </button>
-          <button onClick={confirm} className="px-4 py-1.5 text-[13px] font-semibold" style={{ background: mode === 'reject' ? 'var(--status-critical)' : 'var(--accent)', color: mode === 'reject' ? '#fff' : 'var(--accent-ink)', borderRadius: 'var(--radius-pill)' }}>
+          <button onClick={confirm} disabled={!!issue} className="px-4 py-1.5 text-[13px] font-semibold" style={{ opacity: issue ? 0.45 : 1, background: mode === 'reject' ? 'var(--status-critical)' : 'var(--accent)', color: mode === 'reject' ? '#fff' : 'var(--accent-ink)', borderRadius: 'var(--radius-pill)' }}>
             {CONFIRM[mode]}
           </button>
         </div>
