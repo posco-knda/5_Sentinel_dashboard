@@ -101,7 +101,7 @@ export function DecisionDialog({ mode, engine, onClose }: { mode: DecisionMode; 
             {tooLate && <span style={{ color: 'var(--status-critical)' }}>남은 수명이 다하는 날({md(limitDate(engine.daysLeft))})보다 늦은 일정입니다</span>}
             {picks.length > 0 && (
               <div className="flex flex-row flex-wrap items-center gap-1.5 pt-0.5">
-                <span>가능한 날짜</span>
+                <span title="규칙에 맞는 날 중 가장 빠른 순서로 보여 줍니다">추천 날짜</span>
                 {picks.map((d) => (
                   <button key={d.date} type="button" onClick={() => { setDate(d.date); setErr('') }} className="border px-2.5 py-1 text-[11.5px]" style={{ borderColor: d.date === date ? 'var(--accent)' : 'var(--border)', background: d.date === date ? 'var(--accent-dim)' : 'transparent', color: d.date === date ? 'var(--accent)' : 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}>
                     {dayLabel(d.date)} <span className="mono" style={{ opacity: 0.7 }}>{d.left}자리</span>
