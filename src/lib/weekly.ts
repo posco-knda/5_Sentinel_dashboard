@@ -88,7 +88,7 @@ export function weeklyPayload(s: WeeklyStats) {
     flow: s.flow,
     demand: s.demand.map((d) => ({ label: d.label, n: d.n })),
     modules: s.modules.map((m) => ({ name: m.name, n: m.n })),
-    top: s.top.slice(0, 5).map((e) => ({ name: e.name, pred: e.pred, requestText: e.requestIn <= 0 ? '기한 지남' : deadlineText(e.requestIn), part: e.topPart?.label ?? '' })),
+    top: s.top.slice(0, 5).map((e) => ({ name: e.name, predCycles: e.pred, requestText: e.requestIn <= 0 ? '기한 지남' : deadlineText(e.requestIn), part: e.topPart?.label ?? '' })),
     rejectReasons: s.events.filter((e) => e.action === 'reject' && e.note).slice(0, 5).map((e) => e.note as string),
   }
 }

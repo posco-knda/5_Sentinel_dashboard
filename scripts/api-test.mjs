@@ -84,7 +84,7 @@ await t('summary: 업스트림 오류는 502, 빈 응답도 502', async () => {
 // ---- summary (weekly)
 const stats = {
   period: '10/8 ~ 10/15', fleet: { total: 248, now: 28, week: 41, month: 103, watch: 76 }, flow: { requested: 5, approved: 3, rejected: 1, completed: 1, pending: 2 },
-  demand: [{ label: '기한 경과', n: 28 }, { label: '1주 내', n: 41 }], modules: [{ name: '코어·연소·블리드', n: 66 }], top: [{ name: 'Engine #31', pred: 8.9, requestText: '기한 지남', part: '고압압축기(HPC)' }],
+  demand: [{ label: '기한 경과', n: 28 }, { label: '1주 내', n: 41 }], modules: [{ name: '코어·연소·블리드', n: 66 }], top: [{ name: 'Engine #31', predCycles: 8.9, requestText: '기한 지남', part: '고압압축기(HPC)' }],
   rejectReasons: ['운항 일정상 이번 주는 어렵다'],
 }
 globalThis.fetch = async (url, init) => { seen = { url, headers: init.headers, body: JSON.parse(init.body) }; return { ok: true, status: 200, json: async () => ({ content: [{ type: 'text', text: '주간 요약입니다.' }] }) } }
@@ -121,15 +121,17 @@ const gem = (parts, ok = true, status = 200) => async (url, init) => { gseen = {
 globalThis.fetch = gem([{ text: '생각 중…', thought: true }, { text: ' 제미나이 요약입니다. ' }])
 const gsum = (await import(root + '/api/summary.ts?g1')).default
 await t('gemini: 키만 있어도 동작하고 생각(thought) 조각은 빠짐', async () => {
-  const r = await call(gsum, { method: 'POST', body: { facts } }); assert.equal(r.code, 200); assert.equal(r.body.summary, '제미나이 요약입니다.'); assert.equal(r.body.model, 'gemini-2.5-flash')
+  const r = await call(gsum, { method: 'POST', body: { facts } }); assert.equal(r.code, 200); assert.equal(r.body.summary, '제미나이 요약입니다.'); assert.equal(r.body.model, 'gemini-flash-lite-latest')
 })
 await t('gemini: 키는 주소가 아니라 x-goog-api-key 헤더로 전달됨', async () => {
-  assert.match(gseen.url, /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-2\.5-flash:generateContent$/)
+  assert.match(gseen.url, /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-flash-lite-latest:generateContent$/)
   assert.equal(gseen.headers['x-goog-api-key'], 'gk-secret-test'); assert.ok(!gseen.url.includes('gk-secret-test'))
 })
 await t('gemini: 지침·사실·생각 끄기 설정이 올바르게 전달됨', async () => {
   assert.match(gseen.body.systemInstruction.parts[0].text, /새로운 숫자/); assert.match(gseen.body.contents[0].parts[0].text, /Engine #31/)
-  assert.equal(gseen.body.generationConfig.thinkingConfig.thinkingBudget, 0)
+  assert.equal(gseen.body.generationConfig.thinkingConfig, undefined)
+  process.env.GEMINI_MODEL = 'gemini-2.5-flash'; await call(gsum, { method: 'POST', body: { facts } })
+  assert.equal(gseen.body.generationConfig.thinkingConfig.thinkingBudget, 0); delete process.env.GEMINI_MODEL
 })
 await t('gemini: 응답에 키가 섞여 나가지 않음', async () => { const r = await call(gsum, { method: 'POST', body: { facts } }); assert.ok(!JSON.stringify(r.body).includes('gk-secret-test')) })
 await t('gemini: 주간 요약도 같은 경로로 호출됨', async () => {
@@ -140,6 +142,14 @@ await t('gemini: 둘 다 있으면 Gemini를 우선 사용', async () => {
   const r = await call(gsum, { method: 'POST', body: { facts } }); assert.equal(r.code, 200); assert.ok(gseen && gseen.url.includes('generativelanguage'))
   delete process.env.ANTHROPIC_API_KEY
 })
+await t('gemini: 일시 과부하(503)는 한 번 다시 시도하고, 그래도 안 되면 502', async () => {
+  let n = 0
+  globalThis.fetch = async () => (++n === 1 ? { ok: false, status: 503, json: async () => ({}) } : { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: '재시도 성공' }] } }] }) })
+  const a = await call(gsum, { method: 'POST', body: { facts } }); assert.equal(a.code, 200); assert.equal(a.body.summary, '재시도 성공'); assert.equal(n, 2)
+  n = 0; globalThis.fetch = async () => (n++, { ok: false, status: 503, json: async () => ({}) })
+  assert.equal((await call(gsum, { method: 'POST', body: { facts } })).code, 502); assert.equal(n, 2)
+})
+await t('weekly: 시스템 지침이 cycle 단위를 명시함', async () => { assert.match(gseen ? gseen.body.systemInstruction.parts[0].text : '', /cycle/) })
 await t('gemini: 한도 초과(429)는 429 quota로, 그 밖의 오류는 502로', async () => {
   globalThis.fetch = gem([], false, 429); const a = await call(gsum, { method: 'POST', body: { facts } }); assert.equal(a.code, 429); assert.equal(a.body.error, 'quota')
   globalThis.fetch = gem([], false, 400); assert.equal((await call(gsum, { method: 'POST', body: { facts } })).code, 502)
@@ -147,7 +157,7 @@ await t('gemini: 한도 초과(429)는 429 quota로, 그 밖의 오류는 502로
 })
 await t('gemini: 모델 이름에 이상한 문자가 있으면 기본 모델로 돌아감', async () => {
   process.env.GEMINI_MODEL = '../../evil?x='; globalThis.fetch = gem([{ text: 'ok' }]); await call(gsum, { method: 'POST', body: { facts } })
-  assert.ok(gseen.url.includes('/models/gemini-2.5-flash:generateContent')); delete process.env.GEMINI_MODEL
+  assert.ok(gseen.url.includes('/models/gemini-flash-lite-latest:generateContent')); delete process.env.GEMINI_MODEL
 })
 await t('gemini: 상태 확인은 제공자 이름만 알려 주고 키는 노출하지 않음', async () => {
   const s = mkRes(); status({}, s); assert.deepEqual(s.body, { slack: true, ai: true, aiProvider: 'gemini' }); assert.ok(!JSON.stringify(s.body).includes('gk-secret-test'))
