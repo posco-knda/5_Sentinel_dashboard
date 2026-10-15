@@ -82,8 +82,8 @@ export function Overview() {
           <Panel dense title="엔진 상태">
             <FleetDonut engines={active} />
           </Panel>
-          <Panel dense title="처리 현황" sub="긴급도별 미확인 → 완료">
-            <ProgressChart engines={fleet} plan={plan.items} height={170} />
+          <Panel dense fill title="처리 현황" sub="긴급도별 미확인 → 완료">
+            <ProgressChart engines={fleet} plan={plan.items} height="fill" />
           </Panel>
         </div>
         <Panel dense title="정비 일정" sub="날짜를 누르면 그날의 엔진을 볼 수 있습니다">

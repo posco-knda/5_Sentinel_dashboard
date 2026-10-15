@@ -155,7 +155,7 @@ export function MaintenanceCalendar({ engines, plan }: { engines: FleetEngine[];
         ))}
       </div>
 
-      <div className="border-t pt-3" style={{ borderColor: 'var(--border-soft)' }}>
+      <div className="min-h-[192px] border-t pt-3" style={{ borderColor: 'var(--border-soft)' }}>
         <div className="mb-2 flex flex-row items-baseline justify-between gap-2">
           <span className="text-[13px] font-semibold">
             {selDate.getMonth() + 1}월 {selDate.getDate()}일 ({WEEK[selDate.getDay()]}){selected === today ? ' · 오늘' : ''}

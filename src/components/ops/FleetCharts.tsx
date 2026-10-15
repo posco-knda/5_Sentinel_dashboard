@@ -142,7 +142,7 @@ export function KpiTile({ label, value, unit, color, sub }: { label: string; val
 }
 
 /** 긴급도별 처리 현황 — 즉시·이번 주·이번 달 엔진이 미확인에서 완료까지 어디에 있는지 */
-export function ProgressChart({ engines, plan, height = 200 }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; height?: number }) {
+export function ProgressChart({ engines, plan, height = 200 }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; height?: number | 'fill' }) {
   const data = useMemo(() => {
     const rows = (['now', 'week', 'month'] as Urgency[]).map((u) => ({ u, name: FLEET_LABEL[u], new: 0, review: 0, submitted: 0, rejected: 0, scheduled: 0, done: 0 }))
     for (const e of engines) {
@@ -152,8 +152,8 @@ export function ProgressChart({ engines, plan, height = 200 }: { engines: FleetE
     return rows
   }, [engines, plan])
   return (
-    <div>
-      <div className="w-full" style={{ height }}>
+    <div className={height === 'fill' ? 'flex min-h-0 flex-1 flex-col' : ''}>
+      <div className={height === 'fill' ? 'min-h-[120px] w-full flex-1' : 'w-full'} style={height === 'fill' ? undefined : { height }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 12, bottom: 0, left: 4 }} barCategoryGap={14}>
             <XAxis type="number" hide />
