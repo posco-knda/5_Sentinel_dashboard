@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Panel } from '../components/Panel'
+import { MaintenanceCalendar } from '../components/ops/MaintenanceCalendar'
 import { DemandChart, LifeHistogram } from '../components/ops/OpsCharts'
-import { CumulativeDemand, FleetDonut, KpiTile, ModuleChart, ProgressChart, RecentAlerts, UrgentBars } from '../components/ops/FleetCharts'
+import { FleetDonut, KpiTile, ModuleChart, ProgressChart, RecentAlerts, UrgentBars } from '../components/ops/FleetCharts'
 import { daysText, useFleet } from '../lib/fleet'
 import { useSettings } from '../lib/settings'
 import { usePlan, type PlanStatus } from '../lib/plan'
@@ -76,18 +77,18 @@ export function Overview() {
         <KpiTile label="결재 대기" value={stats.st.submitted} unit="대" color="var(--accent)" sub={`정비 예정 ${stats.st.scheduled}대`} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[260px_1fr_1fr]">
-        <Panel dense title="엔진 상태">
-          <FleetDonut engines={active} />
-        </Panel>
-        <Panel dense title="누적 정비 요청" sub="앞으로 60일, 기한이 도래하는 엔진 수">
-          <CumulativeDemand engines={active} height={228} />
-        </Panel>
-        <div className="lg:col-span-2 xl:col-span-1">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[300px_1fr]">
+        <div className="flex flex-col gap-4">
+          <Panel dense title="엔진 상태">
+            <FleetDonut engines={active} />
+          </Panel>
           <Panel dense title="처리 현황" sub="긴급도별 미확인 → 완료">
-            <ProgressChart engines={fleet} plan={plan.items} height={190} />
+            <ProgressChart engines={fleet} plan={plan.items} height={170} />
           </Panel>
         </div>
+        <Panel dense title="정비 일정" sub="날짜를 누르면 그날의 엔진을 볼 수 있습니다">
+          <MaintenanceCalendar engines={fleet} plan={plan.items} />
+        </Panel>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
