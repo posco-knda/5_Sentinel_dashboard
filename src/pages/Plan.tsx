@@ -97,7 +97,7 @@ export function Plan() {
         </Panel>
       </div>
 
-      <Panel title="엔진 목록" sub="행을 더블클릭하면 엔진 상세로 이동합니다">
+      <Panel title="엔진 목록" sub="행을 누르면 엔진 상세로 이동합니다">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-row flex-wrap gap-2">
             {chips.map((c) => {

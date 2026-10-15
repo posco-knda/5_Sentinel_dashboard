@@ -4,7 +4,7 @@ import { PlanControl } from './PlanControl'
 import { UrgencyChip } from './UrgencyChip'
 import { LEVEL, daysText, deadlineText, limitDate, requestDate, type FleetEngine } from '../../lib/fleet'
 
-/** 정비 요청이 필요한 엔진 표 — 현황과 정비 계획이 함께 쓴다. 행을 더블클릭하면 엔진 상세로 간다(키보드는 Enter). */
+/** 정비 요청이 필요한 엔진 표 — 현황과 정비 계획이 함께 쓴다. 행을 누르면 엔진 상세로 간다(키보드는 Enter). 누르는 동안 배경이 회색으로 바뀐다. */
 export function QueueTable({ engines, withDates = false, empty = '해당하는 엔진이 없습니다' }: { engines: FleetEngine[]; withDates?: boolean; empty?: string }) {
   const nav = useNavigate()
   const heads = ['엔진', '긴급도', '알림 등급', '남은 수명', withDates ? '정비 요청 기한' : '요청 기한', ...(withDates ? ['가동 한계 예상'] : []), '점검 예상 모듈', '처리']
@@ -23,7 +23,7 @@ export function QueueTable({ engines, withDates = false, empty = '해당하는 �
         </thead>
         <tbody>
           {engines.map((e) => (
-            <tr key={e.unit} onDoubleClick={() => nav(`/equipment/engine-${e.unit}`)} className="select-none" title="더블클릭하면 엔진 상세로 이동" tabIndex={0} onKeyDown={(ev) => ev.key === 'Enter' && nav(`/equipment/engine-${e.unit}`)}>
+            <tr key={e.unit} onClick={() => nav(`/equipment/engine-${e.unit}`)} className="row-link" tabIndex={0} onKeyDown={(ev) => ev.key === 'Enter' && nav(`/equipment/engine-${e.unit}`)}>
               <td className="mono px-3 py-3 text-[13px] font-semibold" style={{ ...cell, color: 'var(--text-primary)' }}>#{e.unit}</td>
               <td className="px-3 py-3" style={cell}><UrgencyChip urgency={e.urgency} /></td>
               <td className="px-3 py-3" style={cell}><Badge status={LEVEL[e.level].badge} /></td>
