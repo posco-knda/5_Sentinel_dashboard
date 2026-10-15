@@ -2,7 +2,7 @@
 //  · 엔진 진단(수동 버튼):        { facts }
 //  · 결재 이벤트(자동):            { kind: 'workflow', event }   — 결재 요청·승인·반려·정비 완료
 //  · 신규 즉시 조치(자동):         { kind: 'digest', digest }    — 새로 즉시 조치가 된 엔진 묶음
-// 환경변수 SLACK_WEBHOOK_URL 이 있어야 동작한다. 주소는 서버에만 있고 브라우저로 나가지 않는다.
+// 환경변수 SLACK_WEBHOOK_URL(정비 알림 채널)이 있어야 동작하고, SLACK_WEBHOOK_URL_APPROVALS(결재 알림 채널)를 따로 두면 결재 알림은 그쪽으로 간다. 주소는 서버에만 있고 브라우저로 나가지 않는다.
 // 메시지는 서버가 검증한 필드로만 조립한다(임의 텍스트·전체 멘션이 끼어들 수 없게 이스케이프·길이 제한).
 // 키가 없으면 503 { error: 'not_configured' }.
 
@@ -134,11 +134,12 @@ export default async function handler(req: Req, res: Res) {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ error: 'method_not_allowed' })
   }
-  const hook = process.env.SLACK_WEBHOOK_URL
-  if (!hook) return res.status(503).json({ error: 'not_configured' })
-
   const body = isObj(req.body) ? req.body : {}
   const kind = body.kind === 'workflow' ? 'workflow' : body.kind === 'digest' ? 'digest' : 'engine'
+  // 채널을 나눈다: 결재 흐름(요청·승인·반려·정비 완료)은 결재 알림 채널로, 엔진 상태(위험 감지·신규 즉시 조치)는 정비 알림 채널로.
+  // 결재용 웹훅이 없으면 정비 알림 채널로 함께 보낸다.
+  const hook = kind === 'workflow' ? process.env.SLACK_WEBHOOK_URL_APPROVALS || process.env.SLACK_WEBHOOK_URL : process.env.SLACK_WEBHOOK_URL
+  if (!hook) return res.status(503).json({ error: 'not_configured' })
   const base = origin(req)
   const src = kind === 'workflow' ? body.event : kind === 'digest' ? body.digest : body.facts
   const built = isObj(src) ? (kind === 'workflow' ? buildWorkflow(src, base) : kind === 'digest' ? buildDigest(src, base) : buildEngine(src, base)) : null

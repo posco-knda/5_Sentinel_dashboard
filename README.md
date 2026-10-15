@@ -75,12 +75,19 @@ python scripts/08_export_dashboard_ts.py && python scripts/18_export_detection_l
 
 | 함수 | 환경변수 | 하는 일 |
 |---|---|---|
-| `api/notify.ts` | `SLACK_WEBHOOK_URL` | Slack 채널로 알림 전송 (Incoming Webhook): 엔진 진단(수동), 결재 이벤트(자동), 신규 즉시 조치(자동) |
+| `api/notify.ts` | `SLACK_WEBHOOK_URL`(정비 알림 채널), `SLACK_WEBHOOK_URL_APPROVALS`(결재 알림 채널, 선택) | Slack으로 알림 전송 (Incoming Webhook). 채널이 둘로 나뉨 — 아래 표 참고 |
 | `api/summary.ts` | `GEMINI_API_KEY`(무료 한도 있음, 선택: `GEMINI_MODEL`) 또는 `ANTHROPIC_API_KEY`(선택: `ANTHROPIC_MODEL`) | 엔진 진단 요약, 주간 리포트 요약(`kind: 'weekly'`)을 생성형 AI로 작성. 둘 다 있으면 Gemini 사용 |
 | `api/status.ts` | — | 위 두 가지가 설정돼 있는지만 true/false로 알림 (설정 화면이 사용) |
 
 ### 자동 알림
 Slack이 연결돼 있으면 사람이 버튼을 누르지 않아도 알림이 갑니다(설정 › 자동 알림에서 각각 끌 수 있음).
+
+Slack 채널은 목적에 따라 둘로 나눕니다. 결재용 웹훅(`SLACK_WEBHOOK_URL_APPROVALS`)을 따로 두지 않으면 결재 알림도 정비 알림 채널로 함께 갑니다.
+
+| 채널 | 알림 |
+|---|---|
+| **정비 알림** (`SLACK_WEBHOOK_URL`) | 엔진 위험 감지(버튼으로 보내는 진단), 신규 즉시 조치(자동) |
+| **결재 알림** (`SLACK_WEBHOOK_URL_APPROVALS`) | 결재 요청, 승인, 반려, 정비 완료 |
 
 | 상황 | 메시지 |
 |---|---|

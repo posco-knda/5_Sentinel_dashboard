@@ -10,5 +10,7 @@ interface Res {
 export default function handler(_req: unknown, res: Res) {
   res.setHeader('Cache-Control', 'no-store')
   const aiProvider = process.env.GEMINI_API_KEY ? 'gemini' : process.env.ANTHROPIC_API_KEY ? 'claude' : null
-  return res.status(200).json({ slack: !!process.env.SLACK_WEBHOOK_URL, ai: aiProvider !== null, aiProvider })
+  // 결재 알림: 전용 웹훅이 있으면 'separate', 없고 정비 알림 웹훅만 있으면 같은 채널을 함께 쓰는 'shared'
+  const slackApprovals = process.env.SLACK_WEBHOOK_URL_APPROVALS ? 'separate' : process.env.SLACK_WEBHOOK_URL ? 'shared' : null
+  return res.status(200).json({ slack: !!process.env.SLACK_WEBHOOK_URL, slackApprovals, ai: aiProvider !== null, aiProvider })
 }

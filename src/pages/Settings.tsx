@@ -122,6 +122,8 @@ function Metric({
 type Link = {
   state: "checking" | "ok" | "dev";
   slack: boolean;
+  /** 결재 알림 채널: 별도 웹훅이면 separate, 정비 알림 채널과 같으면 shared */
+  approvals: "separate" | "shared" | null;
   ai: boolean;
   provider?: string;
 };
@@ -265,6 +267,7 @@ export function Settings() {
   const [link, setLink] = useState<Link>({
     state: "checking",
     slack: false,
+    approvals: null,
     ai: false,
   });
 
@@ -276,17 +279,19 @@ export function Settings() {
           throw new Error("no-api");
         const d = (await r.json()) as {
           slack?: boolean;
+          slackApprovals?: "separate" | "shared" | null;
           ai?: boolean;
           aiProvider?: string;
         };
         return {
           state: "ok",
           slack: !!d.slack,
+          approvals: d.slackApprovals ?? null,
           ai: !!d.ai,
           provider: d.aiProvider,
         } as Link;
       })
-      .catch((): Link => ({ state: "dev", slack: false, ai: false }));
+      .catch((): Link => ({ state: "dev", slack: false, approvals: null, ai: false }));
 
   useEffect(() => {
     let alive = true;
@@ -496,8 +501,8 @@ export function Settings() {
         }
       >
         <Row
-          title="Slack 알림"
-          desc="엔진 진단을 Slack 채널로 보냅니다 · SLACK_WEBHOOK_URL"
+          title="Slack 정비 알림"
+          desc="엔진 위험 감지와 신규 즉시 조치를 이 채널로 보냅니다 · SLACK_WEBHOOK_URL"
         >
           {link.state === "checking" ? (
             <span
@@ -515,6 +520,32 @@ export function Settings() {
                   : link.state === "dev"
                     ? "서버 기능 없음 (개발 모드)"
                     : "미연결"
+              }
+            />
+          )}
+        </Row>
+        <Row
+          title="Slack 결재 알림"
+          desc="결재 요청·승인·반려·정비 완료를 보냅니다 · SLACK_WEBHOOK_URL_APPROVALS (없으면 정비 알림 채널로 함께 보냄)"
+        >
+          {link.state === "checking" ? (
+            <span
+              className="text-[12.5px]"
+              style={{ color: "var(--text-muted)" }}
+            >
+              확인 중…
+            </span>
+          ) : (
+            <Status
+              on={link.approvals !== null}
+              label={
+                link.approvals === "separate"
+                  ? "연결됨 · 별도 채널"
+                  : link.approvals === "shared"
+                    ? "정비 알림 채널과 같은 곳으로 전송"
+                    : link.state === "dev"
+                      ? "서버 기능 없음 (개발 모드)"
+                      : "미연결"
               }
             />
           )}
@@ -551,7 +582,7 @@ export function Settings() {
       >
         <Row
           title="결재 알림"
-          desc="결재 요청, 승인, 반려, 정비 완료가 처리될 때 채널로 알립니다"
+          desc="결재 요청, 승인, 반려, 정비 완료가 처리될 때 결재 알림 채널로 알립니다"
         >
           <Switch
             on={settings.notifyWorkflow}
@@ -561,7 +592,7 @@ export function Settings() {
         </Row>
         <Row
           title="신규 즉시 조치 알림"
-          desc="엔진이 새로 '즉시 조치'가 되면 한 건으로 묶어 알립니다. 이미 알린 엔진은 다시 보내지 않습니다"
+          desc="엔진이 새로 '즉시 조치'가 되면 정비 알림 채널로 한 건으로 묶어 알립니다. 이미 알린 엔진은 다시 보내지 않습니다"
         >
           <Switch
             on={settings.notifyUrgent}

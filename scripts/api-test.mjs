@@ -97,13 +97,51 @@ await t('digest: 잘못된 입력은 400, 연달아 보내면 429', async () => 
   assert.equal((await call(dg2, { method: 'POST', body: { kind: 'digest', digest: { count: 3 } } })).code, 400)
 })
 
+// ---- notify (채널 분리: 정비 알림 / 결재 알림)
+process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/maint'
+process.env.SLACK_WEBHOOK_URL_APPROVALS = 'https://hooks.slack.test/T/B/appr'
+const statusFn = (await import(root + '/api/status.ts?rt')).default
+let rsent = []
+globalThis.fetch = async (url, init) => { rsent.push({ url, body: JSON.parse(init.body) }); return { ok: true, status: 200, json: async () => ({}) } }
+const rt = (await import(root + '/api/notify.ts?rt1')).default
+const digestBody = { count: 2, engines: [{ name: 'Engine #1', predCycles: 10, requestText: '기한 지남', part: '' }] }
+await t('채널 분리: 결재 이벤트는 결재 알림 웹훅으로', async () => {
+  const r = await call(rt, { method: 'POST', body: { kind: 'workflow', event: ev } }); assert.equal(r.code, 200); assert.equal(rsent.at(-1).url, 'https://hooks.slack.test/T/B/appr')
+})
+await t('채널 분리: 정비 완료도 결재 알림 채널(결재 흐름의 마지막 단계)', async () => {
+  await new Promise((ok) => setTimeout(ok, 1300))
+  const r = await call(rt, { method: 'POST', body: { kind: 'workflow', event: { ...ev, action: 'complete' } } }); assert.equal(r.code, 200); assert.equal(rsent.at(-1).url, 'https://hooks.slack.test/T/B/appr')
+})
+await t('채널 분리: 엔진 위험 감지와 신규 즉시 조치는 정비 알림 웹훅으로', async () => {
+  assert.equal((await call(rt, { method: 'POST', body: { facts } })).code, 200); assert.equal(rsent.at(-1).url, 'https://hooks.slack.test/T/B/maint')
+  assert.equal((await call(rt, { method: 'POST', body: { kind: 'digest', digest: digestBody } })).code, 200); assert.equal(rsent.at(-1).url, 'https://hooks.slack.test/T/B/maint')
+})
+delete process.env.SLACK_WEBHOOK_URL_APPROVALS
+const rt2 = (await import(root + '/api/notify.ts?rt2')).default
+await t('채널 분리: 결재용 웹훅이 없으면 정비 알림 채널로 함께 보냄', async () => {
+  const r = await call(rt2, { method: 'POST', body: { kind: 'workflow', event: ev } }); assert.equal(r.code, 200); assert.equal(rsent.at(-1).url, 'https://hooks.slack.test/T/B/maint')
+})
+delete process.env.SLACK_WEBHOOK_URL
+process.env.SLACK_WEBHOOK_URL_APPROVALS = 'https://hooks.slack.test/T/B/appr'
+const rt3 = (await import(root + '/api/notify.ts?rt3')).default
+await t('채널 분리: 결재용만 있으면 결재 알림은 가고, 정비 알림은 미설정(503)', async () => {
+  assert.equal((await call(rt3, { method: 'POST', body: { kind: 'workflow', event: ev } })).code, 200)
+  assert.equal((await call(rt3, { method: 'POST', body: { facts } })).code, 503)
+  const st = mkRes(); statusFn({}, st); assert.equal(st.body.slack, false); assert.equal(st.body.slackApprovals, 'separate')
+})
+process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/x'
+await t('채널 분리: 상태 확인은 별도 채널이면 separate (주소는 노출하지 않음)', async () => {
+  const st = mkRes(); statusFn({}, st); assert.equal(st.body.slackApprovals, 'separate'); assert.ok(!JSON.stringify(st.body).includes('hooks.slack.test'))
+})
+delete process.env.SLACK_WEBHOOK_URL_APPROVALS
+
 // ---- status
 const status = (await import(root + '/api/status.ts')).default
 await t('status: 설정 여부만 true/false로 알려 주고 값은 노출하지 않음', async () => {
   process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/secret'; process.env.ANTHROPIC_API_KEY = 'sk-secret'
-  const on = mkRes(); status({}, on); assert.deepEqual(on.body, { slack: true, ai: true, aiProvider: 'claude' }); assert.ok(!JSON.stringify(on.body).includes('secret'))
+  const on = mkRes(); status({}, on); assert.deepEqual(on.body, { slack: true, slackApprovals: 'shared', ai: true, aiProvider: 'claude' }); assert.ok(!JSON.stringify(on.body).includes('secret'))
   delete process.env.SLACK_WEBHOOK_URL; delete process.env.ANTHROPIC_API_KEY
-  const off = mkRes(); status({}, off); assert.deepEqual(off.body, { slack: false, ai: false, aiProvider: null })
+  const off = mkRes(); status({}, off); assert.deepEqual(off.body, { slack: false, slackApprovals: null, ai: false, aiProvider: null })
   process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/x'
 })
 
@@ -207,7 +245,7 @@ await t('gemini: 모델 이름에 이상한 문자가 있으면 기본 모델로
   assert.ok(gseen.url.includes('/models/gemini-flash-lite-latest:generateContent')); delete process.env.GEMINI_MODEL
 })
 await t('gemini: 상태 확인은 제공자 이름만 알려 주고 키는 노출하지 않음', async () => {
-  const s = mkRes(); status({}, s); assert.deepEqual(s.body, { slack: true, ai: true, aiProvider: 'gemini' }); assert.ok(!JSON.stringify(s.body).includes('gk-secret-test'))
+  const s = mkRes(); status({}, s); assert.deepEqual(s.body, { slack: true, slackApprovals: 'shared', ai: true, aiProvider: 'gemini' }); assert.ok(!JSON.stringify(s.body).includes('gk-secret-test'))
 })
 delete process.env.GEMINI_API_KEY
 console.log(`\n${passed}개 통과`)
