@@ -466,6 +466,15 @@ export function Settings() {
             max={LIMITS.prepDays[1]}
             format={(v) => `${v}일`}
           />
+          <Slider
+            label="하루 정비 가능 대수"
+            hint="같은 날 정비 예정으로 잡을 수 있는 엔진 수. 가득 찬 날은 예약할 수 없고, 정비는 다음 주부터 평일에만 잡습니다"
+            value={settings.slotsPerDay}
+            onChange={(v) => update({ slotsPerDay: v })}
+            min={LIMITS.slotsPerDay[0]}
+            max={LIMITS.slotsPerDay[1]}
+            format={(v) => `${v}대/일`}
+          />
         </div>
       </Panel>
 
@@ -624,7 +633,7 @@ export function Settings() {
         </Row>
         <Row
           title="설정 기본값으로"
-          desc={`민감도 ≤${DEFAULT_SETTINGS.dangerN} · 하루 ${DEFAULT_SETTINGS.cyclesPerDay}회 · 준비 ${DEFAULT_SETTINGS.prepDays}일`}
+          desc={`민감도 ≤${DEFAULT_SETTINGS.dangerN} · 하루 ${DEFAULT_SETTINGS.cyclesPerDay}회 · 준비 ${DEFAULT_SETTINGS.prepDays}일 · 하루 정비 ${DEFAULT_SETTINGS.slotsPerDay}대`}
         >
           <button
             onClick={reset}

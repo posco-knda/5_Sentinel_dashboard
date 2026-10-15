@@ -87,7 +87,7 @@ export function Overview() {
           </Panel>
         </div>
         <Panel dense title="정비 일정" sub="날짜를 누르면 그날의 엔진을 볼 수 있습니다">
-          <MaintenanceCalendar engines={fleet} plan={plan.items} />
+          <MaintenanceCalendar engines={fleet} plan={plan.items} prepDays={settings.prepDays} slotsPerDay={settings.slotsPerDay} />
         </Panel>
       </div>
 

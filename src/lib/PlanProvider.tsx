@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from './auth'
+import { problem } from './schedule'
+import { useSettings } from './settings'
 import { ACTION_FROM, ACTION_LABEL, ACTION_ROLE, ACTION_TO, PlanContext, STATUS_ORDER, todayStr, type ActPayload, type ActResult, type PlanAction, type PlanEvent, type PlanItem } from './plan'
 
 const KEY = 'sentinel-plan-v2'
@@ -41,6 +43,7 @@ const EMPTY: PlanItem = { status: 'new', updated: 0, history: [] }
 
 export function PlanProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
+  const { settings } = useSettings()
   const [items, setItems] = useState<Record<number, PlanItem>>(() => read() ?? {})
   const ref = useRef(items)
   useEffect(() => {
@@ -70,7 +73,9 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       if (action === 'submit' || action === 'approve') {
         const d = payload.date ?? cur.date
         if (!d || !DATE.test(d)) return { ok: false, error: '정비 일정을 입력해 주세요' }
-        if (d < todayStr()) return { ok: false, error: '정비 일정은 오늘 이후여야 합니다' }
+        // 주간 계획 규칙: 이번 주·준비 기간·주말 불가, 하루 정비 수용 능력 초과 불가 (승인 때도 다시 검사한다)
+        const why = problem(d, { today: todayStr(), prepDays: settings.prepDays, slotsPerDay: settings.slotsPerDay }, prev, unit)
+        if (why) return { ok: false, error: why }
         date = d
       }
       if (action === 'submit' && !note) return { ok: false, error: '판단 사유를 입력해 주세요' }
@@ -86,7 +91,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       setItems(all)
       return { ok: true }
     },
-    [user],
+    [user, settings.prepDays, settings.slotsPerDay],
   )
 
   const clearAll = useCallback(() => {

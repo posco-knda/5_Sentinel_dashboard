@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { deadlineText, requestDate, type FleetEngine } from '../../lib/fleet'
 import { todayStr, type PlanItem } from '../../lib/plan'
+import { closedReason, label as dayLabel } from '../../lib/schedule'
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토']
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -29,8 +30,9 @@ const KINDS = [
 ] as const
 
 /** 정비 일정 달력 — 날짜별로 정비 요청 기한이 오는 엔진과 정비 예정·결재 대기 건을 보여 준다 */
-export function MaintenanceCalendar({ engines, plan }: { engines: FleetEngine[]; plan: Record<number, PlanItem> }) {
+export function MaintenanceCalendar({ engines, plan, prepDays, slotsPerDay }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; prepDays: number; slotsPerDay: number }) {
   const today = todayStr()
+  const rules = { today: todayStr(), prepDays, slotsPerDay }
   const [cursor, setCursor] = useState(() => {
     const t = parse(today)
     return new Date(t.getFullYear(), t.getMonth(), 1)
@@ -58,6 +60,13 @@ export function MaintenanceCalendar({ engines, plan }: { engines: FleetEngine[];
     return m
   }, [engines, plan, today])
 
+  // 날짜별로 이미 정비 예정(승인)된 엔진 수 — 하루 수용 능력과 비교한다
+  const usedByDate = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const p of Object.values(plan)) if (p.status === 'scheduled' && p.date) m.set(p.date, (m.get(p.date) ?? 0) + 1)
+    return m
+  }, [plan])
+
   const cells = useMemo(() => {
     const start = new Date(cursor.getFullYear(), cursor.getMonth(), 1 - cursor.getDay())
     return Array.from({ length: 42 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i))
@@ -74,6 +83,9 @@ export function MaintenanceCalendar({ engines, plan }: { engines: FleetEngine[];
   const sel = days.get(selected)
   const list = sel ? KINDS.flatMap((k) => sel[k.key].map((e) => ({ e, k }))) : []
   const selDate = parse(selected)
+  const selUsed = usedByDate.get(selected) ?? 0
+  const selLeft = slotsPerDay - selUsed
+  const selProblem = closedReason(selected, rules) ?? (selLeft <= 0 ? `${dayLabel(selected)}은(는) 이미 정비 예정 ${selUsed}/${slotsPerDay}대로 가득 찼습니다` : null)
 
   return (
     <div className="flex flex-col gap-3">
@@ -106,21 +118,24 @@ export function MaintenanceCalendar({ engines, plan }: { engines: FleetEngine[];
           const inMonth = c.getMonth() === cursor.getMonth()
           const isToday = key === today
           const isSel = key === selected
-          const counts = KINDS.map((k) => ({ ...k, n: d?.[k.key].length ?? 0 })).filter((k) => k.n > 0)
+          const counts: { key: string; label: string; color: string; n: number | string }[] = KINDS.map((k) => ({ ...k, n: d?.[k.key].length ?? 0 })).filter((k) => k.n > 0)
+          const closed = closedReason(key, rules) !== null
+          const full = (usedByDate.get(key) ?? 0) >= slotsPerDay
+          if (full) counts.push({ key: 'full', label: '정비 만석', color: 'var(--status-critical)', n: '만석' })
           const heat = d && d.due.length ? Math.round(10 + (d.due.length / maxDue) * 30) : 0
           return (
             <button
               key={key}
               role="gridcell"
               aria-selected={isSel}
-              aria-label={`${c.getMonth() + 1}월 ${c.getDate()}일${counts.map((k) => `, ${k.label} ${k.n}대`).join('')}`}
+              aria-label={`${c.getMonth() + 1}월 ${c.getDate()}일${counts.map((k) => (k.key === 'full' ? `, ${k.label}` : `, ${k.label} ${k.n}대`)).join('')}`}
               onClick={() => {
                 setSelected(key)
                 if (!inMonth) setCursor(new Date(c.getFullYear(), c.getMonth(), 1))
               }}
               className="flex h-[52px] flex-col items-start justify-between px-1.5 py-1 text-left"
               style={{
-                background: heat ? `color-mix(in oklab, var(--status-warning) ${heat}%, var(--surface-1))` : 'var(--surface-1)',
+                background: heat ? `color-mix(in oklab, var(--status-warning) ${heat}%, var(--surface-1))` : closed ? 'color-mix(in oklab, var(--surface-2) 70%, var(--surface-1))' : 'var(--surface-1)',
                 outline: isSel ? '2px solid var(--accent)' : 'none',
                 outlineOffset: -2,
                 opacity: inMonth ? 1 : 0.45,
@@ -155,13 +170,16 @@ export function MaintenanceCalendar({ engines, plan }: { engines: FleetEngine[];
         ))}
       </div>
 
-      <div className="min-h-[192px] border-t pt-3" style={{ borderColor: 'var(--border-soft)' }}>
+      <div className="min-h-[216px] border-t pt-3" style={{ borderColor: 'var(--border-soft)' }}>
         <div className="mb-2 flex flex-row items-baseline justify-between gap-2">
           <span className="text-[13px] font-semibold">
             {selDate.getMonth() + 1}월 {selDate.getDate()}일 ({WEEK[selDate.getDay()]}){selected === today ? ' · 오늘' : ''}
           </span>
           <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{list.length ? `${list.length}대` : ''}</span>
         </div>
+        <p className="m-0 mb-2 text-[11.5px]" style={{ color: selProblem ? 'var(--text-muted)' : 'var(--status-good)' }}>
+          {selProblem ?? `정비 가능 자리 ${selLeft}/${slotsPerDay}대`}
+        </p>
         {list.length === 0 ? (
           <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>이 날 예정된 정비 요청이나 일정이 없습니다</p>
         ) : (
