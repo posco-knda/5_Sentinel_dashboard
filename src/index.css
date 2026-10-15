@@ -381,3 +381,18 @@ input:focus-visible,
     print-color-adjust: exact;
   }
 }
+
+/* 누를 수 있는 것에는 손가락 포인터를, 막힌 것에는 금지 표시를 — 브라우저 기본값은 화살표라 직접 지정한다 */
+button:not(:disabled),
+[role='button'],
+[role='radio'],
+[role='switch'],
+select,
+summary,
+input[type='range'],
+input[type='date'] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
