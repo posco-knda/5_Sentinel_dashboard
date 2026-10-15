@@ -414,3 +414,18 @@ button:disabled {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
+
+/* 버튼·버튼처럼 생긴 링크: 올리면 한 단계, 누르면 두 단계 어두워진다.
+   배경색이 제각각(투명·강조색)이라 안쪽 그림자로 위에 회색을 덧씌우고, 인라인 색 지정과 충돌하지 않게 했다 */
+button,
+a[style*='radius-pill'] {
+  transition: box-shadow 0.12s ease, transform 0.12s ease;
+}
+button:not(:disabled):not(.tab-btn):not(.icon-btn):hover,
+a[style*='radius-pill']:hover {
+  box-shadow: inset 0 0 0 999px rgba(128, 128, 128, 0.18);
+}
+button:not(:disabled):not(.tab-btn):not(.icon-btn):active,
+a[style*='radius-pill']:active {
+  box-shadow: inset 0 0 0 999px rgba(128, 128, 128, 0.32);
+}
