@@ -14,7 +14,8 @@
 | **결재함** `/approvals` | 담당자가 올린 정비 요청을 운영 책임자가 검증해 승인·반려. 담당자는 진행 상태와 반려 사유를 확인 |
 | **알림** `/alerts` | 위험·주의 구간에 들어온 알림을 최근 순으로 보고 확인 처리 |
 | **엔진** `/equipment/:id` | 개요(남은 수명·예측 구간·권고) · 고장 진단(센서 → 점검 모듈 → 경보 시점 → 권고) · 센서 · 이력, 진단 리포트 |
-| **리포트** `/report/:id` | 엔진 하나의 진단 요약을 A4로 인쇄·PDF 저장, AI 요약, Slack 알림 |
+| **엔진 리포트** `/report/:id` | 결론 한 줄, 요약(AI 요약 선택), 핵심 수치, 추이, 점검 예상 모듈, **결재 이력과 확인란(AI 작성·담당자·책임자)**을 A4로 인쇄·PDF 저장. Slack 알림 |
+| **주간 리포트** `/weekly` | 최근 7일 결재 현황, 정비 요청 도래(주별), 점검 예상 모듈(부품·인력 준비용), 우선 정비 대상 10대, 결재 이력을 한 장으로 요약. AI 요약·PDF 저장 |
 | **비용 분석** `/cost` | 사후 정비와 예지 정비의 비용을 단가를 바꿔 가며 비교 (가정값 기반) |
 | **설정** `/settings` | 알림 민감도, 하루 비행 횟수, 정비 준비 기간, 연동 상태, 처리 기록 관리 |
 
@@ -67,8 +68,10 @@ python scripts/08_export_dashboard_ts.py && python scripts/18_export_detection_l
 | 함수 | 환경변수 | 하는 일 |
 |---|---|---|
 | `api/notify.ts` | `SLACK_WEBHOOK_URL` | 엔진 진단을 Slack 채널로 전송 (Incoming Webhook) |
-| `api/summary.ts` | `ANTHROPIC_API_KEY` (선택: `ANTHROPIC_MODEL`) | 진단 리포트 요약을 Claude로 다시 작성 |
+| `api/summary.ts` | `ANTHROPIC_API_KEY` (선택: `ANTHROPIC_MODEL`) | 엔진 진단 요약, 주간 리포트 요약(`kind: 'weekly'`)을 Claude로 작성 |
 | `api/status.ts` | — | 위 두 가지가 설정돼 있는지만 true/false로 알림 (설정 화면이 사용) |
+
+**개발 서버에서 직접 써 보기**: `.env.example`을 `.env.local`로 복사해 `ANTHROPIC_API_KEY`(와 `SLACK_WEBHOOK_URL`)를 채우고 `npm run dev`를 다시 실행하면, 개발 서버가 `api/*.ts`를 배포 때와 같은 코드로 돌립니다. `.env.local`은 git에 올라가지 않습니다. 키는 서버 쪽에서만 쓰이고 브라우저로 나가지 않으며, 주간 리포트에는 집계 숫자와 반려 사유(100자 이내)만 AI로 보냅니다.
 
 `npm run test:api`가 모의 요청으로 입력 검증, Slack 멘션 이스케이프, 오류 처리, 비밀값 비노출을 키 없이 검증합니다. 실제 키로 외부 서비스를 호출하는 확인은 배포 후에 필요합니다.
 

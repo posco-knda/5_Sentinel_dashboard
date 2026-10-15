@@ -79,6 +79,14 @@ export function actionText(f: DiagnosisFacts): string {
   return '당장 정비 요청은 필요 없습니다. 정기 모니터링을 유지하세요.'
 }
 
+/** 리포트 맨 위에 두는 결론 한 줄 */
+export function headline(f: DiagnosisFacts): string {
+  const part = f.topPart ? ` · ${f.topPart.label} 점검 권고(추정)` : ''
+  if (f.requestIn <= 0) return `${f.name} — 정비 요청 기한이 지났습니다${part}`
+  if (f.requestIn <= 30) return `${f.name} — ${deadlineText(f.requestIn)}(${Math.ceil(f.requestIn)}일 안)까지 정비 요청이 필요합니다${part}`
+  return `${f.name} — 당장 정비 요청은 필요하지 않습니다. 정기 모니터링을 유지하세요`
+}
+
 /** 규칙 기반 요약 — 위 사실을 문장으로 옮기기만 한다(새 숫자를 만들지 않음). */
 export function ruleSummary(f: DiagnosisFacts): string[] {
   const out: string[] = []

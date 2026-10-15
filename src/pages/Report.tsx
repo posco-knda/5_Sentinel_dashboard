@@ -4,7 +4,10 @@ import { Badge } from '../components/Badge'
 import { EngineRulChart } from '../components/EngineRulChart'
 import { SurvivalCurveChart } from '../components/SurvivalCurveChart'
 import { callApi, notifyState, type SendState } from '../lib/api'
-import { NOTABLE_Z, ruleSummary, toPayload } from '../lib/diagnosis'
+import { NOTABLE_Z, headline, ruleSummary, toPayload } from '../lib/diagnosis'
+import { ROLE_LABEL, useAuth } from '../lib/auth'
+import { ACTION_LABEL, lastDecision, lastSubmit, usePlan } from '../lib/plan'
+import { printLight } from '../lib/print'
 import { LEVEL, URGENCY, daysText, deadlineText, limitDate, requestDate, useFleet } from '../lib/fleet'
 import { useSettings } from '../lib/settings'
 import { useEngineData } from '../lib/useEngine'
@@ -34,6 +37,8 @@ function Row({ k, v }: { k: string; v: string }) {
 
 function ReportSheet({ unit }: { unit: number }) {
   const { settings } = useSettings()
+  const { user } = useAuth()
+  const plan = usePlan()
   const data = useEngineData(unit)
   const [ai, setAi] = useState<Remote>({ state: 'idle' })
   const [slack, setSlack] = useState<SendState>({ state: 'idle' })
@@ -41,14 +46,7 @@ function ReportSheet({ unit }: { unit: number }) {
   if (!engine || !facts) return null
   const summary = ruleSummary(facts)
 
-  const save = () => {
-    // 인쇄는 항상 라이트 색상으로 — 다크 테마에서 눌러도 종이에서 읽히도록 잠깐 바꿨다가 되돌린다
-    const root = document.documentElement
-    const prev = root.getAttribute('data-theme')
-    root.setAttribute('data-theme', 'light')
-    window.addEventListener('afterprint', () => (prev ? root.setAttribute('data-theme', prev) : root.removeAttribute('data-theme')), { once: true })
-    window.print()
-  }
+  const save = printLight
   const askAi = async () => {
     setAi({ state: 'loading' })
     const r = await callApi('/api/summary', { facts: toPayload(facts) })
@@ -62,6 +60,11 @@ function ReportSheet({ unit }: { unit: number }) {
   }
 
   const stamp = new Date().toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })
+  const item = plan.get(unit)
+  const req = lastSubmit(item)
+  const dec = lastDecision(item)
+  const when = (t: number) => new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const topParts = [...facts.parts].sort((a, b) => b.score - a.score).slice(0, 3)
   const maxScore = Math.max(...facts.parts.map((p) => p.score), NOTABLE_Z)
   const dayAgo = (c: number | null) => (c == null ? '—' : `${c} cycle (${daysText(c / settings.cyclesPerDay)}) 전`)
 
@@ -99,13 +102,17 @@ function ReportSheet({ unit }: { unit: number }) {
           <div>
             <p className="m-0 text-[11px] font-semibold tracking-[0.08em]" style={{ color: 'var(--accent)' }}>SENTINEL</p>
             <h1 className="m-0 mt-1 text-[22px] font-semibold tracking-[-0.01em]">엔진 진단 리포트</h1>
-            <p className="m-0 mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>작성 {stamp} · 하루 {settings.cyclesPerDay}회 비행, 정비 준비 {settings.prepDays}일 기준</p>
+            <p className="m-0 mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>작성 {stamp} · 하루 {settings.cyclesPerDay}회 비행, 정비 준비 {settings.prepDays}일 기준{user ? ` · 출력 ${user.name}(${ROLE_LABEL[user.role]})` : ''}</p>
           </div>
           <div className="flex flex-col items-end gap-1.5">
             <span className="text-[20px] font-semibold">{engine.name}</span>
             <Badge status={LEVEL[engine.level].badge} />
           </div>
         </header>
+
+        <p className="m-0 mt-5 border-l-4 py-1 pl-3 text-[15px] font-semibold leading-snug" style={{ borderColor: LEVEL[engine.level].color }}>
+          {headline(facts)}
+        </p>
 
         <Section title="요약">
           <ul className="m-0 flex list-disc flex-col gap-1.5 pl-5 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
@@ -148,9 +155,9 @@ function ReportSheet({ unit }: { unit: number }) {
           </Section>
         )}
 
-        <Section title="모듈별 센서 변화">
+        <Section title="점검 예상 모듈 (센서 변화가 큰 순, 추정)">
           <div className="flex flex-col gap-1.5">
-            {facts.parts.map((p) => (
+            {topParts.map((p) => (
               <div key={p.id} className="grid grid-cols-[130px_1fr_46px] items-center gap-3 text-[12px]">
                 <span style={{ color: facts.topPart?.id === p.id ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: facts.topPart?.id === p.id ? 600 : 400 }}>{p.label}</span>
                 <div className="h-2" style={{ background: 'var(--surface-2)', borderRadius: 2 }}>
@@ -165,6 +172,51 @@ function ReportSheet({ unit }: { unit: number }) {
               가장 크게 변한 센서: {facts.topSensors.map((s) => `${s.name}(${s.z >= 0 ? '↑' : '↓'}×${Math.abs(s.z).toFixed(1)})`).join(', ')}
             </p>
           )}
+        </Section>
+
+        <Section title="결재 이력">
+          {item.history.length ? (
+            <table className="w-full border-collapse">
+              <thead>
+                <tr style={{ color: 'var(--text-muted)' }}>
+                  {['시각', '처리', '담당', '내용'].map((h) => (
+                    <th key={h} className="border-b px-2 py-1.5 text-left text-[11px] font-semibold" style={{ borderColor: 'var(--border-strong)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {item.history.map((ev) => (
+                  <tr key={ev.at} style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                    <td className="mono whitespace-nowrap px-2 py-1.5 align-top text-[12px]" style={{ color: 'var(--text-muted)' }}>{when(ev.at)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 align-top text-[12px] font-medium" style={{ color: ev.action === 'reject' ? 'var(--status-critical)' : undefined }}>{ACTION_LABEL[ev.action]}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 align-top text-[12px]">{ev.by}({ROLE_LABEL[ev.role]})</td>
+                    <td className="px-2 py-1.5 align-top text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                      {ev.date && <span className="mono">{ev.date.slice(5).replace('-', '/')} 정비 · </span>}
+                      {ev.note ?? '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>아직 결재가 올라가지 않았습니다(AI 권고 단계).</p>
+          )}
+        </Section>
+
+        <Section title="확인">
+          <div className="grid grid-cols-3 gap-3 text-[12px]">
+            {[
+              { role: 'AI 작성', who: ai.state === 'done' ? ai.model || 'Claude' : '규칙 기반 요약', at: stamp },
+              { role: '정비 담당자 검토', who: req ? req.by : '미검토', at: req ? when(req.at) : '' },
+              { role: '운영 책임자 결재', who: dec ? `${dec.by} · ${dec.action === 'approve' ? '승인' : '반려'}` : item.status === 'submitted' ? '결재 대기' : '결재 전', at: dec ? when(dec.at) : '' },
+            ].map((b) => (
+              <div key={b.role} className="avoid-break border px-3 py-2.5" style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-xs)' }}>
+                <div style={{ color: 'var(--text-muted)' }}>{b.role}</div>
+                <div className="mt-2 text-[13px] font-semibold">{b.who}</div>
+                <div className="mono mt-0.5 min-h-[16px] text-[11px]" style={{ color: 'var(--text-muted)' }}>{b.at}</div>
+              </div>
+            ))}
+          </div>
         </Section>
 
         <footer className="mt-6 border-t pt-3 text-[10.5px] leading-relaxed" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>

@@ -15,6 +15,7 @@ import { Login } from './pages/Login'
 
 // 무거운 화면(차트·큰 데이터)은 처음 열 때 불러온다
 const Approvals = lazy(() => import('./pages/Approvals').then((m) => ({ default: m.Approvals })))
+const Weekly = lazy(() => import('./pages/Weekly').then((m) => ({ default: m.Weekly })))
 const Alerts = lazy(() => import('./pages/Alerts').then((m) => ({ default: m.Alerts })))
 const Detail = lazy(() => import('./pages/Detail').then((m) => ({ default: m.Detail })))
 const Report = lazy(() => import('./pages/Report').then((m) => ({ default: m.Report })))
@@ -31,6 +32,7 @@ const CalendarIcon = () => icon(<><rect x="3.5" y="5" width="17" height="15" rx=
 const BellIcon = () => icon(<><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z" /><path d="M10 20a2 2 0 0 0 4 0" /></>)
 const CpuIcon = () => icon(<><rect x="6" y="6" width="12" height="12" rx="1.5" /><rect x="9.5" y="9.5" width="5" height="5" rx="0.5" /><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3" /></>)
 const CheckIcon = () => icon(<><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 13l2 2 4-4" /></>)
+const DocIcon = () => icon(<><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h6" /></>)
 const BarsIcon = () => icon(<><path d="M4 20V10" /><path d="M10 20V4" /><path d="M16 20v-7" /><path d="M22 20H2" /></>)
 const GearIcon = () => icon(<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></>)
 const MenuIcon = () => (
@@ -69,6 +71,7 @@ function AnimatedRoutes() {
             <Route path="/equipment" element={<Detail />} />
             <Route path="/equipment/:id" element={<Detail />} />
             <Route path="/report/:id" element={<Report />} />
+            <Route path="/weekly" element={<Weekly />} />
             <Route path="/cost" element={<Cost />} />
             <Route path="/settings" element={<Settings />} />
             {/* 이전 주소 */}
@@ -124,6 +127,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     {
       title: '관리',
       items: [
+        { to: '/weekly', label: '주간 리포트', icon: DocIcon, match: '/weekly' },
         { to: '/cost', label: '비용 분석', icon: BarsIcon, match: '/cost' },
         { to: '/settings', label: '설정', icon: GearIcon, match: '/settings' },
       ],
