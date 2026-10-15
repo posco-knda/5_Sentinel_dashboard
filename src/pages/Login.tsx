@@ -23,7 +23,7 @@ export function Login() {
 
   return (
     <div className="relative flex min-h-screen" style={{ background: 'var(--page)', color: 'var(--text-primary)' }}>
-      <div className="absolute inset-0 hidden lg:block">
+      <div className="hidden h-screen w-[56%] shrink-0 lg:block">
         <Turbofan3D full className="h-full">
           <div className="absolute bottom-10 left-10 max-w-[380px]">
             <p className="m-0 text-[22px] font-semibold leading-snug tracking-[-0.01em]" style={{ color: '#fff' }}>
@@ -35,8 +35,8 @@ export function Login() {
           </div>
         </Turbofan3D>
       </div>
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10 lg:justify-end lg:pr-[8%]">
-      <div className="w-full max-w-[380px] lg:border lg:p-7" style={{ background: 'var(--page)', borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)' }}>
+      <div className="flex flex-1 items-center justify-center px-4 py-10">
+      <div className="w-full max-w-[380px]">
         <div className="mb-6 flex flex-row items-center gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center" style={{ background: 'var(--accent)', borderRadius: 'var(--radius-sm)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
