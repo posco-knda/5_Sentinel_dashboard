@@ -54,9 +54,9 @@ await t('notify: 네트워크 실패는 504', async () => { globalThis.fetch = a
 const status = (await import(root + '/api/status.ts')).default
 await t('status: 설정 여부만 true/false로 알려 주고 값은 노출하지 않음', async () => {
   process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/secret'; process.env.ANTHROPIC_API_KEY = 'sk-secret'
-  const on = mkRes(); status({}, on); assert.deepEqual(on.body, { slack: true, ai: true }); assert.ok(!JSON.stringify(on.body).includes('secret'))
+  const on = mkRes(); status({}, on); assert.deepEqual(on.body, { slack: true, ai: true, aiProvider: 'claude' }); assert.ok(!JSON.stringify(on.body).includes('secret'))
   delete process.env.SLACK_WEBHOOK_URL; delete process.env.ANTHROPIC_API_KEY
-  const off = mkRes(); status({}, off); assert.deepEqual(off.body, { slack: false, ai: false })
+  const off = mkRes(); status({}, off); assert.deepEqual(off.body, { slack: false, ai: false, aiProvider: null })
   process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/x'
 })
 
@@ -113,4 +113,44 @@ await t('weekly: 키가 없으면 503', async () => {
   assert.equal((await call(w2, { method: 'POST', body: { kind: 'weekly', stats } })).code, 503)
   process.env.ANTHROPIC_API_KEY = 'sk-test'
 })
+// ---- summary (Gemini)
+delete process.env.ANTHROPIC_API_KEY
+process.env.GEMINI_API_KEY = 'gk-secret-test'
+let gseen = null
+const gem = (parts, ok = true, status = 200) => async (url, init) => { gseen = { url: String(url), headers: init.headers, body: JSON.parse(init.body) }; return { ok, status, json: async () => ({ candidates: [{ content: { parts } }] }) } }
+globalThis.fetch = gem([{ text: '생각 중…', thought: true }, { text: ' 제미나이 요약입니다. ' }])
+const gsum = (await import(root + '/api/summary.ts?g1')).default
+await t('gemini: 키만 있어도 동작하고 생각(thought) 조각은 빠짐', async () => {
+  const r = await call(gsum, { method: 'POST', body: { facts } }); assert.equal(r.code, 200); assert.equal(r.body.summary, '제미나이 요약입니다.'); assert.equal(r.body.model, 'gemini-2.5-flash')
+})
+await t('gemini: 키는 주소가 아니라 x-goog-api-key 헤더로 전달됨', async () => {
+  assert.match(gseen.url, /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-2\.5-flash:generateContent$/)
+  assert.equal(gseen.headers['x-goog-api-key'], 'gk-secret-test'); assert.ok(!gseen.url.includes('gk-secret-test'))
+})
+await t('gemini: 지침·사실·생각 끄기 설정이 올바르게 전달됨', async () => {
+  assert.match(gseen.body.systemInstruction.parts[0].text, /새로운 숫자/); assert.match(gseen.body.contents[0].parts[0].text, /Engine #31/)
+  assert.equal(gseen.body.generationConfig.thinkingConfig.thinkingBudget, 0)
+})
+await t('gemini: 응답에 키가 섞여 나가지 않음', async () => { const r = await call(gsum, { method: 'POST', body: { facts } }); assert.ok(!JSON.stringify(r.body).includes('gk-secret-test')) })
+await t('gemini: 주간 요약도 같은 경로로 호출됨', async () => {
+  const r = await call(gsum, { method: 'POST', body: { kind: 'weekly', stats } }); assert.equal(r.code, 200); assert.match(gseen.body.systemInstruction.parts[0].text, /주간 리포트/)
+})
+await t('gemini: 둘 다 있으면 Gemini를 우선 사용', async () => {
+  process.env.ANTHROPIC_API_KEY = 'sk-test'; gseen = null
+  const r = await call(gsum, { method: 'POST', body: { facts } }); assert.equal(r.code, 200); assert.ok(gseen && gseen.url.includes('generativelanguage'))
+  delete process.env.ANTHROPIC_API_KEY
+})
+await t('gemini: 한도 초과(429)는 429 quota로, 그 밖의 오류는 502로', async () => {
+  globalThis.fetch = gem([], false, 429); const a = await call(gsum, { method: 'POST', body: { facts } }); assert.equal(a.code, 429); assert.equal(a.body.error, 'quota')
+  globalThis.fetch = gem([], false, 400); assert.equal((await call(gsum, { method: 'POST', body: { facts } })).code, 502)
+  globalThis.fetch = gem([]); assert.equal((await call(gsum, { method: 'POST', body: { facts } })).code, 502)
+})
+await t('gemini: 모델 이름에 이상한 문자가 있으면 기본 모델로 돌아감', async () => {
+  process.env.GEMINI_MODEL = '../../evil?x='; globalThis.fetch = gem([{ text: 'ok' }]); await call(gsum, { method: 'POST', body: { facts } })
+  assert.ok(gseen.url.includes('/models/gemini-2.5-flash:generateContent')); delete process.env.GEMINI_MODEL
+})
+await t('gemini: 상태 확인은 제공자 이름만 알려 주고 키는 노출하지 않음', async () => {
+  const s = mkRes(); status({}, s); assert.deepEqual(s.body, { slack: true, ai: true, aiProvider: 'gemini' }); assert.ok(!JSON.stringify(s.body).includes('gk-secret-test'))
+})
+delete process.env.GEMINI_API_KEY
 console.log(`\n${passed}개 통과`)

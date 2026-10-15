@@ -68,10 +68,10 @@ python scripts/08_export_dashboard_ts.py && python scripts/18_export_detection_l
 | 함수 | 환경변수 | 하는 일 |
 |---|---|---|
 | `api/notify.ts` | `SLACK_WEBHOOK_URL` | 엔진 진단을 Slack 채널로 전송 (Incoming Webhook) |
-| `api/summary.ts` | `ANTHROPIC_API_KEY` (선택: `ANTHROPIC_MODEL`) | 엔진 진단 요약, 주간 리포트 요약(`kind: 'weekly'`)을 Claude로 작성 |
+| `api/summary.ts` | `GEMINI_API_KEY`(무료 한도 있음, 선택: `GEMINI_MODEL`) 또는 `ANTHROPIC_API_KEY`(선택: `ANTHROPIC_MODEL`) | 엔진 진단 요약, 주간 리포트 요약(`kind: 'weekly'`)을 생성형 AI로 작성. 둘 다 있으면 Gemini 사용 |
 | `api/status.ts` | — | 위 두 가지가 설정돼 있는지만 true/false로 알림 (설정 화면이 사용) |
 
-**개발 서버에서 직접 써 보기**: `.env.example`을 `.env.local`로 복사해 `ANTHROPIC_API_KEY`(와 `SLACK_WEBHOOK_URL`)를 채우고 `npm run dev`를 다시 실행하면, 개발 서버가 `api/*.ts`를 배포 때와 같은 코드로 돌립니다. `.env.local`은 git에 올라가지 않습니다. 키는 서버 쪽에서만 쓰이고 브라우저로 나가지 않으며, 주간 리포트에는 집계 숫자와 반려 사유(100자 이내)만 AI로 보냅니다.
+**개발 서버에서 직접 써 보기**: `.env.example`을 `.env.local`로 복사해 `GEMINI_API_KEY`(와 `SLACK_WEBHOOK_URL`)를 채우고 `npm run dev`를 다시 실행하면, 개발 서버가 `api/*.ts`를 배포 때와 같은 코드로 돌립니다. `.env.local`은 git에 올라가지 않습니다. 키는 서버 쪽에서만 쓰이고 브라우저로 나가지 않으며, 주간 리포트에는 집계 숫자와 반려 사유(100자 이내)만 AI로 보냅니다. **Gemini 무료 한도에서는 입력이 Google의 서비스 개선에 쓰일 수 있으므로**, 시연 데이터가 아닌 실제 운항·정비 정보는 보내지 마세요.
 
 `npm run test:api`가 모의 요청으로 입력 검증, Slack 멘션 이스케이프, 오류 처리, 비밀값 비노출을 키 없이 검증합니다. 실제 키로 외부 서비스를 호출하는 확인은 배포 후에 필요합니다.
 

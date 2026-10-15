@@ -206,7 +206,7 @@ function ReportSheet({ unit }: { unit: number }) {
         <Section title="확인">
           <div className="grid grid-cols-3 gap-3 text-[12px]">
             {[
-              { role: 'AI 작성', who: ai.state === 'done' ? ai.model || 'Claude' : '규칙 기반 요약', at: stamp },
+              { role: 'AI 작성', who: ai.state === 'done' ? ai.model || 'AI' : '규칙 기반 요약', at: stamp },
               { role: '정비 담당자 검토', who: req ? req.by : '미검토', at: req ? when(req.at) : '' },
               { role: '운영 책임자 결재', who: dec ? `${dec.by} · ${dec.action === 'approve' ? '승인' : '반려'}` : item.status === 'submitted' ? '결재 대기' : '결재 전', at: dec ? when(dec.at) : '' },
             ].map((b) => (

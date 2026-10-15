@@ -58,7 +58,7 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
   )
 }
 
-type Link = { state: 'checking' | 'ok' | 'dev'; slack: boolean; ai: boolean }
+type Link = { state: 'checking' | 'ok' | 'dev'; slack: boolean; ai: boolean; provider?: string }
 
 function Status({ on, label }: { on: boolean; label: string }) {
   return (
@@ -92,8 +92,8 @@ export function Settings() {
     fetch('/api/status')
       .then(async (r) => {
         if (!(r.headers.get('content-type') ?? '').includes('json')) throw new Error('no-api')
-        const d = (await r.json()) as { slack?: boolean; ai?: boolean }
-        return { state: 'ok', slack: !!d.slack, ai: !!d.ai } as Link
+        const d = (await r.json()) as { slack?: boolean; ai?: boolean; aiProvider?: string }
+        return { state: 'ok', slack: !!d.slack, ai: !!d.ai, provider: d.aiProvider } as Link
       })
       .catch((): Link => ({ state: 'dev', slack: false, ai: false }))
 
@@ -204,8 +204,8 @@ export function Settings() {
         <Row title="Slack 알림" desc="엔진 진단을 Slack 채널로 보냅니다 · SLACK_WEBHOOK_URL">
           {link.state === 'checking' ? <span className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>확인 중…</span> : <Status on={link.slack} label={link.slack ? '연결됨' : link.state === 'dev' ? '서버 기능 없음 (개발 모드)' : '미연결'} />}
         </Row>
-        <Row title="AI 요약" desc="진단 리포트의 요약을 Claude로 다시 씁니다 · ANTHROPIC_API_KEY">
-          {link.state === 'checking' ? <span className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>확인 중…</span> : <Status on={link.ai} label={link.ai ? '연결됨' : link.state === 'dev' ? '서버 기능 없음 (개발 모드)' : '미연결'} />}
+        <Row title="AI 요약" desc="리포트의 요약을 생성형 AI로 다시 씁니다 · GEMINI_API_KEY(무료 한도 있음) 또는 ANTHROPIC_API_KEY">
+          {link.state === 'checking' ? <span className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>확인 중…</span> : <Status on={link.ai} label={link.ai ? `연결됨${link.provider === 'gemini' ? ' · Gemini' : link.provider === 'claude' ? ' · Claude' : ''}` : link.state === 'dev' ? '서버 기능 없음 (개발 모드)' : '미연결'} />}
         </Row>
       </Panel>
 
