@@ -24,7 +24,7 @@ export function Login() {
   return (
     <div className="relative flex min-h-screen" style={{ background: 'var(--page)', color: 'var(--text-primary)' }}>
       <div className="hidden h-screen w-[56%] shrink-0 lg:block">
-        <Turbofan3D className="h-full">
+        <Turbofan3D full className="h-full">
           <div className="absolute bottom-10 left-10 max-w-[380px]">
             <p className="m-0 text-[22px] font-semibold leading-snug tracking-[-0.01em]" style={{ color: '#fff' }}>
               엔진이 멈추기 전에,<br />정비할 때를 먼저 알려드립니다

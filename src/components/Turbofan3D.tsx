@@ -5,19 +5,21 @@ interface Props {
   heat?: Record<string, number>
   /** 강조해서 보여줄 모듈 (목록에서 가리킨 것) */
   focus?: string | null
+  /** true면 기체 전체가 나오는 원래 연출을 그대로 재생한다 (기본은 엔진만 보여주는 단면) */
+  full?: boolean
   className?: string
   style?: CSSProperties
   /** 3D 위에 겹쳐 보여줄 안내 (포인터는 통과한다) */
   children?: ReactNode
 }
 
-const SRC = '/turbofan_3d.html?view=engine'
+const SRC = '/turbofan_3d.html'
 
 /**
  * 3D 엔진 단면 애니메이션. public/turbofan_3d.html 을 iframe으로 불러오고, postMessage로 모듈 강조 값을 보낸다.
  * 화면 밖이거나 탭이 숨겨지면 그리기를 멈추고, '동작 줄이기' 설정이면 움직이지 않는 단면 장면으로 보여준다.
  */
-export function Turbofan3D({ heat, focus = null, className, style, children }: Props) {
+export function Turbofan3D({ heat, focus = null, full = false, className, style, children }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const frame = useRef<HTMLIFrameElement>(null)
   const state = useRef<{ heat?: Record<string, number>; focus: string | null; visible: boolean }>({ heat, focus, visible: true })
@@ -64,7 +66,7 @@ export function Turbofan3D({ heat, focus = null, className, style, children }: P
     >
       <iframe
         ref={frame}
-        src={reduced ? `${SRC}&t=6.5` : SRC}
+        src={full ? (reduced ? `${SRC}?t=6.5` : SRC) : reduced ? `${SRC}?view=engine&t=6.5` : `${SRC}?view=engine`}
         title="항공기 엔진 3D 단면"
         loading="lazy"
         onLoad={send}
