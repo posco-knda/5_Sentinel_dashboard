@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, ReferenceLine, Tooltip, ResponsiveContainer } from 'recharts'
 import { EngineRulChart } from '../EngineRulChart'
+import { Turbofan3D } from '../Turbofan3D'
 import { partMeta } from '../../data/partFlowMeta'
 import type { PartFlow } from '../../data/partFlow'
 import { actionText } from '../../lib/diagnosis'
@@ -46,11 +47,11 @@ function Step({ n, title, sub, children, last = false }: { n: number; title: str
 }
 
 /** 공기 흐름 순서로 늘어놓은 모듈 블록 — 초기 상태에서 많이 벗어날수록 진하게 */
-export function PartStrip({ flow }: { flow: PartFlow }) {
+export function PartStrip({ flow, cols = 'grid-cols-3 sm:grid-cols-6', onFocus }: { flow: PartFlow; cols?: string; onFocus?: (id: string | null) => void }) {
   const top = GAS_PATH.reduce((a, b) => (flow.part[b] > flow.part[a] ? b : a))
   const showTop = flow.part[top] >= NOTABLE_Z
   return (
-    <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+    <div className={`grid gap-2 ${cols}`}>
       {GAS_PATH.map((id, i) => {
         const score = flow.part[id]
         const isTop = showTop && id === top
@@ -60,6 +61,8 @@ export function PartStrip({ flow }: { flow: PartFlow }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.3 }}
+            onMouseEnter={() => onFocus?.(id)}
+            onMouseLeave={() => onFocus?.(null)}
             className="relative flex flex-col gap-1 border p-3"
             style={{
               background: `color-mix(in oklab, var(--status-critical) ${Math.round(intensity(score) * 55)}%, var(--surface-2))`,
@@ -85,6 +88,22 @@ export function PartStrip({ flow }: { flow: PartFlow }) {
           </motion.div>
         )
       })}
+    </div>
+  )
+}
+
+/** 3D 엔진 단면 + 모듈 블록: 이탈이 큰 모듈이 엔진 위에서도 붉게 빛나고, 블록에 마우스를 올리면 그 모듈이 표시된다 */
+function ModuleView({ flow }: { flow: PartFlow }) {
+  const [focus, setFocus] = useState<string | null>(null)
+  const heat = useMemo(() => Object.fromEntries(GAS_PATH.map((id) => [id, flow.part[id] >= NOTABLE_Z ? intensity(flow.part[id]) : 0])), [flow])
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <Turbofan3D heat={heat} focus={focus} className="h-[300px] lg:h-full lg:min-h-[300px]" style={{ borderRadius: 'var(--radius-sm)' }}>
+        <span className="absolute bottom-2 left-3 text-[11px]" style={{ color: 'rgba(255,255,255,.7)' }}>
+          붉게 빛나는 곳 = 초기 상태에서 많이 벗어난 모듈 · 드래그로 회전, 더블클릭으로 원위치
+        </span>
+      </Turbofan3D>
+      <PartStrip flow={flow} cols="grid-cols-2" onFocus={setFocus} />
     </div>
   )
 }
@@ -169,7 +188,7 @@ export function DiagnosisFlow({ data }: { data: EngineData }) {
       </Step>
 
       <Step n={2} title={notable ? `점검 예상 모듈 — ${facts.topPart!.label}` : '점검 예상 모듈 — 뚜렷하게 변한 모듈 없음'} sub="센서가 측정하는 위치 기준 · 모듈 이탈도 = 소속 센서 이탈도(|×N|)의 평균">
-        <PartStrip flow={flow} />
+        <ModuleView flow={flow} />
         <p className="mb-0 mt-2.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
           공기가 지나가는 순서(왼쪽 흡입 → 오른쪽 배기). 고장 원인을 확정한 것이 아니라 가장 크게 변한 센서가 속한 모듈을 점검 우선순위로 추정한 값입니다.
         </p>
