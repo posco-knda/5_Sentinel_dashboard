@@ -11,7 +11,7 @@ interface Props {
   children?: ReactNode
 }
 
-const SRC = '/turbofan_3d.html'
+const SRC = '/turbofan_3d.html?view=engine'
 
 /**
  * 3D 엔진 단면 애니메이션. public/turbofan_3d.html 을 iframe으로 불러오고, postMessage로 모듈 강조 값을 보낸다.
@@ -64,7 +64,7 @@ export function Turbofan3D({ heat, focus = null, className, style, children }: P
     >
       <iframe
         ref={frame}
-        src={reduced ? `${SRC}?t=6.5` : SRC}
+        src={reduced ? `${SRC}&t=6.5` : SRC}
         title="항공기 엔진 3D 단면"
         loading="lazy"
         onLoad={send}

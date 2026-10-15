@@ -24,6 +24,8 @@
 (() => {
 const params = new URLSearchParams(location.search);
 if (params.get('bg') === 'transparent') document.documentElement.classList.add('transparent');
+// ?view=engine : 대시보드용. 기체(동체·날개)를 빼고 단면이 열린 엔진만 천천히 좌우로 돌려 보여준다
+const INSPECT = params.get('view') === 'engine';
 const LOOP = 12;                       // 한 바퀴 길이(초)
 
 // ---------- renderer / scene ----------
@@ -189,7 +191,7 @@ const shafts = [];
 {
   // core cowl (clipped like nacelle)
   const cowl = lathe([[0.62, -1.15], [0.74, -0.7], [0.76, 0.6], [0.7, 1.6], [0.62, 2.4], [0.5, 2.85], [0.46, 2.85], [0.56, 2.3], [0.62, 1.4], [0.6, 0.4], [0.56, -0.6], [0.5, -1.0]], M.core, 96);
-  engine.add(cowl);
+  if (!INSPECT) engine.add(cowl);   // 대시보드용 화면에서는 덮개를 빼서 안쪽 모듈이 가려지지 않게 한다
   // exhaust plug
   const plug = lathe([[0.42, 2.0], [0.4, 2.7], [0.28, 3.3], [0.1, 3.75], [0, 3.85]], M.hot, 64); engine.add(plug);
   // inner splitter / hub to spinner
@@ -278,7 +280,8 @@ const flow = (() => {
       d.updateMatrix(); im.setMatrixAt(i, d.matrix);
       if (p.core) { const h = THREE.MathUtils.smoothstep(p.x, 1.0, 1.5); c.copy(cold).lerp(warm, h); }
       else c.copy(cold);
-      c.multiplyScalar(fade);
+      // 대시보드용 화면: 카메라 쪽(열린 단면 앞)의 기류는 그리지 않아 안쪽 모듈이 가려지지 않게 한다
+      c.multiplyScalar(INSPECT && Math.sin(p.a + rot) > 0.02 ? 0 : fade);
       im.setColorAt(i, c);
     }
     im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true;
@@ -286,19 +289,15 @@ const flow = (() => {
   return { update };
 })();
 
+if (INSPECT) for (const c of plane.children) if (c !== engine) c.visible = false;
+
 // ---------- 모듈 강조 ----------
 // 대시보드(부모 창)가 모듈별 이탈도(0~1)를 보내면 해당 모듈이 붉게 빛나고, 목록에서 가리킨 모듈은 청록으로 표시된다.
-const cowlPts = [[-1.15, 0.62], [-0.7, 0.74], [0.6, 0.76], [1.6, 0.70], [2.4, 0.62]];
-function cowlR(x) {
-  for (let i = 1; i < cowlPts.length; i++) {
-    const [x1, r1] = cowlPts[i], [x0, r0] = cowlPts[i - 1];
-    if (x <= x1) return r0 + (r1 - r0) * Math.max(0, (x - x0) / (x1 - x0));
-  }
-  return cowlPts[cowlPts.length - 1][1];
-}
-const bandMat = (planes) => new THREE.MeshBasicMaterial({ color: 0xff2a10, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, clippingPlanes: planes });
+const bandMat = (planes) => new THREE.MeshBasicMaterial({ color: 0xd0100a, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, side: THREE.DoubleSide, clippingPlanes: planes });
+// 모듈 뒤쪽 안쪽 벽에 붙이는 붉은 패널 — 단면이 열렸을 때 해당 구간이 한눈에 보인다
 function shell(x0, x1) {
-  const m = lathe([[cowlR(x0) + 0.03, x0], [cowlR(x1) + 0.03, x1]], bandMat([coreCut]), 64);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, 1.05), bandMat(null));
+  m.position.set((x0 + x1) / 2, 0, -0.3);
   engine.add(m); return m;
 }
 const fanDisc = new THREE.Mesh(new THREE.CircleGeometry(1.0, 64), bandMat([cutZ]));
@@ -324,10 +323,10 @@ function updateMods(now, dt, glow) {
     st.foc += ((focusId === k ? 1 : 0) - st.foc) * a;
     const cyan = st.foc > st.heat;
     m.band.material.color.copy(cyan ? CYAN : RED);
-    m.band.material.opacity = Math.max(st.heat * 0.42 * pulse, st.foc * 0.5);
+    m.band.material.opacity = Math.max(st.heat * (k === 'fan' ? 0.4 : 0.8 + 0.2 * pulse), st.foc * 0.6);
     m.band.visible = m.band.material.opacity > 0.004;
     const baseR = m.hot ? 0.25 * glow : 0, baseG = m.hot ? 0.09 * glow : 0, baseB = m.hot ? 0.02 * glow : 0;
-    const h = st.heat * pulse * 0.9, f = st.foc * 0.5;
+    const h = st.heat * pulse * 1.7, f = st.foc * 0.6;
     for (const mat of m.mats) mat.emissive.setRGB(baseR + RED.r * h + CYAN.r * f, baseG + RED.g * h + CYAN.g * f, baseB + RED.b * h + CYAN.b * f);
   }
 }
@@ -369,6 +368,14 @@ function shot(t) {
   return { pos: new THREE.Vector3().setFromSpherical(s).add(ta), tgt: ta };
 }
 
+function inspectShot() {
+  const tgt = V(0.55, 0, 0);
+  const dist = Math.max(7, 4.1 / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect));
+  const yaw = -0.2 + Math.sin(time * 0.28) * 0.32;
+  const dir = V(Math.sin(yaw), 0.17, Math.cos(yaw)).normalize();
+  return { pos: tgt.clone().add(dir.multiplyScalar(dist)), tgt };
+}
+
 // ---------- interaction ----------
 let yawOff = 0, pitchOff = 0, drag = null, paused = false;
 renderer.domElement.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, yaw: yawOff, pitch: pitchOff }; });
@@ -397,7 +404,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (!running) { requestAnimationFrame(frame); return; }
   if (!paused && !fixed) time += dt;
-  const t = time % LOOP;
+  const t = INSPECT ? 6.5 : time % LOOP;
   const spin = paused ? 0 : (fixed ? 0 : dt);
 
   // cutaway: open 7.5-10, close 16.5-18.5
@@ -414,14 +421,14 @@ function frame(now) {
 
   // flow + combustion glow
   const flowK = seg(t, 3.6, 4.8) * (1 - seg(t, 9.8, 11));
-  flow.update(fixed ? 0 : dt, flowK);
+  flow.update(fixed ? 0 : dt, INSPECT ? flowK * 0.6 : flowK);
   const glow = seg(t, 4, 5) * (1 - seg(t, 9.8, 11));
   M.flame.opacity = glow * (0.55 + 0.15 * Math.sin(now * 0.02));
   M.hot.emissive.setRGB(0.25 * glow, 0.09 * glow, 0.02 * glow);
   updateMods(now, dt, glow);
 
   // camera
-  const s = shot(t);
+  const s = INSPECT ? inspectShot() : shot(t);
   const off = s.pos.clone().sub(s.tgt);
   const sp = new THREE.Spherical().setFromVector3(off);
   sp.theta += yawOff; sp.phi = THREE.MathUtils.clamp(sp.phi + pitchOff, 0.3, 2.8);
