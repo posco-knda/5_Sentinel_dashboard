@@ -60,7 +60,8 @@
     "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
-:root[data-theme="light"] {
+:root[data-theme="light"],
+.force-light {
   color-scheme: light;
 
   --page: #fafafa;
@@ -235,13 +236,6 @@ input:focus-visible,
   transform: translateY(0) scale(0.98);
 }
 
-.theme-toggle-track:hover {
-  border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
-}
-.theme-toggle-track:active {
-  transform: scale(0.97);
-}
-
 .back-link {
   width: fit-content;
   transition: color 0.15s ease;
@@ -352,4 +346,86 @@ input:focus-visible,
   .led-dot--live {
     animation: none;
   }
+}
+
+/* 진단 리포트 인쇄 — 사이드바·버튼은 숨기고 시트만 A4에 맞춰 찍는다 */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+@media print {
+  aside,
+  .no-print {
+    display: none !important;
+  }
+  html,
+  body,
+  #root {
+    height: auto !important;
+    background: #fff !important;
+  }
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  .report-sheet {
+    border: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  .avoid-break {
+    break-inside: avoid;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* 누를 수 있는 것에는 손가락 포인터를, 막힌 것에는 금지 표시를 — 브라우저 기본값은 화살표라 직접 지정한다 */
+button:not(:disabled),
+[role='button'],
+[role='radio'],
+[role='switch'],
+select,
+summary,
+input[type='range'],
+input[type='date'] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* 눌러서 이동하는 표의 행: 올리면 연한 회색, 누르는 동안 더 진한 회색 */
+.row-link {
+  cursor: pointer;
+}
+.row-link > td {
+  transition: background-color 0.1s;
+}
+.row-link:hover > td {
+  background: rgba(128, 128, 128, 0.1);
+}
+.row-link:active > td {
+  background: rgba(128, 128, 128, 0.22);
+}
+.row-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* 버튼·버튼처럼 생긴 링크: 올리면 한 단계, 누르면 두 단계 어두워진다.
+   배경색이 제각각(투명·강조색)이라 안쪽 그림자로 위에 회색을 덧씌우고, 인라인 색 지정과 충돌하지 않게 했다 */
+button,
+a[style*='radius-pill'] {
+  transition: box-shadow 0.12s ease, transform 0.12s ease;
+}
+button:not(:disabled):not(.tab-btn):not(.icon-btn):hover,
+a[style*='radius-pill']:hover {
+  box-shadow: inset 0 0 0 999px rgba(128, 128, 128, 0.18);
+}
+button:not(:disabled):not(.tab-btn):not(.icon-btn):active,
+a[style*='radius-pill']:active {
+  box-shadow: inset 0 0 0 999px rgba(128, 128, 128, 0.32);
 }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { costModel, savingsSummary, riskThresholds, dataMeta } from '../data/mock'
+import { costModel, savingsSummary } from '../data/mock'
 
 function Slider({
   label,
@@ -114,9 +114,9 @@ function computeScenario(m: Mult) {
   const r1 = (v: number) => Math.round(v * 10) / 10
   return {
     metrics: [
-      { metric: '평균 가동중단 시간 (시간/1,000대 환산)', asIs: r1(acc.asis.hours * per1000), toBe: r1(acc.tobe.hours * per1000) },
-      { metric: '정비 비용 (억원/1,000대 환산)', asIs: r1((acc.asis.repair * per1000) / 10000), toBe: r1((acc.tobe.repair * per1000) / 10000) },
-      { metric: '가동중단 손실 (억원/1,000대 환산)', asIs: r1((loss(acc.asis) * per1000) / 10000), toBe: r1((loss(acc.tobe) * per1000) / 10000) },
+      { metric: '가동중단 시간 (시간)', asIs: r1(acc.asis.hours * per1000), toBe: r1(acc.tobe.hours * per1000) },
+      { metric: '정비 비용 (억원)', asIs: r1((acc.asis.repair * per1000) / 10000), toBe: r1((acc.tobe.repair * per1000) / 10000) },
+      { metric: '가동중단 손실 (억원)', asIs: r1((loss(acc.asis) * per1000) / 10000), toBe: r1((loss(acc.tobe) * per1000) / 10000) },
     ],
     savingPer1000: r1(((asisTotal - tobeTotal) * per1000) / 10000),
     savingRate: asisTotal > 0 ? Math.round(((asisTotal - tobeTotal) / asisTotal) * 1000) / 10 : 0,
@@ -138,18 +138,16 @@ export function Simulation() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <p className="m-0 text-xl font-semibold">정비 시나리오 비교 시뮬레이션</p>
-        <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
-          아래 가정을 조절하면 사후보전(고장 후 수리)과 예지보전(RUL 기반 사전 정비)의 비용 격차가 실시간으로 다시
-          계산됩니다. 사건 수·탐지율(정밀도·재현율)은 test 엔진 {dataMeta.testEngines}대에 대한 {dataMeta.model} 모델의 실제 결과이고, 가동중단
-          시간·단가는 가정값입니다
+        <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">비용 분석</h1>
+        <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+          고장 난 뒤 수리하는 방식(사후 정비)과 예측으로 미리 정비하는 방식(예지 정비)의 비용을 비교합니다. 왼쪽 단가를 우리 기준으로 바꿔 보세요.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1.4fr]">
         <div className="surface-card flex flex-col gap-5 border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
           <p className="m-0 text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-            시뮬레이션 가정 조절
+            가정 조절
           </p>
           <Slider
             label={`엔진 가동중단 손실 단가 (기준 ${(baseHourCost / 10000).toFixed(1)}억원/시간)`}
@@ -196,7 +194,7 @@ export function Simulation() {
             </span>
           </div>
           <p className="m-0 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-            test 엔진 {dataMeta.testEngines}대의 실제 탐지 결과를 1,000대 규모로 환산한 값입니다 (화면 상단의 모니터링 대상 9대와는 다른 표본)
+            엔진 1,000대를 운용한다고 보고 과거 검증에서의 탐지·누락·오경보 비율을 적용한 값입니다
           </p>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -214,23 +212,22 @@ export function Simulation() {
             style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
           >
             <span className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
-              예상 절감 효과 (test {dataMeta.testEngines}대 → 1,000대 환산)
+              예상 절감 효과 (엔진 1,000대 기준)
             </span>
             <span className="text-[34px] font-bold" style={{ color: 'var(--accent)' }}>
               {result.savingPer1000.toLocaleString()}억원 · 절감률 {result.savingRate}%
             </span>
             <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-              위험 상태(RUL ≤ {riskThresholds.dangerRul})로 방치되는 엔진 사례가 {result.dangerCaseReduction}% 줄어듭니다 (가정과 무관한, 탐지·누락
-              건수 기반의 실제 결과). 기준 가정의 절감률은 {savingsSummary.savingRatePct}%입니다
+              위험 상태로 방치되는 엔진이 {result.dangerCaseReduction}% 줄어듭니다 (단가와 무관하게 탐지·누락 비율에서 나온 값). 기본 단가에서의 절감률은{' '}
+              {savingsSummary.savingRatePct}%입니다
             </span>
           </motion.div>
         </div>
       </div>
 
       <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-        ※ C-MAPSS 데이터에는 실제 비용·정비 시간 정보가 없어서, 금액과 가동중단 시간은 항공 정비 맥락의 illustrative
-        가정값입니다(항공사·기종별로 실제 단가는 다를 수 있습니다). 탐지·누락·오탐 건수만 test 엔진 {dataMeta.testEngines}대에 대한 실제
-        모델 성능이며, 표본 수가 적어 연간 환산이나 ROI는 계산하지 않았습니다.
+        ※ 금액과 가동중단 시간은 가정값입니다. 항공사·기종마다 단가가 다르므로 왼쪽 슬라이더를 운영 기준에 맞게 조정하세요. 탐지·누락·오경보 비율은 과거 검증
+        결과이며, 검증 표본이 작아 연간 환산이나 투자 회수 기간은 계산하지 않았습니다.
       </p>
     </div>
   )
