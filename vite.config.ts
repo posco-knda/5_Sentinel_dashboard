@@ -2,7 +2,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-const API_KEYS = ['GEMINI_API_KEY', 'GEMINI_MODEL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'SLACK_WEBHOOK_URL', 'SLACK_WEBHOOK_URL_APPROVALS']
+const API_KEYS = ['GEMINI_API_KEY', 'GEMINI_MODEL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'SLACK_WEBHOOK_URL', 'SLACK_APPROVAL_WEBHOOK_URL']
 
 /**
  * 개발 서버에서도 api/*.ts 서버 함수를 그대로 돌린다(배포 환경의 Vercel 함수와 같은 코드).

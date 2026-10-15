@@ -99,7 +99,7 @@ await t('digest: 잘못된 입력은 400, 연달아 보내면 429', async () => 
 
 // ---- notify (채널 분리: 정비 알림 / 결재 알림)
 process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/maint'
-process.env.SLACK_WEBHOOK_URL_APPROVALS = 'https://hooks.slack.test/T/B/appr'
+process.env.SLACK_APPROVAL_WEBHOOK_URL = 'https://hooks.slack.test/T/B/appr'
 const statusFn = (await import(root + '/api/status.ts?rt')).default
 let rsent = []
 globalThis.fetch = async (url, init) => { rsent.push({ url, body: JSON.parse(init.body) }); return { ok: true, status: 200, json: async () => ({}) } }
@@ -116,13 +116,13 @@ await t('채널 분리: 엔진 위험 감지와 신규 즉시 조치는 정비 �
   assert.equal((await call(rt, { method: 'POST', body: { facts } })).code, 200); assert.equal(rsent.at(-1).url, 'https://hooks.slack.test/T/B/maint')
   assert.equal((await call(rt, { method: 'POST', body: { kind: 'digest', digest: digestBody } })).code, 200); assert.equal(rsent.at(-1).url, 'https://hooks.slack.test/T/B/maint')
 })
-delete process.env.SLACK_WEBHOOK_URL_APPROVALS
+delete process.env.SLACK_APPROVAL_WEBHOOK_URL
 const rt2 = (await import(root + '/api/notify.ts?rt2')).default
 await t('채널 분리: 결재용 웹훅이 없으면 정비 알림 채널로 함께 보냄', async () => {
   const r = await call(rt2, { method: 'POST', body: { kind: 'workflow', event: ev } }); assert.equal(r.code, 200); assert.equal(rsent.at(-1).url, 'https://hooks.slack.test/T/B/maint')
 })
 delete process.env.SLACK_WEBHOOK_URL
-process.env.SLACK_WEBHOOK_URL_APPROVALS = 'https://hooks.slack.test/T/B/appr'
+process.env.SLACK_APPROVAL_WEBHOOK_URL = 'https://hooks.slack.test/T/B/appr'
 const rt3 = (await import(root + '/api/notify.ts?rt3')).default
 await t('채널 분리: 결재용만 있으면 결재 알림은 가고, 정비 알림은 미설정(503)', async () => {
   assert.equal((await call(rt3, { method: 'POST', body: { kind: 'workflow', event: ev } })).code, 200)
@@ -133,7 +133,7 @@ process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/x'
 await t('채널 분리: 상태 확인은 별도 채널이면 separate (주소는 노출하지 않음)', async () => {
   const st = mkRes(); statusFn({}, st); assert.equal(st.body.slackApprovals, 'separate'); assert.ok(!JSON.stringify(st.body).includes('hooks.slack.test'))
 })
-delete process.env.SLACK_WEBHOOK_URL_APPROVALS
+delete process.env.SLACK_APPROVAL_WEBHOOK_URL
 
 // ---- status
 const status = (await import(root + '/api/status.ts')).default

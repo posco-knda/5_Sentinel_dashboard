@@ -526,7 +526,7 @@ export function Settings() {
         </Row>
         <Row
           title="Slack 결재 알림"
-          desc="결재 요청·승인·반려·정비 완료를 보냅니다 · SLACK_WEBHOOK_URL_APPROVALS (없으면 정비 알림 채널로 함께 보냄)"
+          desc="결재 요청·승인·반려·정비 완료를 보냅니다 · SLACK_APPROVAL_WEBHOOK_URL (없으면 정비 알림 채널로 함께 보냄)"
         >
           {link.state === "checking" ? (
             <span
