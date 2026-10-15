@@ -14,6 +14,8 @@ interface Props {
 }
 
 const SRC = '/turbofan_3d.html'
+// 로그인용: 원본 파일을 손대지 않은 그대로, '동작 줄이기' 설정이어도 연출을 그대로 재생한다
+const ORIGINAL = '/turbofan_original.html'
 
 /**
  * 3D 엔진 단면 애니메이션. public/turbofan_3d.html 을 iframe으로 불러오고, postMessage로 모듈 강조 값을 보낸다.
@@ -66,7 +68,7 @@ export function Turbofan3D({ heat, focus = null, full = false, className, style,
     >
       <iframe
         ref={frame}
-        src={full ? (reduced ? `${SRC}?t=6.5` : SRC) : reduced ? `${SRC}?view=engine&t=6.5` : `${SRC}?view=engine`}
+        src={full ? ORIGINAL : reduced ? `${SRC}?view=engine&t=6.5` : `${SRC}?view=engine`}
         title="항공기 엔진 3D 단면"
         loading="lazy"
         onLoad={send}
