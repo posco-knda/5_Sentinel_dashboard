@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Panel } from '../components/Panel'
 import { StatTile } from '../components/StatTile'
 import { QueueTable } from '../components/ops/QueueTable'
+import { Pagination } from '../components/Pagination'
 import { DemandChart } from '../components/ops/OpsCharts'
 import { URGENCY, useFleet, type Urgency } from '../lib/fleet'
 import { useSettings } from '../lib/settings'
@@ -19,6 +20,8 @@ export function Plan() {
   const bulkReview = useBulkReview()
   const [filter, setFilter] = useState<Filter>('todo')
   const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
 
   // 처리 상태를 plan.items에서 직접 읽어서, 상태가 바뀌면 아래 계산이 자동으로 다시 돌게 한다
   const items = plan.items
@@ -44,6 +47,10 @@ export function Plan() {
     return base.filter((e) => !q || String(e.unit).includes(q))
   }, [filter, query, todo, done, fleet, items])
 
+  // 필터·검색·처리 상태가 바뀌어 쪽 수가 줄어도 마지막 쪽 안에 머문다
+  const lastPage = Math.max(1, Math.ceil(rows.length / pageSize))
+  const curPage = Math.min(page, lastPage)
+  const pageRows = rows.slice((curPage - 1) * pageSize, curPage * pageSize)
   const startAll = () => bulkReview(todo.filter((e) => stateOf(e.unit) === 'new').map((e) => e.unit))
   const chips: { id: Filter; label: string }[] = [
     { id: 'todo', label: '조치 필요' },
@@ -105,7 +112,10 @@ export function Plan() {
               return (
                 <button
                   key={c.id}
-                  onClick={() => setFilter(c.id)}
+                  onClick={() => {
+                    setFilter(c.id)
+                    setPage(1)
+                  }}
                   className="border px-3 py-1.5 text-[12.5px]"
                   style={{
                     borderRadius: 'var(--radius-pill)',
@@ -121,19 +131,18 @@ export function Plan() {
           </div>
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setPage(1)
+            }}
             placeholder="엔진 번호"
             inputMode="numeric"
             className="mono w-32 border px-3 py-1.5 text-[12.5px]"
             style={{ borderColor: 'var(--border)', background: 'var(--surface-2)', color: 'var(--text-primary)', borderRadius: 'var(--radius-pill)' }}
           />
         </div>
-        <QueueTable engines={rows.slice(0, 80)} withDates empty={filter === 'done' ? '완료 처리한 엔진이 없습니다' : '해당하는 엔진이 없습니다'} />
-        {rows.length > 80 && (
-          <p className="mb-0 mt-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-            {rows.length}대 중 상위 80대만 표시합니다. 엔진 번호로 검색하세요.
-          </p>
-        )}
+        <QueueTable engines={pageRows} withDates empty={filter === 'done' ? '완료 처리한 엔진이 없습니다' : '해당하는 엔진이 없습니다'} />
+        <Pagination total={rows.length} page={curPage} pageSize={pageSize} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1) }} />
       </Panel>
     </div>
   )
