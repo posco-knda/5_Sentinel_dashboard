@@ -10,12 +10,12 @@ export function QueueTable({ engines, withDates = false, empty = '해당하는 �
   const heads = ['엔진', '긴급도', '알림 등급', '남은 수명', withDates ? '정비 요청 기한' : '요청 기한', ...(withDates ? ['가동 한계 예상'] : []), '점검 예상 모듈', '처리']
   const cell = { borderBottom: '1px solid var(--border-soft)' }
   return (
-    <div className="overflow-x-auto">
+    <div>
       <table className="w-full min-w-[820px] border-collapse">
         <thead>
           <tr>
             {heads.map((h) => (
-              <th key={h} className="whitespace-nowrap border-b px-3 py-2.5 text-left text-[11.5px] font-semibold" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-strong)' }}>
+              <th key={h} className="whitespace-nowrap px-3 py-2.5 text-left text-[11.5px] font-semibold" style={{ position: 'sticky', top: 0, zIndex: 1, background: 'var(--surface-1)', boxShadow: 'inset 0 -1px 0 var(--border-strong)', color: 'var(--text-muted)' }}>
                 {h}
               </th>
             ))}
@@ -24,20 +24,20 @@ export function QueueTable({ engines, withDates = false, empty = '해당하는 �
         <tbody>
           {engines.map((e) => (
             <tr key={e.unit} onClick={() => nav(`/equipment/engine-${e.unit}`)} className="row-link" tabIndex={0} onKeyDown={(ev) => ev.key === 'Enter' && nav(`/equipment/engine-${e.unit}`)}>
-              <td className="mono px-3 py-3 text-[13px] font-semibold" style={{ ...cell, color: 'var(--text-primary)' }}>#{e.unit}</td>
-              <td className="px-3 py-3" style={cell}><UrgencyChip urgency={e.urgency} /></td>
-              <td className="px-3 py-3" style={cell}><Badge status={LEVEL[e.level].badge} /></td>
-              <td className="px-3 py-3 text-[13px]" style={{ ...cell, color: 'var(--text-primary)' }}>
+              <td className="mono px-3 py-2 text-[13px] font-semibold" style={{ ...cell, color: 'var(--text-primary)' }}>#{e.unit}</td>
+              <td className="px-3 py-2" style={cell}><UrgencyChip urgency={e.urgency} /></td>
+              <td className="px-3 py-2" style={cell}><Badge status={LEVEL[e.level].badge} /></td>
+              <td className="px-3 py-2 text-[13px]" style={{ ...cell, color: 'var(--text-primary)' }}>
                 <span className="mono font-medium">{e.pred}</span> cycle
                 <span className="ml-1.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{daysText(e.daysLeft)}</span>
               </td>
-              <td className="px-3 py-3 text-[13px]" style={{ ...cell, color: e.requestIn <= 0 ? 'var(--status-critical)' : 'var(--text-primary)', fontWeight: e.requestIn <= 7 ? 600 : 400 }}>
+              <td className="px-3 py-2 text-[13px]" style={{ ...cell, color: e.requestIn <= 0 ? 'var(--status-critical)' : 'var(--text-primary)', fontWeight: e.requestIn <= 7 ? 600 : 400 }}>
                 {deadlineText(e.requestIn)}
                 {withDates && <span className="mono ml-1.5 text-[11.5px] font-normal" style={{ color: 'var(--text-muted)' }}>{requestDate(e.requestIn).slice(5).replace('-', '/')}</span>}
               </td>
-              {withDates && <td className="mono px-3 py-3 text-[12.5px]" style={{ ...cell, color: 'var(--text-secondary)' }}>{limitDate(e.daysLeft).slice(5).replace('-', '/')}</td>}
-              <td className="px-3 py-3 text-[12.5px]" style={{ ...cell, color: e.topPart ? 'var(--text-secondary)' : 'var(--text-muted)' }}>{e.topPart ? e.topPart.label : '뚜렷한 변화 없음'}</td>
-              <td className="px-3 py-3" style={cell}><PlanControl engine={e} compact /></td>
+              {withDates && <td className="mono px-3 py-2 text-[12.5px]" style={{ ...cell, color: 'var(--text-secondary)' }}>{limitDate(e.daysLeft).slice(5).replace('-', '/')}</td>}
+              <td className="px-3 py-2 text-[12.5px]" style={{ ...cell, color: e.topPart ? 'var(--text-secondary)' : 'var(--text-muted)' }}>{e.topPart ? e.topPart.label : '뚜렷한 변화 없음'}</td>
+              <td className="px-3 py-2" style={cell}><PlanControl engine={e} compact /></td>
             </tr>
           ))}
           {!engines.length && (

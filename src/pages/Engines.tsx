@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Panel } from '../components/Panel'
-import { Pagination } from '../components/Pagination'
+import { Pagination, type SizeMode } from '../components/Pagination'
 import { Badge } from '../components/Badge'
 import { StatusChip } from '../components/ops/StatusChip'
 import { UrgencyChip } from '../components/ops/UrgencyChip'
 import { LEVEL, daysText, deadlineText, useFleet, type Level } from '../lib/fleet'
 import { usePlan } from '../lib/plan'
 import { useSettings } from '../lib/settings'
+import { useFitRows } from '../lib/useFitRows'
 
 type Filter = 'all' | Level
 type Sort = 'urgent' | 'life' | 'unit'
@@ -30,7 +31,10 @@ export function Engines() {
   const [sort, setSort] = useState<Sort>('urgent')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const [sizeMode, setSizeMode] = useState<SizeMode>('auto')
+  const boxRef = useRef<HTMLDivElement>(null)
+  const fit = useFitRows(boxRef)
+  const pageSize = sizeMode === 'auto' ? (fit ?? 10) : sizeMode
 
   const counts = useMemo(() => {
     const c: Record<Filter, number> = { all: fleet.length, red: 0, warn: 0, ok: 0 }
@@ -59,16 +63,16 @@ export function Engines() {
   const go = (unit: number) => nav(`/equipment/engine-${unit}`)
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-4 lg:h-[calc(100dvh-4rem)] lg:min-h-[520px]">
+      <div className="flex shrink-0 flex-col gap-1">
         <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">엔진</h1>
         <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
           플릿의 모든 엔진 {fleet.length}대 · 행을 누르면 엔진 상세로 이동합니다
         </p>
       </div>
 
-      <Panel dense>
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <Panel dense fill>
+        <div className="mb-3 flex shrink-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-row flex-wrap gap-2">
             {chips.map((c) => {
               const active = filter === c.id
@@ -117,12 +121,12 @@ export function Engines() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div ref={boxRef} className="min-h-0 flex-1 overflow-auto">
           <table className="w-full min-w-[820px] border-collapse">
             <thead>
               <tr>
                 {HEADS.map((h) => (
-                  <th key={h} className="whitespace-nowrap border-b px-3 py-2.5 text-left text-[11.5px] font-semibold" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-strong)' }}>
+                  <th key={h} className="whitespace-nowrap px-3 py-2.5 text-left text-[11.5px] font-semibold" style={{ position: 'sticky', top: 0, zIndex: 1, background: 'var(--surface-1)', boxShadow: 'inset 0 -1px 0 var(--border-strong)', color: 'var(--text-muted)' }}>
                     {h}
                   </th>
                 ))}
@@ -131,18 +135,18 @@ export function Engines() {
             <tbody>
               {pageRows.map((e) => (
                 <tr key={e.unit} onClick={() => go(e.unit)} onKeyDown={(ev) => ev.key === 'Enter' && go(e.unit)} className="row-link" tabIndex={0}>
-                  <td className="mono px-3 py-3 text-[13px] font-semibold" style={{ ...cell, color: 'var(--text-primary)' }}>#{e.unit}</td>
-                  <td className="px-3 py-3" style={cell}><Badge status={LEVEL[e.level].badge} /></td>
-                  <td className="px-3 py-3" style={cell}><UrgencyChip urgency={e.urgency} /></td>
-                  <td className="px-3 py-3 text-[13px]" style={{ ...cell, color: 'var(--text-primary)' }}>
+                  <td className="mono px-3 py-2 text-[13px] font-semibold" style={{ ...cell, color: 'var(--text-primary)' }}>#{e.unit}</td>
+                  <td className="px-3 py-2" style={cell}><Badge status={LEVEL[e.level].badge} /></td>
+                  <td className="px-3 py-2" style={cell}><UrgencyChip urgency={e.urgency} /></td>
+                  <td className="px-3 py-2 text-[13px]" style={{ ...cell, color: 'var(--text-primary)' }}>
                     <span className="mono font-medium">{e.pred}</span> cycle
                     <span className="ml-1.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{daysText(e.daysLeft)}</span>
                   </td>
-                  <td className="px-3 py-3 text-[13px]" style={{ ...cell, color: e.requestIn <= 0 ? 'var(--status-critical)' : 'var(--text-primary)', fontWeight: e.requestIn <= 7 ? 600 : 400 }}>
+                  <td className="px-3 py-2 text-[13px]" style={{ ...cell, color: e.requestIn <= 0 ? 'var(--status-critical)' : 'var(--text-primary)', fontWeight: e.requestIn <= 7 ? 600 : 400 }}>
                     {e.urgency === 'watch' ? <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{deadlineText(e.requestIn)}</span> : deadlineText(e.requestIn)}
                   </td>
-                  <td className="px-3 py-3 text-[12.5px]" style={{ ...cell, color: e.topPart ? 'var(--text-secondary)' : 'var(--text-muted)' }}>{e.topPart ? e.topPart.label : '뚜렷한 변화 없음'}</td>
-                  <td className="px-3 py-3" style={cell}><StatusChip status={plan.get(e.unit).status} /></td>
+                  <td className="px-3 py-2 text-[12.5px]" style={{ ...cell, color: e.topPart ? 'var(--text-secondary)' : 'var(--text-muted)' }}>{e.topPart ? e.topPart.label : '뚜렷한 변화 없음'}</td>
+                  <td className="px-3 py-2" style={cell}><StatusChip status={plan.get(e.unit).status} /></td>
                 </tr>
               ))}
               {!pageRows.length && (
@@ -153,8 +157,8 @@ export function Engines() {
             </tbody>
           </table>
         </div>
-        <Pagination total={rows.length} page={curPage} pageSize={pageSize} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1) }} />
-        <p className="mb-0 mt-3 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+        <Pagination total={rows.length} page={curPage} pageSize={pageSize} sizeMode={sizeMode} onPage={setPage} onSizeMode={(m) => { setSizeMode(m); setPage(1) }} />
+        <p className="mb-0 mt-2 shrink-0 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
           위험은 예측 남은 수명 {settings.dangerN} cycle 이하, 주의는 80 cycle 미만입니다. 기준은 설정에서 바꿀 수 있습니다.
         </p>
       </Panel>
