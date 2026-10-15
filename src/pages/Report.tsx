@@ -4,6 +4,8 @@ import { Badge } from '../components/Badge'
 import { EngineRulChart } from '../components/EngineRulChart'
 import { SurvivalCurveChart } from '../components/SurvivalCurveChart'
 import { callApi, notifyState, type SendState } from '../lib/api'
+import { saveExcel } from '../lib/excel'
+import { engineReportSheets } from '../lib/exportData'
 import { NOTABLE_Z, headline, ruleSummary, toPayload } from '../lib/diagnosis'
 import { ROLE_LABEL, useAuth } from '../lib/auth'
 import { ACTION_LABEL, lastDecision, lastSubmit, usePlan } from '../lib/plan'
@@ -47,6 +49,7 @@ function ReportSheet({ unit }: { unit: number }) {
   const summary = ruleSummary(facts)
 
   const save = printLight
+  const saveXlsx = () => void saveExcel(`엔진_진단_리포트_Engine${unit}`, engineReportSheets(facts, engine, plan.get(unit), summary, ai.state === 'done' ? (ai.text ?? null) : null))
   const askAi = async () => {
     setAi({ state: 'loading' })
     const r = await callApi('/api/summary', { facts: toPayload(facts) })
@@ -80,6 +83,9 @@ function ReportSheet({ unit }: { unit: number }) {
           </button>
           <button onClick={sendSlack} disabled={slack.state === 'loading'} className="border px-3.5 py-1.5 text-[12.5px]" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}>
             {slack.state === 'loading' ? '전송 중…' : 'Slack으로 알림'}
+          </button>
+          <button onClick={saveXlsx} className="border px-3.5 py-1.5 text-[12.5px]" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}>
+            엑셀로 저장
           </button>
           <button onClick={save} className="cta-primary px-4 py-1.5 text-[12.5px] font-semibold" style={{ background: 'var(--accent)', color: 'var(--accent-ink)' }}>
             PDF로 저장
