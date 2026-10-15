@@ -625,7 +625,27 @@ export function Settings() {
 
       <Panel title="데이터 관리">
         <Row
-          title="결재·처리 기록 초기화"
+          title="운영 이력을 처음 상태로"
+          desc="검토·결재·정비 이력을 처음 열었을 때의 상태로 되돌립니다. 지금까지 처리한 내용은 사라집니다"
+        >
+          <button
+            onClick={() =>
+              window.confirm(
+                "검토·결재·정비 이력을 처음 열었을 때의 상태로 되돌릴까요? 지금까지 처리한 내용은 사라집니다.",
+              ) && plan.restoreSeed()
+            }
+            className="border px-3 py-1.5 text-[12px] font-medium"
+            style={{
+              borderColor: "var(--border)",
+              color: "var(--text-secondary)",
+              borderRadius: "var(--radius-pill)",
+            }}
+          >
+            되돌리기
+          </button>
+        </Row>
+        <Row
+          title="결재·처리 기록 모두 지우기"
           desc={`검토·결재·정비 이력이 있는 엔진 ${marked}대 (완료 ${doneCount}대)`}
         >
           <button

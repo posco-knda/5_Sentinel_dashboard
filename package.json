@@ -9,7 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test:api": "node scripts/api-test.mjs",
-    "test:logic": "node scripts/schedule-test.mjs"
+    "test:logic": "node scripts/schedule-test.mjs && node scripts/seed-test.mjs"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",

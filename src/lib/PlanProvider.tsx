@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from './auth'
+import { buildFleet } from './fleet'
+import { buildSeed } from './seed'
 import { problem } from './schedule'
-import { useSettings } from './settings'
+import { useSettings, type Settings } from './settings'
 import { ACTION_FROM, ACTION_LABEL, ACTION_ROLE, ACTION_TO, PlanContext, STATUS_ORDER, todayStr, type ActPayload, type ActResult, type PlanAction, type PlanEvent, type PlanItem } from './plan'
 
 const KEY = 'sentinel-plan-v2'
@@ -41,10 +43,29 @@ function write(items: Record<number, PlanItem>) {
 
 const EMPTY: PlanItem = { status: 'new', updated: 0, history: [] }
 
+/** 처음 열었을 때의 운영 이력: 지금 시각과 오늘 날짜를 기준으로 만든다 */
+function makeSeed(s: Settings): Record<number, PlanItem> {
+  return buildSeed(buildFleet(s), { now: Date.now(), today: todayStr(), prepDays: s.prepDays, slotsPerDay: s.slotsPerDay })
+}
+
+/** 저장된 기록이 아예 없는 처음 상태인가 (기록을 일부러 비운 경우는 빈 목록이 저장돼 있으므로 해당하지 않는다) */
+function isFirstRun(): boolean {
+  try {
+    return localStorage.getItem(KEY) === null
+  } catch {
+    return true
+  }
+}
+
 export function PlanProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const { settings } = useSettings()
-  const [items, setItems] = useState<Record<number, PlanItem>>(() => read() ?? {})
+  const [items, setItems] = useState<Record<number, PlanItem>>(() => {
+    if (!isFirstRun()) return read() ?? {}
+    const seeded = makeSeed(settings)
+    write(seeded)
+    return seeded
+  })
   const ref = useRef(items)
   useEffect(() => {
     ref.current = items
@@ -99,7 +120,13 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     setItems({})
   }, [])
 
+  const restoreSeed = useCallback(() => {
+    const seeded = makeSeed(settings)
+    write(seeded)
+    setItems(seeded)
+  }, [settings])
+
   const get = useCallback((unit: number) => items[unit] ?? EMPTY, [items])
-  const value = useMemo(() => ({ items, get, act, clearAll }), [items, get, act, clearAll])
+  const value = useMemo(() => ({ items, get, act, clearAll, restoreSeed }), [items, get, act, clearAll, restoreSeed])
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>
 }
