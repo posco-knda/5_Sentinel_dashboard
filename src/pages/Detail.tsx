@@ -227,12 +227,12 @@ function EngineView({ unit }: { unit: number }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <Link to="/plan" className="back-link flex flex-row items-center gap-1.5 text-[13px] no-underline" style={{ color: 'var(--text-muted)' }}>
+      <Link to="/equipment" className="back-link flex flex-row items-center gap-1.5 text-[13px] no-underline" style={{ color: 'var(--text-muted)' }}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="19" y1="12" x2="5" y2="12" />
           <polyline points="12 19 5 12 12 5" />
         </svg>
-        정비 계획
+        엔진 목록
       </Link>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -294,12 +294,8 @@ function EngineView({ unit }: { unit: number }) {
 export function Detail() {
   const { id } = useParams<{ id: string }>()
   const fleet = useFleet()
-  const plan = usePlan()
   const unit = Number((id ?? '').replace('engine-', ''))
-  if (!fleet.some((e) => e.unit === unit)) {
-    // 주소가 없거나 잘못되면 지금 가장 급한 엔진으로 연다
-    const first = fleet.find((e) => plan.get(e.unit).status !== 'done') ?? fleet[0]
-    return <Navigate to={`/equipment/engine-${first.unit}`} replace />
-  }
+  // 없는 엔진 번호면 엔진 목록으로 보낸다
+  if (!fleet.some((e) => e.unit === unit)) return <Navigate to="/equipment" replace />
   return <EngineView key={unit} unit={unit} />
 }

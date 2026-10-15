@@ -18,6 +18,7 @@ import { useUrgentWatcher } from './lib/autoAlert'
 const Approvals = lazy(() => import('./pages/Approvals').then((m) => ({ default: m.Approvals })))
 const Weekly = lazy(() => import('./pages/Weekly').then((m) => ({ default: m.Weekly })))
 const Alerts = lazy(() => import('./pages/Alerts').then((m) => ({ default: m.Alerts })))
+const Engines = lazy(() => import('./pages/Engines').then((m) => ({ default: m.Engines })))
 const Detail = lazy(() => import('./pages/Detail').then((m) => ({ default: m.Detail })))
 const Report = lazy(() => import('./pages/Report').then((m) => ({ default: m.Report })))
 const Cost = lazy(() => import('./pages/Simulation').then((m) => ({ default: m.Simulation })))
@@ -69,7 +70,7 @@ function AnimatedRoutes() {
             <Route path="/plan" element={<Plan />} />
             <Route path="/approvals" element={<Approvals />} />
             <Route path="/alerts" element={<Alerts />} />
-            <Route path="/equipment" element={<Detail />} />
+            <Route path="/equipment" element={<Engines />} />
             <Route path="/equipment/:id" element={<Detail />} />
             <Route path="/report/:id" element={<Report />} />
             <Route path="/weekly" element={<Weekly />} />
@@ -112,7 +113,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const { user } = useAuth()
   // 운영 책임자에게는 결재 대기 건수, 정비 담당자에게는 반려된 건수를 알린다
   const approvals = Object.values(plan.items).filter((i) => i.status === (user?.role === 'manager' ? 'submitted' : 'rejected')).length
-  const firstUnit = (active[0] ?? fleet[0]).unit
 
   const groups = [
     {
@@ -122,7 +122,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         { to: '/plan', label: '정비 계획', icon: CalendarIcon, match: '/plan', badge: urgent },
         { to: '/approvals', label: '결재함', icon: CheckIcon, match: '/approvals', badge: approvals, badgeColor: 'var(--accent)' },
         { to: '/alerts', label: '알림', icon: BellIcon, match: '/alerts' },
-        { to: `/equipment/engine-${firstUnit}`, label: '엔진', icon: CpuIcon, match: '/equipment' },
+        { to: '/equipment', label: '엔진', icon: CpuIcon, match: '/equipment' },
       ],
     },
     {
