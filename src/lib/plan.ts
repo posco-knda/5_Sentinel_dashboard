@@ -6,7 +6,7 @@ import type { Role } from './auth'
  * AI 권고(new) → 담당자 검토(review) → 결재 요청(submitted) → 운영 책임자 승인(scheduled) 또는 반려(rejected) → 정비 완료(done)
  */
 export type PlanStatus = 'new' | 'review' | 'submitted' | 'rejected' | 'scheduled' | 'done'
-export type PlanAction = 'review' | 'submit' | 'withdraw' | 'approve' | 'reject' | 'complete'
+export type PlanAction = 'review' | 'unreview' | 'submit' | 'withdraw' | 'approve' | 'reject' | 'complete'
 
 export interface PlanEvent {
   at: number
@@ -47,6 +47,7 @@ export const STATUS_COLOR: Record<PlanStatus, string> = {
 
 export const ACTION_LABEL: Record<PlanAction, string> = {
   review: '검토 시작',
+  unreview: '검토 취소',
   submit: '결재 요청',
   withdraw: '요청 회수',
   approve: '승인',
@@ -54,16 +55,17 @@ export const ACTION_LABEL: Record<PlanAction, string> = {
   complete: '정비 완료',
 }
 /** 어느 역할만 할 수 있는가 — 담당자는 올리고, 책임자만 승인·반려한다 */
-export const ACTION_ROLE: Record<PlanAction, Role> = { review: 'planner', submit: 'planner', withdraw: 'planner', approve: 'manager', reject: 'manager', complete: 'planner' }
+export const ACTION_ROLE: Record<PlanAction, Role> = { review: 'planner', unreview: 'planner', submit: 'planner', withdraw: 'planner', approve: 'manager', reject: 'manager', complete: 'planner' }
 export const ACTION_FROM: Record<PlanAction, PlanStatus[]> = {
   review: ['new'],
+  unreview: ['review'],
   submit: ['new', 'review', 'rejected'],
   withdraw: ['submitted'],
   approve: ['submitted'],
   reject: ['submitted'],
   complete: ['scheduled'],
 }
-export const ACTION_TO: Record<PlanAction, PlanStatus> = { review: 'review', submit: 'submitted', withdraw: 'review', approve: 'scheduled', reject: 'rejected', complete: 'done' }
+export const ACTION_TO: Record<PlanAction, PlanStatus> = { review: 'review', unreview: 'new', submit: 'submitted', withdraw: 'review', approve: 'scheduled', reject: 'rejected', complete: 'done' }
 
 export const canAct = (role: Role | undefined, action: PlanAction, status: PlanStatus) => role === ACTION_ROLE[action] && ACTION_FROM[action].includes(status)
 

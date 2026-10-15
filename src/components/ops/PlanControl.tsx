@@ -43,6 +43,7 @@ export function PlanControl({ engine, stacked = false, compact = false }: { engi
 
   const buttons = [
     can('review') && pill(ACTION_LABEL.review, () => plan.act(engine.unit, 'review')),
+    can('unreview') && pill(ACTION_LABEL.unreview, () => plan.act(engine.unit, 'unreview')),
     can('submit') && !(compact && item.status === 'new') && pill(ACTION_LABEL.submit, () => setDlg('submit'), true),
     can('withdraw') && pill(ACTION_LABEL.withdraw, () => plan.act(engine.unit, 'withdraw')),
     can('approve') && pill(ACTION_LABEL.approve, () => setDlg('approve'), true),

@@ -5,6 +5,8 @@ export interface Notice {
   id: number
   text: string
   tone: 'ok' | 'error'
+  /** 알림에 붙는 버튼(예: 되돌리기) */
+  action?: { label: string; run: () => void }
 }
 
 let list: Notice[] = []
@@ -12,8 +14,8 @@ let seq = 0
 const subs = new Set<() => void>()
 const emit = () => subs.forEach((f) => f())
 
-export function pushNotice(text: string, tone: Notice['tone'] = 'ok', ms = 5000) {
-  const n: Notice = { id: ++seq, text, tone }
+export function pushNotice(text: string, tone: Notice['tone'] = 'ok', ms = 5000, action?: Notice['action']) {
+  const n: Notice = { id: ++seq, text, tone, action }
   list = [...list, n].slice(-3)
   emit()
   setTimeout(() => dismissNotice(n.id), ms)

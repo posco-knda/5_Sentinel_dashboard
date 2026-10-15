@@ -9,6 +9,7 @@ import { useCurves } from '../lib/curves'
 import { useSettings } from '../lib/settings'
 import { STATUS_LABEL, usePlan } from '../lib/plan'
 import { useAuth } from '../lib/auth'
+import { useBulkReview } from '../lib/bulk'
 
 type Filter = 'all' | 'red' | 'warn' | 'new'
 const PAGE = 40
@@ -26,6 +27,7 @@ export function Alerts() {
   const { settings } = useSettings()
   const plan = usePlan()
   const isPlanner = useAuth().user?.role === 'planner'
+  const bulkReview = useBulkReview()
   const [filter, setFilter] = useState<Filter>('all')
   const [shown, setShown] = useState(PAGE)
 
@@ -48,7 +50,7 @@ export function Alerts() {
 
   const unreadEngines = new Set((events ?? []).filter((ev) => unread(ev.unit)).map((ev) => ev.unit))
   const recent = (events ?? []).filter((ev) => ev.ago / settings.cyclesPerDay <= 7)
-  const ackAll = () => unreadEngines.forEach((u) => plan.act(u, 'review'))
+  const ackAll = () => bulkReview([...unreadEngines])
   const chips: { id: Filter; label: string; n: number }[] = [
     { id: 'all', label: '전체', n: events?.length ?? 0 },
     { id: 'red', label: '위험', n: events?.filter((e) => e.kind === 'red').length ?? 0 },

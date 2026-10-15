@@ -7,6 +7,7 @@ import { URGENCY, useFleet, type Urgency } from '../lib/fleet'
 import { useSettings } from '../lib/settings'
 import { STATUS_COLOR, STATUS_LABEL, STATUS_ORDER, usePlan, type PlanStatus } from '../lib/plan'
 import { useAuth } from '../lib/auth'
+import { useBulkReview } from '../lib/bulk'
 
 type Filter = 'todo' | Urgency | 'done'
 
@@ -15,6 +16,7 @@ export function Plan() {
   const { settings } = useSettings()
   const plan = usePlan()
   const isPlanner = useAuth().user?.role === 'planner'
+  const bulkReview = useBulkReview()
   const [filter, setFilter] = useState<Filter>('todo')
   const [query, setQuery] = useState('')
 
@@ -42,7 +44,7 @@ export function Plan() {
     return base.filter((e) => !q || String(e.unit).includes(q))
   }, [filter, query, todo, done, fleet, items])
 
-  const startAll = () => todo.forEach((e) => stateOf(e.unit) === 'new' && plan.act(e.unit, 'review'))
+  const startAll = () => bulkReview(todo.filter((e) => stateOf(e.unit) === 'new').map((e) => e.unit))
   const chips: { id: Filter; label: string }[] = [
     { id: 'todo', label: '조치 필요' },
     { id: 'now', label: URGENCY.now.label },
