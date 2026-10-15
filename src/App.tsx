@@ -2,7 +2,6 @@ import { Suspense, lazy, useMemo, useState } from 'react'
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ThemeProvider } from './theme/ThemeContext'
-import { ThemeToggle } from './components/ThemeToggle'
 import { SettingsProvider } from './lib/SettingsProvider'
 import { PlanProvider } from './lib/PlanProvider'
 import { AuthProvider } from './lib/AuthProvider'
@@ -185,14 +184,6 @@ function UserBox() {
   )
 }
 
-function FooterRow() {
-  return (
-    <div className="flex flex-row items-center justify-end">
-      <ThemeToggle />
-    </div>
-  )
-}
-
 function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   return (
     <>
@@ -204,7 +195,6 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
         </div>
         <div className="flex flex-col gap-3 px-2">
           <UserBox />
-          <FooterRow />
         </div>
       </aside>
 
@@ -232,7 +222,6 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
               </div>
               <div className="flex flex-col gap-3 px-2">
                 <UserBox />
-                <FooterRow />
               </div>
             </motion.aside>
           </>

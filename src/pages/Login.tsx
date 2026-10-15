@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { ACCOUNTS } from '../lib/accounts'
 import { ROLE_LABEL, useAuth } from '../lib/auth'
-import { ThemeToggle } from '../components/ThemeToggle'
 
 const field = { background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text-primary)', borderRadius: 'var(--radius-xs)' } as const
 
@@ -23,9 +22,6 @@ export function Login() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4" style={{ background: 'var(--page)', color: 'var(--text-primary)' }}>
-      <div className="absolute right-4 top-4">
-        <ThemeToggle />
-      </div>
       <div className="w-full max-w-[380px]">
         <div className="mb-6 flex flex-row items-center gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center" style={{ background: 'var(--accent)', borderRadius: 'var(--radius-sm)' }}>

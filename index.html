@@ -1,10 +1,19 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pdm-app</title>
+    <title>Sentinel — 항공 엔진 정비 관리</title>
+    <script>
+      (function () {
+        try {
+          var m = localStorage.getItem('pdm-theme')
+          var dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          document.documentElement.setAttribute('data-theme', m === 'light' || m === 'dark' ? m : dark ? 'dark' : 'light')
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -4,6 +4,7 @@ import { analysisExtras } from '../data/analysisExtras'
 import { daysText, useFleet } from '../lib/fleet'
 import { usePlan } from '../lib/plan'
 import { resetUrgentBaseline } from '../lib/autoAlert'
+import { useTheme, type ThemeMode } from '../theme/theme'
 import { DEFAULT_SETTINGS, LIMITS, useSettings } from '../lib/settings'
 
 interface SweepRow {
@@ -85,6 +86,42 @@ function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
   )
 }
 
+const THEME_OPTIONS: { id: ThemeMode; label: string }[] = [
+  { id: 'light', label: '라이트' },
+  { id: 'dark', label: '다크' },
+  { id: 'system', label: '시스템 설정' },
+]
+
+function ThemePicker() {
+  const { mode, theme, setMode } = useTheme()
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div role="radiogroup" aria-label="화면 테마" className="inline-flex w-fit flex-row border p-0.5" style={{ borderColor: 'var(--border)', background: 'var(--surface-2)', borderRadius: 'var(--radius-pill)' }}>
+        {THEME_OPTIONS.map((o) => {
+          const active = mode === o.id
+          return (
+            <button
+              key={o.id}
+              role="radio"
+              aria-checked={active}
+              onClick={() => setMode(o.id)}
+              className="px-4 py-1.5 text-[12.5px] font-medium"
+              style={{ borderRadius: 'var(--radius-pill)', background: active ? 'var(--accent)' : 'transparent', color: active ? 'var(--accent-ink)' : 'var(--text-secondary)', transition: 'background .15s, color .15s' }}
+            >
+              {o.label}
+            </button>
+          )
+        })}
+      </div>
+      {mode === 'system' && (
+        <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+          기기의 라이트/다크 설정을 따릅니다. 지금은 {theme === 'dark' ? '다크' : '라이트'}입니다.
+        </span>
+      )}
+    </div>
+  )
+}
+
 function Row({ title, desc, children }: { title: string; desc: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2 py-3.5 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: '1px solid var(--border-soft)' }}>
@@ -136,6 +173,16 @@ export function Settings() {
         <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">설정</h1>
         <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>이 기준에 따라 모든 화면의 등급과 정비 요청 기한이 다시 계산됩니다. 설정은 이 브라우저에 저장됩니다.</p>
       </div>
+
+      <Panel title="화면">
+        <div className="flex flex-col gap-2 py-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>화면 테마</div>
+            <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>이 브라우저에 저장됩니다. 인쇄·PDF 저장은 항상 라이트로 나옵니다</div>
+          </div>
+          <ThemePicker />
+        </div>
+      </Panel>
 
       <Panel title="알림 민감도" sub="예측 남은 수명이 몇 cycle 이하이면 '위험'으로 알릴지 정합니다. 높일수록 놓칠 위험은 줄고 불필요한 점검은 늘어납니다.">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
