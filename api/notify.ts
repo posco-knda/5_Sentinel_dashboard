@@ -73,10 +73,10 @@ export default async function handler(req: Req, res: Res) {
   if (dangerAgo != null) fields.push({ type: 'mrkdwn', text: `*위험 구간 체류*\n${dangerAgo} cycle 전부터` })
 
   const blocks: unknown[] = [
-    { type: 'header', text: { type: 'plain_text', text: `[시연] Engine #${unit} ${level} 감지` } },
+    { type: 'header', text: { type: 'plain_text', text: `Engine #${unit} ${level} 감지` } },
     { type: 'section', fields },
     { type: 'section', text: { type: 'mrkdwn', text: `*권고*  ${esc(f.action, 260)}` } },
-    { type: 'context', elements: [{ type: 'mrkdwn', text: 'NASA C-MAPSS 시뮬레이션 데이터 · 실제 항공기 알림이 아닙니다' }] },
+    { type: 'context', elements: [{ type: 'mrkdwn', text: 'Sentinel 정비 관리 · 남은 수명은 예측값이며 오차가 있습니다' }] },
   ]
   if (link) blocks.push({ type: 'actions', elements: [{ type: 'button', text: { type: 'plain_text', text: '고장 진단 열기' }, url: link }] })
 
@@ -87,7 +87,7 @@ export default async function handler(req: Req, res: Res) {
       method: 'POST',
       signal: ctrl.signal,
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ text: `[시연] Engine #${unit} ${level} 감지`, blocks }),
+      body: JSON.stringify({ text: `Engine #${unit} ${level} 감지`, blocks }),
     })
     if (!r.ok) return res.status(502).json({ error: 'upstream', status: r.status })
     return res.status(200).json({ ok: true })

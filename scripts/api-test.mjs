@@ -20,7 +20,7 @@ globalThis.fetch = async (url, init) => { sent.push({ url, body: JSON.parse(init
 const notify2 = (await import(root + '/api/notify.ts?b')).default
 await t('notify: 잘못된 입력(등급 없음)은 400이고 Slack으로 안 보냄', async () => { const r = await call(notify2, { method: 'POST', body: { facts: { unit: 31, level: 'x' } } }); assert.equal(r.code, 400); assert.equal(sent.length, 0) })
 await t('notify: 정상 입력은 200, 웹훅으로 1회 전송', async () => { const r = await call(notify2, { method: 'POST', body: { facts } }); assert.equal(r.code, 200); assert.equal(sent.length, 1); assert.equal(sent[0].url, 'https://hooks.slack.test/T/B/x') })
-await t('notify: 메시지에 [시연] 표시와 진단 링크가 있음', async () => { const b = sent[0].body; assert.match(b.text, /^\[시연\] Engine #31 위험 감지$/); const btn = b.blocks.at(-1).elements[0]; assert.equal(btn.url, 'https://demo.example.app/equipment/engine-31?tab=diagnosis') })
+await t('notify: 메시지에 제목과 진단 링크가 있음', async () => { const b = sent[0].body; assert.match(b.text, /^Engine #31 위험 감지$/); assert.ok(!JSON.stringify(b).includes('시연') && !JSON.stringify(b).includes('NASA')); const btn = b.blocks.at(-1).elements[0]; assert.equal(btn.url, 'https://demo.example.app/equipment/engine-31?tab=diagnosis') })
 await t('notify: 메시지에 현장에서 아는 값만 있고 정답 기반 문구("고장 N사이클 전")가 없음', async () => {
   const dump = JSON.stringify(sent[0].body)
   assert.ok(dump.includes('정비 요청 기한') && dump.includes('기한 지남') && dump.includes('30 cycle 전부터') && dump.includes('고압압축기(HPC)'), dump)

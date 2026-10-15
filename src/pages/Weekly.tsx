@@ -190,7 +190,7 @@ export function Weekly() {
         </Section>
 
         <footer className="mt-6 border-t pt-3 text-[10.5px] leading-relaxed" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-          남은 수명은 예측값이며 오차가 있습니다. 점검 예상 모듈은 센서가 가장 크게 변한 모듈을 추정한 것이며 고장 원인을 확정하지 않습니다. 시연용 시뮬레이션 데이터(NASA C-MAPSS)이며 실제 항공기 판정이 아닙니다.
+          남은 수명은 예측값이며 오차가 있습니다. 점검 예상 모듈은 센서가 가장 크게 변한 모듈을 추정한 것이며 고장 원인을 확정하지 않습니다.
         </footer>
       </article>
     </div>

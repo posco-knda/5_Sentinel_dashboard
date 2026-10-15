@@ -164,7 +164,7 @@ export function Settings() {
             <Metric label="정비 비용(표준 대비)" value={`${eff.cost >= 0 ? '+' : ''}${eff.cost.toFixed(1)}%`} tone={eff.cost > 3 ? 'var(--status-warning)' : undefined} />
           </div>
           <p className="m-0 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-            지금 플릿에서는 <b style={{ color: 'var(--text-primary)' }}>{redCount}대</b>가 위험으로 분류됩니다. 위 효과는 과거 검증 데이터(위험 {policy.testN.danger}대·안전 {policy.testN.safe}대) 기준 추정이며, 정비 전 고장·비용은 정비 준비 7일 등을 가정한 시뮬레이션입니다.
+            지금 플릿에서는 <b style={{ color: 'var(--text-primary)' }}>{redCount}대</b>가 위험으로 분류됩니다. 위 효과는 과거 검증 데이터(위험 {policy.testN.danger}대·안전 {policy.testN.safe}대) 기준 추정이며, 정비 전 고장·비용은 정비 준비 7일 등을 가정한 값입니다.
           </p>
         </div>
       </Panel>
@@ -216,14 +216,13 @@ export function Settings() {
             예측의 평균 오차는 약 {gruMae.toFixed(0)} cycle({daysText(gruMae / settings.cyclesPerDay)})입니다. 그래서 날짜 하나가 아니라 90% 구간을 함께 보여 줍니다.
           </li>
           <li>센서 변화로 가리키는 점검 모듈은 가장 크게 변한 센서가 속한 모듈을 추정한 것이며, 고장 원인을 확정하지 않습니다.</li>
-          <li>이 화면의 데이터는 시연용입니다. NASA C-MAPSS 터보팬 열화 시뮬레이션(FD004)이며 실제 항공기 데이터가 아닙니다.</li>
         </ul>
       </Panel>
 
       <Panel title="데이터 관리">
         <Row title="결재·처리 기록 초기화" desc={`검토·결재·정비 이력이 있는 엔진 ${marked}대 (완료 ${doneCount}대)`}>
           <button
-            onClick={() => window.confirm('결재 요청·승인 이력을 포함한 모든 처리 기록을 지울까요? 시연을 처음부터 다시 할 때만 사용하세요.') && plan.clearAll()}
+            onClick={() => window.confirm('결재 요청·승인 이력을 포함한 모든 처리 기록을 지울까요? 되돌릴 수 없습니다.') && plan.clearAll()}
             disabled={!marked}
             className="border px-3 py-1.5 text-[12px] font-medium"
             style={{ borderColor: 'var(--border)', color: marked ? 'var(--status-critical)' : 'var(--text-muted)', borderRadius: 'var(--radius-pill)', opacity: marked ? 1 : 0.6 }}

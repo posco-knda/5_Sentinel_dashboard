@@ -221,7 +221,7 @@ function ReportSheet({ unit }: { unit: number }) {
 
         <footer className="mt-6 border-t pt-3 text-[10.5px] leading-relaxed" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
           남은 수명은 예측값이며 오차가 있습니다(90% 구간 참고). 점검 모듈은 가장 크게 변한 센서가 속한 모듈을 추정한 것이며 고장 원인을 확정하지 않습니다. 모듈별 ×N은 처음{' '}
-          {partMeta.baselineCycles}사이클 대비 최근 {partMeta.recentCycles}사이클 평균 변화가 평소 흔들림의 N배라는 뜻입니다. 시연용 시뮬레이션 데이터(NASA C-MAPSS)이며 실제 항공기 판정이 아닙니다.
+          {partMeta.baselineCycles}사이클 대비 최근 {partMeta.recentCycles}사이클 평균 변화가 평소 흔들림의 N배라는 뜻입니다.
         </footer>
       </article>
     </div>

@@ -147,7 +147,7 @@ export function Simulation() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1.4fr]">
         <div className="surface-card flex flex-col gap-5 border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
           <p className="m-0 text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-            시뮬레이션 가정 조절
+            가정 조절
           </p>
           <Slider
             label={`엔진 가동중단 손실 단가 (기준 ${(baseHourCost / 10000).toFixed(1)}억원/시간)`}

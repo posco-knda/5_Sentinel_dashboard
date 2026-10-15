@@ -185,11 +185,7 @@ function UserBox() {
 
 function FooterRow() {
   return (
-    <div className="flex flex-row items-center justify-between">
-      <span className="flex flex-row items-center gap-1.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }} title="NASA C-MAPSS 터보팬 열화 시뮬레이션 — 실제 항공기 데이터가 아닙니다">
-        <span className="led-dot" style={{ background: 'var(--status-warning)' }} />
-        시연 데이터
-      </span>
+    <div className="flex flex-row items-center justify-end">
       <ThemeToggle />
     </div>
   )

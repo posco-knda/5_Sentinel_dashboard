@@ -56,7 +56,7 @@ export function Login() {
         </form>
 
         <div className="mt-5">
-          <p className="m-0 mb-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>시연 계정으로 입력</p>
+          <p className="m-0 mb-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>계정 선택</p>
           <div className="grid grid-cols-2 gap-2">
             {ACCOUNTS.map((a) => (
               <button key={a.id} type="button" onClick={() => fill(a.id, a.password)} className="flex flex-col items-start gap-0.5 border px-3 py-2.5 text-left" style={{ borderColor: 'var(--border)', background: 'var(--surface-1)', borderRadius: 'var(--radius-sm)' }}>
@@ -65,9 +65,6 @@ export function Login() {
               </button>
             ))}
           </div>
-          <p className="mb-0 mt-4 text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-            시연용 로그인입니다. 계정 정보는 이 브라우저에서만 확인하며 실제 인증이 아닙니다. 탭 두 개에 각각 다른 계정으로 들어가면 결재가 오가는 모습을 볼 수 있습니다.
-          </p>
         </div>
       </div>
     </div>
