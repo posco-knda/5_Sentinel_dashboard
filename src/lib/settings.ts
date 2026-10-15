@@ -8,9 +8,13 @@ export interface Settings {
   cyclesPerDay: number
   /** 정비 요청부터 부품·인력이 준비되기까지 걸리는 일수 */
   prepDays: number
+  /** 결재 요청·승인·반려·정비 완료를 Slack으로 자동 알림 */
+  notifyWorkflow: boolean
+  /** 엔진이 새로 '즉시 조치'가 되면 Slack으로 자동 알림 */
+  notifyUrgent: boolean
 }
 
-export const DEFAULT_SETTINGS: Settings = { dangerN: 40, cyclesPerDay: 3, prepDays: 7 }
+export const DEFAULT_SETTINGS: Settings = { dangerN: 40, cyclesPerDay: 3, prepDays: 7, notifyWorkflow: true, notifyUrgent: true }
 export const LIMITS = {
   dangerN: [30, 50],
   cyclesPerDay: [1, 8],
@@ -44,5 +48,7 @@ export function sanitize(raw: Partial<Record<keyof Settings, unknown>> | null | 
     dangerN: clamp(raw?.dangerN, LIMITS.dangerN, DEFAULT_SETTINGS.dangerN),
     cyclesPerDay: clamp(raw?.cyclesPerDay, LIMITS.cyclesPerDay, DEFAULT_SETTINGS.cyclesPerDay),
     prepDays: clamp(raw?.prepDays, LIMITS.prepDays, DEFAULT_SETTINGS.prepDays),
+    notifyWorkflow: typeof raw?.notifyWorkflow === 'boolean' ? raw.notifyWorkflow : DEFAULT_SETTINGS.notifyWorkflow,
+    notifyUrgent: typeof raw?.notifyUrgent === 'boolean' ? raw.notifyUrgent : DEFAULT_SETTINGS.notifyUrgent,
   }
 }

@@ -3,6 +3,7 @@ import { Panel } from '../components/Panel'
 import { analysisExtras } from '../data/analysisExtras'
 import { daysText, useFleet } from '../lib/fleet'
 import { usePlan } from '../lib/plan'
+import { resetUrgentBaseline } from '../lib/autoAlert'
 import { DEFAULT_SETTINGS, LIMITS, useSettings } from '../lib/settings'
 
 interface SweepRow {
@@ -66,6 +67,21 @@ function Status({ on, label }: { on: boolean; label: string }) {
       <span className="h-2 w-2 rounded-full" style={{ background: on ? 'var(--status-good)' : 'var(--border-strong)' }} />
       {label}
     </span>
+  )
+}
+
+function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      onClick={() => onChange(!on)}
+      className="relative h-6 w-11 shrink-0 border"
+      style={{ background: on ? 'var(--accent)' : 'var(--surface-2)', borderColor: on ? 'var(--accent)' : 'var(--border-strong)', borderRadius: 999, transition: 'background .15s' }}
+    >
+      <span className="absolute top-0.5 h-[18px] w-[18px] rounded-full" style={{ left: on ? 22 : 2, background: on ? 'var(--accent-ink)' : 'var(--text-muted)', transition: 'left .15s' }} />
+    </button>
   )
 }
 
@@ -209,6 +225,15 @@ export function Settings() {
         </Row>
       </Panel>
 
+      <Panel title="자동 알림" sub="Slack이 연결돼 있으면 아래 상황에서 사람이 누르지 않아도 알림이 갑니다.">
+        <Row title="결재 알림" desc="결재 요청, 승인, 반려, 정비 완료가 처리될 때 채널로 알립니다">
+          <Switch on={settings.notifyWorkflow} onChange={(v) => update({ notifyWorkflow: v })} label="결재 알림" />
+        </Row>
+        <Row title="신규 즉시 조치 알림" desc="엔진이 새로 '즉시 조치'가 되면 한 건으로 묶어 알립니다. 이미 알린 엔진은 다시 보내지 않습니다">
+          <Switch on={settings.notifyUrgent} onChange={(v) => update({ notifyUrgent: v })} label="신규 즉시 조치 알림" />
+        </Row>
+      </Panel>
+
       <Panel title="예측 정보">
         <ul className="m-0 flex list-disc flex-col gap-2 pl-5 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           <li>엔진의 센서 15개를 시계열 신경망(GRU)에 넣어 남은 수명(cycle)을 예측합니다. 비행 후 데이터가 들어올 때마다 갱신됩니다.</li>
@@ -228,6 +253,11 @@ export function Settings() {
             style={{ borderColor: 'var(--border)', color: marked ? 'var(--status-critical)' : 'var(--text-muted)', borderRadius: 'var(--radius-pill)', opacity: marked ? 1 : 0.6 }}
           >
             기록 지우기
+          </button>
+        </Row>
+        <Row title="알림 기준 다시 잡기" desc="지금 '즉시 조치'인 엔진을 모두 이미 알린 것으로 보고 새로 시작합니다">
+          <button onClick={resetUrgentBaseline} className="border px-3 py-1.5 text-[12px] font-medium" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}>
+            다시 잡기
           </button>
         </Row>
         <Row title="설정 기본값으로" desc={`민감도 ≤${DEFAULT_SETTINGS.dangerN} · 하루 ${DEFAULT_SETTINGS.cyclesPerDay}회 · 준비 ${DEFAULT_SETTINGS.prepDays}일`}>

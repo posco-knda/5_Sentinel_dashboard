@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { daysText, deadlineText, limitDate, requestDate, type FleetEngine } from '../../lib/fleet'
+import { useAuth } from '../../lib/auth'
+import { announceWorkflow } from '../../lib/notify'
 import { lastSubmit, todayStr, usePlan } from '../../lib/plan'
+import { useSettings } from '../../lib/settings'
 
 export type DecisionMode = 'submit' | 'approve' | 'reject'
 
@@ -15,6 +18,8 @@ const when = (at: number) => new Date(at).toLocaleString('ko-KR', { month: 'nume
 /** 결재 요청(담당자) · 승인/반려(운영 책임자)를 받는 창 — 판단한 사람과 사유가 이력에 남는다 */
 export function DecisionDialog({ mode, engine, onClose }: { mode: DecisionMode; engine: FleetEngine; onClose: () => void }) {
   const plan = usePlan()
+  const { user } = useAuth()
+  const { settings } = useSettings()
   const item = plan.get(engine.unit)
   const req = lastSubmit(item)
   const [date, setDate] = useState(item.date ?? requestDate(engine.requestIn))
@@ -31,7 +36,10 @@ export function DecisionDialog({ mode, engine, onClose }: { mode: DecisionMode; 
 
   const confirm = () => {
     const r = plan.act(engine.unit, mode, { note, date: needDate ? date : undefined })
-    if (r.ok) onClose()
+    if (r.ok) {
+      if (settings.notifyWorkflow && user) void announceWorkflow(engine, mode, user, { note, date: needDate ? date : undefined })
+      onClose()
+    }
     else setErr(r.error ?? '처리하지 못했습니다')
   }
 

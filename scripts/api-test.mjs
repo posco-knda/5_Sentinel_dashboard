@@ -50,6 +50,53 @@ await t('notify: Slack이 오류를 주면 502 (내용은 숨김)', async () => 
 const notify6 = (await import(root + '/api/notify.ts?f')).default
 await t('notify: 네트워크 실패는 504', async () => { globalThis.fetch = async () => { throw new Error('boom') }; const r = await call(notify6, { method: 'POST', body: { facts } }); assert.equal(r.code, 504) })
 
+// ---- notify (자동: 결재 이벤트 · 신규 즉시 조치)
+process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/x'
+let wsent = []
+globalThis.fetch = async (url, init) => { wsent.push({ url, body: JSON.parse(init.body) }); return { ok: true, status: 200, json: async () => ({}) } }
+const wf = (await import(root + '/api/notify.ts?wf')).default
+const ev = { unit: 31, action: 'submit', by: '김정비', role: 'planner', note: 'AI 권고대로 정비가 필요하다고 판단', date: '2026-10-16', pred: 8.9, requestText: '기한 지남', part: '고압압축기(HPC)' }
+await t('workflow: 결재 요청은 요청자·희망일·사유·결재함 링크가 담겨 전송됨', async () => {
+  const r = await call(wf, { method: 'POST', body: { kind: 'workflow', event: ev } }); assert.equal(r.code, 200); assert.equal(wsent.length, 1)
+  const b = wsent[0].body; const dump = JSON.stringify(b)
+  assert.equal(b.text, '결재 요청 · Engine #31'); assert.ok(dump.includes('김정비') && dump.includes('정비 담당자') && dump.includes('10/16') && dump.includes('판단 사유') && dump.includes('고압압축기(HPC)'), dump)
+  assert.equal(b.blocks.at(-1).elements[0].url, 'https://demo.example.app/approvals')
+})
+await t('workflow: 반려는 반려 사유 라벨과 엔진 이력 링크를 씀', async () => {
+  await new Promise((ok) => setTimeout(ok, 1300)); wsent = []
+  const r = await call(wf, { method: 'POST', body: { kind: 'workflow', event: { ...ev, action: 'reject', by: '박운영', role: 'manager', note: '일정 조정 후 다시 올릴 것' } } }); assert.equal(r.code, 200)
+  const dump = JSON.stringify(wsent[0].body); assert.ok(dump.includes('반려 · Engine #31') && dump.includes('*반려 사유*') && dump.includes('운영 책임자'), dump)
+  assert.equal(wsent[0].body.blocks.at(-1).elements[0].url, 'https://demo.example.app/equipment/engine-31?tab=history')
+})
+await t('workflow: 메모의 전체 멘션·태그는 이스케이프되고 길이가 제한됨', async () => {
+  await new Promise((ok) => setTimeout(ok, 1300)); wsent = []
+  await call(wf, { method: 'POST', body: { kind: 'workflow', event: { ...ev, note: '<!channel> <@U1> & ' + 'x'.repeat(600), by: '<!here>' } } })
+  const dump = JSON.stringify(wsent[0].body); assert.ok(!dump.includes('<!channel>') && !dump.includes('<@U1>') && !dump.includes('<!here>') && dump.includes('&lt;!channel&gt;'), dump)
+  assert.ok(!dump.includes('x'.repeat(301)))
+})
+await t('workflow: 연달아 보내면 429, 모르는 동작·잘못된 엔진은 400', async () => {
+  assert.equal((await call(wf, { method: 'POST', body: { kind: 'workflow', event: ev } })).code, 429)
+  await new Promise((ok) => setTimeout(ok, 1300))
+  assert.equal((await call(wf, { method: 'POST', body: { kind: 'workflow', event: { ...ev, action: 'delete' } } })).code, 400)
+  assert.equal((await call(wf, { method: 'POST', body: { kind: 'workflow', event: { ...ev, unit: 0 } } })).code, 400)
+  assert.equal((await call(wf, { method: 'POST', body: { kind: 'workflow', event: { ...ev, by: '  ' } } })).code, 400)
+  assert.equal((await call(wf, { method: 'POST', body: { kind: 'workflow' } })).code, 400)
+})
+const dg = (await import(root + '/api/notify.ts?dg')).default
+const digest = { count: 41, engines: Array.from({ length: 10 }, (_, i) => ({ name: `Engine #${i + 1}`, predCycles: 10 + i, requestText: '기한 지남', part: '코어·연소·블리드' })) }
+await t('digest: 신규 즉시 조치 N대 제목, 최대 8대 목록과 나머지 대수, 정비 계획 링크', async () => {
+  wsent = []; const r = await call(dg, { method: 'POST', body: { kind: 'digest', digest } }); assert.equal(r.code, 200)
+  const b = wsent[0].body; const dump = JSON.stringify(b)
+  assert.equal(b.text, '신규 즉시 조치 41대'); assert.ok(dump.includes('Engine #8') && !dump.includes('Engine #9') && dump.includes('외 33대'), dump)
+  assert.equal(b.blocks.at(-1).elements[0].url, 'https://demo.example.app/plan')
+})
+await t('digest: 잘못된 입력은 400, 연달아 보내면 429', async () => {
+  assert.equal((await call(dg, { method: 'POST', body: { kind: 'digest', digest } })).code, 429)
+  const dg2 = (await import(root + '/api/notify.ts?dg2')).default
+  assert.equal((await call(dg2, { method: 'POST', body: { kind: 'digest', digest: { count: 0, engines: [] } } })).code, 400)
+  assert.equal((await call(dg2, { method: 'POST', body: { kind: 'digest', digest: { count: 3 } } })).code, 400)
+})
+
 // ---- status
 const status = (await import(root + '/api/status.ts')).default
 await t('status: 설정 여부만 true/false로 알려 주고 값은 노출하지 않음', async () => {

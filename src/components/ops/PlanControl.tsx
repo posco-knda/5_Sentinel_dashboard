@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { limitDate, type FleetEngine } from '../../lib/fleet'
 import { useAuth } from '../../lib/auth'
+import { announceWorkflow } from '../../lib/notify'
 import { ACTION_LABEL, canAct, usePlan, type PlanAction } from '../../lib/plan'
+import { useSettings } from '../../lib/settings'
 import { DecisionDialog, type DecisionMode } from './DecisionDialog'
 import { StatusChip } from './StatusChip'
 
@@ -14,6 +16,7 @@ const md = (d: string) => d.slice(5).replace('-', '/')
 export function PlanControl({ engine, stacked = false, compact = false }: { engine: FleetEngine; stacked?: boolean; compact?: boolean }) {
   const plan = usePlan()
   const { user } = useAuth()
+  const { settings } = useSettings()
   const [dlg, setDlg] = useState<DecisionMode | null>(null)
   const item = plan.get(engine.unit)
   const can = (a: PlanAction) => canAct(user?.role, a, item.status)
@@ -44,7 +47,9 @@ export function PlanControl({ engine, stacked = false, compact = false }: { engi
     can('withdraw') && pill(ACTION_LABEL.withdraw, () => plan.act(engine.unit, 'withdraw')),
     can('approve') && pill(ACTION_LABEL.approve, () => setDlg('approve'), true),
     can('reject') && pill(ACTION_LABEL.reject, () => setDlg('reject'), false, true),
-    can('complete') && pill(ACTION_LABEL.complete, () => plan.act(engine.unit, 'complete'), true),
+    can('complete') && pill(ACTION_LABEL.complete, () => {
+      if (plan.act(engine.unit, 'complete').ok && settings.notifyWorkflow && user) void announceWorkflow(engine, 'complete', user, {})
+    }, true),
   ].filter(Boolean)
 
   return (

@@ -12,6 +12,8 @@ import { usePlan } from './lib/plan'
 import { Overview } from './pages/Overview'
 import { Plan } from './pages/Plan'
 import { Login } from './pages/Login'
+import { NoticeStack } from './components/NoticeStack'
+import { useUrgentWatcher } from './lib/autoAlert'
 
 // 무거운 화면(차트·큰 데이터)은 처음 열 때 불러온다
 const Approvals = lazy(() => import('./pages/Approvals').then((m) => ({ default: m.Approvals })))
@@ -256,8 +258,10 @@ function MobileTopBar({ onMenuClick }: { onMenuClick: () => void }) {
 
 function Shell() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  useUrgentWatcher()
   return (
     <div className="flex min-h-screen flex-col md:flex-row" style={{ background: 'var(--page)', color: 'var(--text-primary)' }}>
+      <NoticeStack />
       <MobileTopBar onMenuClick={() => setMobileOpen(true)} />
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6 lg:px-9 lg:py-8">
