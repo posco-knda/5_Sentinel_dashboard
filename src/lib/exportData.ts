@@ -46,7 +46,7 @@ export function engineListSheet(engines: FleetEngine[], items: Record<number, Pl
 const historyRows = (events: (PlanEvent & { unit?: number })[], withUnit: boolean) =>
   events.map((ev) => [stamp(ev.at), ...(withUnit ? [ev.unit != null ? `#${ev.unit}` : ''] : []), ACTION_LABEL[ev.action], `${ev.by}(${ROLE_LABEL[ev.role]})`, ev.date ?? '', ev.note ?? ''])
 
-const kv = (name: string, rows: [string, string | number | null][]): XSheet => ({ name, header: ['항목', '내용'], rows, widths: [26, 90] })
+const kv = (name: string, rows: [string, string | number | null][]): XSheet => ({ name, header: ['항목', '내용'], rows, widths: [26, 90], filter: false })
 
 /** 주간 정비 리포트 — 화면의 요약·표를 시트별로 나눠 담는다 (결재 이력은 15건 제한 없이 전부) */
 export function weeklySheets(stats: WeeklyStats, summary: string[], ai: string | null, basis: { cyclesPerDay: number; prepDays: number }): XSheet[] {
