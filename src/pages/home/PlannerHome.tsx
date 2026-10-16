@@ -80,29 +80,35 @@ export function PlannerHome() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_1fr]">
-        <div className="flex flex-col gap-4">
-          <Panel dense title="지금 처리할 엔진" sub="요청 기한이 급한 순 · 바로 검토하고 결재를 올릴 수 있습니다" action={<Link to="/plan" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 {todo.length}대 →</Link>}>
-            {todo.slice(0, 8).map((e) => (
-              <EngineLine key={e.unit} e={e} />
-            ))}
-            {!todo.length && <p className="m-0 py-6 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>처리할 엔진이 없습니다</p>}
-          </Panel>
-          <Panel dense title="반려된 요청" sub="책임자가 남긴 사유" action={<Link to="/approvals" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>결재함 →</Link>}>
-            {rejected.slice(0, 4).map((e) => {
-              const d = lastDecision(plan.get(e.unit))
-              return <EngineLine key={e.unit} e={e} note={d?.note ?? '사유 없음'} noteLabel={d ? `${d.by} 반려` : undefined} />
-            })}
-            {!rejected.length && <p className="m-0 py-6 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>반려된 요청이 없습니다</p>}
-          </Panel>
+        {/* 왼쪽 목록은 오른쪽 캘린더의 높이에 맞추고, 넘치는 엔진은 안에서 스크롤한다 */}
+        <div className="relative">
+          <div className="flex flex-col xl:absolute xl:inset-0">
+            <Panel dense fill title="지금 처리할 엔진" sub="요청 기한이 급한 순 · 바로 검토하고 결재를 올릴 수 있습니다" action={<Link to="/plan" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 {todo.length}대 →</Link>}>
+              <div className="min-h-0 flex-1 xl:overflow-y-auto">
+                {todo.slice(0, 20).map((e) => (
+                  <EngineLine key={e.unit} e={e} />
+                ))}
+                {!todo.length && <p className="m-0 py-6 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>처리할 엔진이 없습니다</p>}
+              </div>
+            </Panel>
+          </div>
         </div>
-        <div className="flex flex-col gap-4">
-          <Panel dense title="정비 일정" sub="날짜를 누르면 그날의 엔진을 볼 수 있습니다">
-            <MaintenanceCalendar engines={fleet} plan={plan.items} prepDays={settings.prepDays} slotsPerDay={settings.slotsPerDay} />
-          </Panel>
-          <Panel dense title="최근 알림" action={<Link to="/alerts" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 →</Link>}>
-            <RecentAlerts engines={fleet} dangerN={settings.dangerN} cyclesPerDay={settings.cyclesPerDay} plan={plan.items} />
-          </Panel>
-        </div>
+        <Panel dense title="정비 일정" sub="날짜를 누르면 그날의 엔진을 볼 수 있습니다">
+          <MaintenanceCalendar engines={fleet} plan={plan.items} prepDays={settings.prepDays} slotsPerDay={settings.slotsPerDay} />
+        </Panel>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_1fr]">
+        <Panel dense title="반려된 요청" sub="책임자가 남긴 사유" action={<Link to="/approvals" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>결재함 →</Link>}>
+          {rejected.slice(0, 4).map((e) => {
+            const d = lastDecision(plan.get(e.unit))
+            return <EngineLine key={e.unit} e={e} note={d?.note ?? '사유 없음'} noteLabel={d ? `${d.by} 반려` : undefined} />
+          })}
+          {!rejected.length && <p className="m-0 py-6 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>반려된 요청이 없습니다</p>}
+        </Panel>
+        <Panel dense title="최근 알림" action={<Link to="/alerts" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 →</Link>}>
+          <RecentAlerts engines={fleet} dangerN={settings.dangerN} cyclesPerDay={settings.cyclesPerDay} plan={plan.items} />
+        </Panel>
       </div>
     </div>
   )
