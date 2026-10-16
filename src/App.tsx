@@ -157,12 +157,9 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     },
   ]
 
-  // 운영 책임자는 결재함이 맨 위에 온다
-  const ordered = user?.role === 'manager' ? groups.map((g, i) => (i === 0 ? { ...g, items: [g.items[2], g.items[0], g.items[1], g.items[3], g.items[4]] } : g)) : groups
-
   return (
     <nav className="flex flex-col gap-4">
-      {ordered.map((group) => (
+      {groups.map((group) => (
         <div key={group.title} className="flex flex-col gap-0.5">
           <span className="px-2.5 pb-1 text-[11px] font-medium tracking-[0.04em]" style={{ color: 'var(--text-muted)', opacity: 0.8 }}>
             {group.title}
