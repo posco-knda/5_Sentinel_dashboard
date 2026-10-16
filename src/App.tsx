@@ -1,5 +1,5 @@
-import { Suspense, lazy, useMemo, useState } from 'react'
-import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ThemeProvider } from './theme/ThemeContext'
 import { SettingsProvider } from './lib/SettingsProvider'
@@ -104,6 +104,21 @@ function Logo() {
   )
 }
 
+const ROLE_DUTY = { planner: '엔진을 검토하고 결재를 올립니다', manager: '올라온 결재를 승인·반려합니다' } as const
+
+/** 지금 어떤 역할로 쓰고 있는지 한눈에 보이는 카드 — 색도 역할마다 다르다 */
+function RoleBanner() {
+  const { user } = useAuth()
+  if (!user) return null
+  return (
+    <div className="flex flex-col gap-0.5 px-3 py-2.5" style={{ background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 'var(--radius-sm)' }}>
+      <span className="text-[10.5px] font-medium tracking-[0.04em]" style={{ opacity: 0.8 }}>현재 역할</span>
+      <span className="text-[15px] font-semibold leading-tight">{ROLE_LABEL[user.role]}</span>
+      <span className="text-[11.5px]" style={{ opacity: 0.9 }}>{ROLE_DUTY[user.role]}</span>
+    </div>
+  )
+}
+
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation()
   const fleet = useFleet()
@@ -135,9 +150,12 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     },
   ]
 
+  // 운영 책임자는 결재함이 맨 위에 온다
+  const ordered = user?.role === 'manager' ? groups.map((g, i) => (i === 0 ? { ...g, items: [g.items[2], g.items[0], g.items[1], g.items[3], g.items[4]] } : g)) : groups
+
   return (
     <nav className="flex flex-col gap-4">
-      {groups.map((group) => (
+      {ordered.map((group) => (
         <div key={group.title} className="flex flex-col gap-0.5">
           <span className="px-2.5 pb-1 text-[11px] font-medium tracking-[0.04em]" style={{ color: 'var(--text-muted)', opacity: 0.8 }}>
             {group.title}
@@ -174,7 +192,7 @@ function UserBox() {
   if (!user) return null
   return (
     <div className="flex flex-row items-center gap-2.5 border px-2.5 py-2" style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)' }}>
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[12px] font-semibold" style={{ background: 'var(--accent-dim)', color: 'var(--accent)', borderRadius: 'var(--radius-pill)' }}>{user.name.slice(0, 1)}</span>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[12px] font-semibold" style={{ background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 'var(--radius-pill)' }}>{user.name.slice(0, 1)}</span>
       <div className="min-w-0 flex-1">
         <div className="truncate text-[12.5px] font-medium">{user.name}</div>
         <div className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>{ROLE_LABEL[user.role]}</div>
@@ -191,6 +209,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
       <aside className="sticky top-0 hidden h-screen w-[228px] shrink-0 flex-col justify-between px-3 py-4 md:flex" style={{ borderRight: '1px solid var(--border)', background: 'var(--surface-1)' }}>
         <div className="flex flex-col gap-6">
           <Logo />
+          <RoleBanner />
           <SidebarNav />
         </div>
         <div className="flex flex-col gap-3 px-2">
@@ -218,6 +237,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                     <CloseIcon />
                   </button>
                 </div>
+                <RoleBanner />
                 <SidebarNav onNavigate={onClose} />
               </div>
               <div className="flex flex-col gap-3 px-2">
@@ -247,9 +267,19 @@ function MobileTopBar({ onMenuClick }: { onMenuClick: () => void }) {
 
 function Shell() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { user } = useAuth()
+  const nav = useNavigate()
+  const location = useLocation()
   useUrgentWatcher()
+  // 운영 책임자는 로그인하면 결재함부터 본다
+  useEffect(() => {
+    if (user?.role === 'manager' && location.pathname === '/') nav('/approvals', { replace: true })
+    // 처음 들어올 때만
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   return (
     <div className="flex min-h-screen flex-col md:flex-row" style={{ background: 'var(--page)', color: 'var(--text-primary)' }}>
+      <div className="no-print fixed inset-x-0 top-0 z-[60] h-[3px]" style={{ background: 'var(--accent)' }} />
       <NoticeStack />
       <MobileTopBar onMenuClick={() => setMobileOpen(true)} />
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
@@ -264,6 +294,12 @@ function Shell() {
 
 function Gate() {
   const { user } = useAuth()
+  const role = user?.role
+  // 역할에 따라 포인트 색(CSS 변수)이 바뀌도록 표시해 둔다
+  useEffect(() => {
+    if (role) document.documentElement.setAttribute('data-role', role)
+    else document.documentElement.removeAttribute('data-role')
+  }, [role])
   return user ? <Shell /> : <Login />
 }
 
