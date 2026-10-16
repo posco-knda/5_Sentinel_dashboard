@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { Fragment, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Bar, BarChart, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { LEVEL, PART_LABEL, daysText, deadlineText, type FleetEngine, type Urgency } from '../../lib/fleet'
@@ -142,51 +142,47 @@ export function KpiTile({ label, value, unit, color, sub }: { label: string; val
 }
 
 /** 긴급도별 처리 현황 — 즉시·이번 주·이번 달 엔진이 미확인에서 완료까지 어디에 있는지 */
-export function ProgressChart({ engines, plan, height = 200 }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; height?: number | 'fill' }) {
-  const data = useMemo(() => {
-    const rows = (['now', 'week', 'month'] as Urgency[]).map((u) => ({ u, name: FLEET_LABEL[u], new: 0, review: 0, submitted: 0, rejected: 0, scheduled: 0, done: 0 }))
-    for (const e of engines) {
-      const r = rows.find((x) => x.u === e.urgency)
-      if (r) r[plan[e.unit]?.status ?? 'new']++
-    }
-    return rows
+const urgencies: Urgency[] = ['now', 'week', 'month']
+
+export function ProgressChart({ engines, plan }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; height?: number | 'fill' }) {
+  const { cell, max } = useMemo(() => {
+    const cell = {} as Record<PlanStatus, Record<Urgency, number>>
+    for (const k of STATUS_ORDER) cell[k] = { now: 0, week: 0, month: 0, watch: 0 }
+    for (const e of engines) if (urgencies.includes(e.urgency)) cell[plan[e.unit]?.status ?? 'new'][e.urgency]++
+    // 아직 손대지 않은 엔진(미확인)이 훨씬 많아서, 색 농도는 나머지 단계끼리 비교한다
+    const max = Math.max(1, ...STATUS_ORDER.filter((k) => k !== 'new').flatMap((k) => urgencies.map((u) => cell[k][u])))
+    return { cell, max }
   }, [engines, plan])
+  const head = 'flex items-center justify-center text-[11.5px] font-medium'
   return (
-    <div className={height === 'fill' ? 'flex min-h-0 flex-1 flex-col' : ''}>
-      <div className={height === 'fill' ? 'min-h-[120px] w-full flex-1' : 'w-full'} style={height === 'fill' ? undefined : { height }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ top: 4, right: 12, bottom: 0, left: 4 }} barCategoryGap={14}>
-            <XAxis type="number" hide />
-            <YAxis type="category" dataKey="name" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={false} tickLine={false} width={72} />
-            <Tooltip
-              cursor={{ fill: 'var(--border-soft)' }}
-              content={({ active, payload, label }) => {
-                if (!active || !payload?.length) return null
-                const d = payload[0].payload as Record<PlanStatus, number>
-                return (
-                  <div className="border px-3 py-2 text-[12px]" style={tipBox}>
-                    <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</div>
-                    <div style={{ color: 'var(--text-muted)' }}>
-                      {STATUS_ORDER.map((k) => `${STATUS_LABEL[k]} ${d[k]}`).join(' · ')}
-                    </div>
-                  </div>
-                )
-              }}
-            />
-            {STATUS_ORDER.map((k, i) => (
-              <Bar key={k} dataKey={k} stackId="a" fill={STATUS_COLOR[k]} radius={i === STATUS_ORDER.length - 1 ? [0, 4, 4, 0] : 0} animationDuration={600} />
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="flex flex-row flex-wrap gap-x-4 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-        {STATUS_ORDER.map((k) => (
-          <span key={k} className="flex flex-row items-center gap-1.5">
-            <span className="h-2 w-2 rounded-[2px]" style={{ background: STATUS_COLOR[k] }} />
-            {STATUS_LABEL[k]}
-          </span>
-        ))}
-      </div>
+    <div className="grid min-h-[236px] flex-1 gap-1.5 text-[13px]" style={{ gridTemplateColumns: 'minmax(86px,1.3fr) repeat(3, minmax(0,1fr)) minmax(44px,.7fr)', gridTemplateRows: `auto repeat(${STATUS_ORDER.length}, minmax(30px, 1fr))` }}>
+      <span />
+      {urgencies.map((u) => (
+        <span key={u} className={head} style={{ color: 'var(--text-muted)' }}>{FLEET_LABEL[u]}</span>
+      ))}
+      <span className={head} style={{ color: 'var(--text-muted)' }}>합계</span>
+      {STATUS_ORDER.map((k) => {
+        const total = urgencies.reduce((n, u) => n + cell[k][u], 0)
+        return (
+          <Fragment key={k}>
+            <span className="flex flex-row items-center gap-2 pl-0.5" style={{ color: 'var(--text-secondary)' }}>
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: STATUS_COLOR[k] }} />
+              {STATUS_LABEL[k]}
+            </span>
+            {urgencies.map((u) => {
+              const v = cell[k][u]
+              const a = k === 'new' ? 0.1 : v ? 0.16 + 0.5 * Math.min(1, v / max) : 0
+              return (
+                <span key={u} className="relative flex items-center justify-center overflow-hidden" style={{ borderRadius: 'var(--radius-xs)', background: 'var(--surface-2)' }} title={`${FLEET_LABEL[u]} · ${STATUS_LABEL[k]} ${v}대`}>
+                  <span className="absolute inset-0" style={{ background: STATUS_COLOR[k], opacity: a }} />
+                  <span className="mono relative font-semibold" style={{ color: v ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: v ? 600 : 400 }}>{v || '·'}</span>
+                </span>
+              )
+            })}
+            <span className="mono flex items-center justify-center font-semibold" style={{ color: 'var(--text-primary)' }}>{total}</span>
+          </Fragment>
+        )
+      })}
     </div>
   )
 }

@@ -92,7 +92,7 @@ export function Overview() {
           <Panel dense title="엔진 상태">
             <FleetDonut engines={active} />
           </Panel>
-          <Panel dense fill title="처리 현황" sub="긴급도별 미확인 → 완료">
+          <Panel dense fill title="처리 현황" sub="긴급도별 처리 단계 · 단위: 대">
             <ProgressChart engines={fleet} plan={plan.items} height="fill" />
           </Panel>
         </div>
