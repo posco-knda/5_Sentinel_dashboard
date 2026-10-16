@@ -106,14 +106,24 @@ function Logo() {
 
 const ROLE_DUTY = { planner: '엔진을 검토하고 결재를 올립니다', manager: '올라온 결재를 승인·반려합니다' } as const
 
-/** 지금 어떤 역할로 쓰고 있는지 한눈에 보이는 카드 — 색도 역할마다 다르다 */
+/** 사이드바 맨 위 카드 — 누구로, 어떤 역할로 쓰고 있는지와 로그아웃을 한곳에 모았다. 색은 역할마다 다르다 */
 function RoleBanner() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   if (!user) return null
   return (
-    <div className="flex flex-col gap-0.5 px-3 py-2.5" style={{ background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 'var(--radius-sm)' }}>
-      <span className="text-[10.5px] font-medium tracking-[0.04em]" style={{ opacity: 0.8 }}>현재 역할</span>
-      <span className="text-[15px] font-semibold leading-tight">{ROLE_LABEL[user.role]}</span>
+    <div className="flex flex-col gap-2 px-3 py-3" style={{ background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 'var(--radius-sm)' }}>
+      <div className="flex flex-row items-center gap-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center text-[13px] font-semibold" style={{ background: 'color-mix(in oklab, var(--accent-ink) 22%, transparent)', borderRadius: 'var(--radius-pill)' }}>
+          {user.name.slice(0, 1)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[14px] font-semibold leading-tight">{user.name}</div>
+          <div className="truncate text-[11.5px]" style={{ opacity: 0.85 }}>{ROLE_LABEL[user.role]}</div>
+        </div>
+        <button onClick={logout} className="shrink-0 border px-2 py-1 text-[11px] font-medium" style={{ borderColor: 'color-mix(in oklab, var(--accent-ink) 40%, transparent)', borderRadius: 'var(--radius-pill)' }}>
+          로그아웃
+        </button>
+      </div>
       <span className="text-[11.5px]" style={{ opacity: 0.9 }}>{ROLE_DUTY[user.role]}</span>
     </div>
   )
@@ -187,21 +197,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-function UserBox() {
-  const { user, logout } = useAuth()
-  if (!user) return null
-  return (
-    <div className="flex flex-row items-center gap-2.5 border px-2.5 py-2" style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)' }}>
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[12px] font-semibold" style={{ background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 'var(--radius-pill)' }}>{user.name.slice(0, 1)}</span>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[12.5px] font-medium">{user.name}</div>
-        <div className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>{ROLE_LABEL[user.role]}</div>
-      </div>
-      <button onClick={logout} className="shrink-0 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>로그아웃</button>
-    </div>
-  )
-}
-
 function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   return (
     <>
@@ -211,9 +206,6 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
           <Logo />
           <RoleBanner />
           <SidebarNav />
-        </div>
-        <div className="flex flex-col gap-3 px-2">
-          <UserBox />
         </div>
       </aside>
 
@@ -239,9 +231,6 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                 </div>
                 <RoleBanner />
                 <SidebarNav onNavigate={onClose} />
-              </div>
-              <div className="flex flex-col gap-3 px-2">
-                <UserBox />
               </div>
             </motion.aside>
           </>
