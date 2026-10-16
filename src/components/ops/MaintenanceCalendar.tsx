@@ -135,7 +135,7 @@ export function MaintenanceCalendar({ engines, plan, prepDays, slotsPerDay }: { 
               }}
               className="flex h-[52px] flex-col items-start justify-between px-1.5 py-1 text-left"
               style={{
-                background: heat ? `color-mix(in oklab, #3b9fd6 ${heat}%, var(--surface-1))` : closed ? 'color-mix(in oklab, var(--surface-2) 70%, var(--surface-1))' : 'var(--surface-1)',
+                background: heat ? `color-mix(in oklab, var(--text-secondary) ${Math.round(heat * 0.7)}%, var(--surface-1))` : closed ? 'color-mix(in oklab, var(--surface-2) 70%, var(--surface-1))' : 'var(--surface-1)',
                 outline: isSel ? '2px solid var(--accent)' : 'none',
                 outlineOffset: -2,
                 opacity: inMonth ? 1 : 0.45,
