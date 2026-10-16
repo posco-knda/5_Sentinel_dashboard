@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Panel } from '../../components/Panel'
+import { MaintenanceCalendar } from '../../components/ops/MaintenanceCalendar'
 import { DemandChart } from '../../components/ops/OpsCharts'
 import { ModuleChart, ProgressChart, UrgentBars } from '../../components/ops/FleetCharts'
 import { eok, summarize } from '../../lib/cost'
@@ -80,16 +81,13 @@ export function ManagerHome() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_1fr]">
         <Panel dense title="승인할 요청" sub="요청 기한이 급한 순 · 근거를 보고 바로 승인하거나 반려합니다" action={<Link to="/approvals" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 {pending.length}건 →</Link>}>
-          {pending.slice(0, 5).map((e) => {
+          {pending.slice(0, 8).map((e) => {
             const req = lastSubmit(plan.get(e.unit))
             return <EngineLine key={e.unit} e={e} note={req?.note} noteLabel={req ? `${req.by} 요청${req.date ? ` · 희망 ${md(req.date)}` : ''}` : undefined} />
           })}
           {!pending.length && <p className="m-0 py-6 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>승인을 기다리는 요청이 없습니다</p>}
         </Panel>
         <div className="flex flex-col gap-4">
-          <Panel dense title="주별 정비 요청" sub={`한 주 수용 능력 ${capacity}대 (하루 ${settings.slotsPerDay}대 × 5일)`}>
-            <DemandChart engines={fleet} plan={plan.items} height={200} />
-          </Panel>
           <Panel dense title="결재 지표">
             <div className="grid grid-cols-3 gap-3">
               {[
@@ -104,6 +102,12 @@ export function ManagerHome() {
                 </div>
               ))}
             </div>
+          </Panel>
+          <Panel dense title="정비 일정" sub="날짜를 누르면 그날의 엔진을 볼 수 있습니다">
+            <MaintenanceCalendar engines={fleet} plan={plan.items} prepDays={settings.prepDays} slotsPerDay={settings.slotsPerDay} />
+          </Panel>
+          <Panel dense title="주별 정비 요청" sub={`한 주 수용 능력 ${capacity}대 (하루 ${settings.slotsPerDay}대 × 5일)`}>
+            <DemandChart engines={fleet} plan={plan.items} height={200} />
           </Panel>
         </div>
       </div>
