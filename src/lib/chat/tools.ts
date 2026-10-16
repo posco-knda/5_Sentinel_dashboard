@@ -119,18 +119,33 @@ function getSchedule(a: Args, env: ToolEnv): ToolResult {
   const days = int(a.days, 1, 31, 14)
   const r = rules(env)
   const b = booked(env)
-  const out = []
+  const bookable: { date: string; scheduled: number; slotsLeft: number; full: boolean; engines?: string[] }[] = []
+  // 정비를 잡을 수 없는 날은 같은 이유가 이어지는 구간으로 묶어서 알린다 (목록이 길어지지 않게)
+  const closed: { from: string; to: string; reason: string }[] = []
   for (let i = 0; i < days; i++) {
     const d = addDays(from, i)
     const reason = closedReason(d, r)
+    if (reason) {
+      const last = closed[closed.length - 1]
+      if (last && last.reason === reason && last.to === label(addDays(d, -1))) last.to = label(d)
+      else closed.push({ from: label(d), to: label(d), reason })
+      continue
+    }
     const n = used(b, d)
     const engines = Object.entries(env.items)
       .filter(([, v]) => v.status === 'scheduled' && v.date === d)
       .slice(0, 5)
       .map(([u]) => `Engine #${u}`)
-    out.push(reason ? { date: label(d), bookable: false, reason, ...(n ? { scheduled: n, engines } : {}) } : { date: label(d), bookable: true, scheduled: n, slotsLeft: Math.max(0, r.slotsPerDay - n), full: n >= r.slotsPerDay, ...(n ? { engines } : {}) })
+    bookable.push({ date: label(d), scheduled: n, slotsLeft: Math.max(0, r.slotsPerDay - n), full: n >= r.slotsPerDay, ...(n ? { engines } : {}) })
   }
-  return { earliestBookable: label(earliest(r)), slotsPerDay: r.slotsPerDay, prepDays: r.prepDays, days: out }
+  return {
+    earliestBookable: label(earliest(r)),
+    slotsPerDay: r.slotsPerDay,
+    prepDays: r.prepDays,
+    bookableDays: bookable,
+    fullDays: bookable.filter((d) => d.full).map((d) => d.date),
+    unavailable: closed.map((c) => ({ range: c.from === c.to ? c.from : `${c.from}~${c.to}`, reason: c.reason })),
+  }
 }
 
 function suggestDates(a: Args, env: ToolEnv): ToolResult {

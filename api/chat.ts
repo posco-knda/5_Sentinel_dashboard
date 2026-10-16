@@ -18,7 +18,7 @@ interface Res {
 const GEMINI_DEFAULT = 'gemini-flash-lite-latest'
 const MAX_BODY_CHARS = 60000
 const MAX_CONTENTS = 24
-const MAX_PARTS = 8
+const MAX_PARTS = 24
 const MAX_TEXT = 4000
 const MAX_RESULT_CHARS = 14000
 /** 한 질문(마지막 사람 메시지 이후)에서 도구 결과를 받아 다시 묻는 횟수의 상한 */

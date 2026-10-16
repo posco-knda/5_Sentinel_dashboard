@@ -298,6 +298,10 @@ await t('chat: 모르는 필드·큰 결과·잘못된 차례는 거부', async 
   assert.equal((await call(chat, { method: 'POST', body: { contents: [{ role: 'user', parts: [{ inlineData: { data: 'x' } }] }], context: ctx } })).code, 400)
   assert.equal((await call(chat, { method: 'POST', body: { contents: ask('a'.repeat(70000)), context: ctx } })).code, 413)
 })
+await t('chat: 한 차례에 글 조각이 많아도(연달아 12개) 받아들임', async () => {
+  globalThis.fetch = gem([{ text: '확인' }]); const parts = Array.from({ length: 12 }, (_, i) => ({ text: `안녕하세요 ${i}` }))
+  assert.equal((await call(chat, { method: 'POST', body: { contents: [{ role: 'user', parts }], context: ctx } })).code, 200)
+})
 await t('chat: 한도 초과(429)는 quota, 일시 과부하(503)는 한 번 재시도', async () => {
   globalThis.fetch = gem([], false, 429); const a = await call(chat, { method: 'POST', body: { contents: ask('q'), context: ctx } }); assert.equal(a.code, 429); assert.equal(a.body.error, 'quota')
   let n = 0; globalThis.fetch = async () => (++n === 1 ? { ok: false, status: 503, json: async () => ({}) } : { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: '재시도' }] } }] }) })

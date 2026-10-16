@@ -78,7 +78,9 @@ function toContents(msgs: ChatMessage[]): Content[] {
     const role = isBot ? 'model' : 'user'
     const text = isBot ? m.text : `${m.name}(${ROLE_LABEL[m.from as 'planner' | 'manager']}): ${m.text.replace(MENTION_ALL, '')}`
     const last = out[out.length - 1]
-    if (last && last.role === role) last.parts.push({ text })
+    // 같은 쪽이 연달아 말하면 한 덩어리 글로 합친다 (조각이 너무 많아지지 않게)
+    if (last && last.role === role && typeof last.parts[0]?.text === 'string') last.parts[0].text = `${last.parts[0].text}
+${text}`
     else out.push({ role, parts: [{ text }] })
   }
   // 대화는 사용자 차례로 시작해야 한다
