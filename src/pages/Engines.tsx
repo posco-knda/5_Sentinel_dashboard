@@ -5,6 +5,8 @@ import { Pagination, type SizeMode } from '../components/Pagination'
 import { Badge } from '../components/Badge'
 import { StatusChip } from '../components/ops/StatusChip'
 import { UrgencyChip } from '../components/ops/UrgencyChip'
+import { saveExcel } from '../lib/excel'
+import { engineListSheet } from '../lib/exportData'
 import { LEVEL, daysText, deadlineText, useFleet, type Level } from '../lib/fleet'
 import { usePlan } from '../lib/plan'
 import { useSettings } from '../lib/settings'
@@ -60,6 +62,7 @@ export function Engines() {
     { id: 'warn', label: LEVEL.warn.label },
     { id: 'ok', label: LEVEL.ok.label },
   ]
+  const saveXlsx = () => void saveExcel('엔진_목록', [engineListSheet(rows, plan.items)])
   const go = (unit: number) => nav(`/equipment/engine-${unit}`)
 
   return (
@@ -118,6 +121,9 @@ export function Engines() {
               className="mono w-32 border px-3 py-1.5 text-[12.5px]"
               style={{ borderColor: 'var(--border)', background: 'var(--surface-2)', color: 'var(--text-primary)', borderRadius: 'var(--radius-pill)' }}
             />
+            <button onClick={saveXlsx} title="지금 거른 엔진 전체를 엑셀로 저장합니다" className="border px-3.5 py-1.5 text-[12.5px]" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}>
+              엑셀로 저장
+            </button>
           </div>
         </div>
 

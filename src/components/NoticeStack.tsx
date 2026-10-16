@@ -4,7 +4,7 @@ export function NoticeStack() {
   const notices = useNotices()
   if (!notices.length) return null
   return (
-    <div className="no-print pointer-events-none fixed bottom-4 right-4 z-[70] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-2" role="status" aria-live="polite">
+    <div className="no-print pointer-events-none fixed bottom-[88px] right-4 z-[70] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-2" role="status" aria-live="polite">
       {notices.map((n) => (
         <div
           key={n.id}

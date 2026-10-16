@@ -1,10 +1,12 @@
-import { Suspense, lazy, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ThemeProvider } from './theme/ThemeContext'
 import { SettingsProvider } from './lib/SettingsProvider'
 import { PlanProvider } from './lib/PlanProvider'
 import { AuthProvider } from './lib/AuthProvider'
+import { ChatProvider } from './lib/ChatProvider'
+import { ChatDock } from './components/chat/ChatDock'
 import { ROLE_LABEL, useAuth } from './lib/auth'
 import { useFleet } from './lib/fleet'
 import { usePlan } from './lib/plan'
@@ -21,7 +23,7 @@ const Alerts = lazy(() => import('./pages/Alerts').then((m) => ({ default: m.Ale
 const Engines = lazy(() => import('./pages/Engines').then((m) => ({ default: m.Engines })))
 const Detail = lazy(() => import('./pages/Detail').then((m) => ({ default: m.Detail })))
 const Report = lazy(() => import('./pages/Report').then((m) => ({ default: m.Report })))
-const Cost = lazy(() => import('./pages/Simulation').then((m) => ({ default: m.Simulation })))
+const Cost = lazy(() => import('./pages/Effect').then((m) => ({ default: m.Effect })))
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })))
 
 const icon = (children: React.ReactNode) => (
@@ -104,6 +106,28 @@ function Logo() {
   )
 }
 
+/** 사이드바 아래 카드 — 누구로, 어떤 역할로 쓰고 있는지와 로그아웃을 한곳에 모았다. 색은 역할마다 다르다 */
+function RoleBanner() {
+  const { user, logout } = useAuth()
+  if (!user) return null
+  return (
+    <div className="flex flex-col gap-2 px-3 py-2.5" style={{ background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 'var(--radius-sm)' }}>
+      <div className="flex flex-row items-center gap-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center text-[13px] font-semibold" style={{ background: 'color-mix(in oklab, var(--accent-ink) 22%, transparent)', borderRadius: 'var(--radius-pill)' }}>
+          {user.name.slice(0, 1)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[14px] font-semibold leading-tight">{user.name}</div>
+          <div className="truncate text-[11.5px]" style={{ opacity: 0.85 }}>{ROLE_LABEL[user.role]}</div>
+        </div>
+        <button onClick={logout} className="shrink-0 border px-2 py-1 text-[11px] font-medium" style={{ borderColor: 'color-mix(in oklab, var(--accent-ink) 40%, transparent)', borderRadius: 'var(--radius-pill)' }}>
+          로그아웃
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation()
   const fleet = useFleet()
@@ -129,7 +153,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       title: '관리',
       items: [
         { to: '/weekly', label: '주간 리포트', icon: DocIcon, match: '/weekly' },
-        { to: '/cost', label: '비용 분석', icon: BarsIcon, match: '/cost' },
+        { to: '/cost', label: '정비 효과', icon: BarsIcon, match: '/cost' },
         { to: '/settings', label: '설정', icon: GearIcon, match: '/settings' },
       ],
     },
@@ -169,21 +193,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-function UserBox() {
-  const { user, logout } = useAuth()
-  if (!user) return null
-  return (
-    <div className="flex flex-row items-center gap-2.5 border px-2.5 py-2" style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)' }}>
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[12px] font-semibold" style={{ background: 'var(--accent-dim)', color: 'var(--accent)', borderRadius: 'var(--radius-pill)' }}>{user.name.slice(0, 1)}</span>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[12.5px] font-medium">{user.name}</div>
-        <div className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>{ROLE_LABEL[user.role]}</div>
-      </div>
-      <button onClick={logout} className="shrink-0 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>로그아웃</button>
-    </div>
-  )
-}
-
 function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   return (
     <>
@@ -193,8 +202,8 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
           <Logo />
           <SidebarNav />
         </div>
-        <div className="flex flex-col gap-3 px-2">
-          <UserBox />
+        <div className="px-1">
+          <RoleBanner />
         </div>
       </aside>
 
@@ -220,8 +229,8 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                 </div>
                 <SidebarNav onNavigate={onClose} />
               </div>
-              <div className="flex flex-col gap-3 px-2">
-                <UserBox />
+              <div className="px-1">
+                <RoleBanner />
               </div>
             </motion.aside>
           </>
@@ -250,7 +259,9 @@ function Shell() {
   useUrgentWatcher()
   return (
     <div className="flex min-h-screen flex-col md:flex-row" style={{ background: 'var(--page)', color: 'var(--text-primary)' }}>
+      <div className="no-print fixed inset-x-0 top-0 z-[60] h-[3px]" style={{ background: 'var(--accent)' }} />
       <NoticeStack />
+      <ChatDock />
       <MobileTopBar onMenuClick={() => setMobileOpen(true)} />
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6 lg:px-9 lg:py-8">
@@ -264,7 +275,19 @@ function Shell() {
 
 function Gate() {
   const { user } = useAuth()
-  return user ? <Shell /> : <Login />
+  const role = user?.role
+  // 역할에 따라 포인트 색(CSS 변수)이 바뀌도록 표시해 둔다
+  useEffect(() => {
+    if (role) document.documentElement.setAttribute('data-role', role)
+    else document.documentElement.removeAttribute('data-role')
+  }, [role])
+  return user ? (
+    <ChatProvider>
+      <Shell />
+    </ChatProvider>
+  ) : (
+    <Login />
+  )
 }
 
 export default function App() {

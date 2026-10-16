@@ -7,6 +7,8 @@ import { useSettings, type Settings } from './settings'
 import { ACTION_FROM, ACTION_LABEL, ACTION_ROLE, ACTION_TO, PlanContext, STATUS_ORDER, todayStr, type ActPayload, type ActResult, type PlanAction, type PlanEvent, type PlanItem } from './plan'
 
 const KEY = 'sentinel-plan-v2'
+// 처음 이력을 만들었는지('seeded'), 일부러 비웠는지('cleared') 기록한다 — 비운 것과 "아직 아무것도 안 한 것"을 구분하려고
+const FLAG = 'sentinel-plan-seed-v1'
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 const ACTIONS = Object.keys(ACTION_TO)
 const NOTE_MAX = 300
@@ -48,7 +50,6 @@ function makeSeed(s: Settings): Record<number, PlanItem> {
   return buildSeed(buildFleet(s), { now: Date.now(), today: todayStr(), prepDays: s.prepDays, slotsPerDay: s.slotsPerDay })
 }
 
-/** 저장된 기록이 아예 없는 처음 상태인가 (기록을 일부러 비운 경우는 빈 목록이 저장돼 있으므로 해당하지 않는다) */
 function isFirstRun(): boolean {
   try {
     return localStorage.getItem(KEY) === null
@@ -57,14 +58,36 @@ function isFirstRun(): boolean {
   }
 }
 
+function readFlag(): string | null {
+  try {
+    return localStorage.getItem(FLAG)
+  } catch {
+    return null
+  }
+}
+
+function setFlag(v: 'seeded' | 'cleared') {
+  try {
+    localStorage.setItem(FLAG, v)
+  } catch {
+    /* 저장이 막힌 환경에서는 무시 */
+  }
+}
+
 export function PlanProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const { settings } = useSettings()
   const [items, setItems] = useState<Record<number, PlanItem>>(() => {
-    if (!isFirstRun()) return read() ?? {}
-    const seeded = makeSeed(settings)
-    write(seeded)
-    return seeded
+    const stored = isFirstRun() ? null : (read() ?? {})
+    // 처음 열었거나, 이전 버전에서 쓰다가 기록이 비어 있는 상태(일부러 비운 것이 아님)이면 이미 운영 중인 이력으로 시작한다.
+    // 처리한 기록이 있으면 그 사람의 데이터이므로 건드리지 않는다.
+    if (stored === null || (readFlag() === null && Object.keys(stored).length === 0)) {
+      const seeded = makeSeed(settings)
+      write(seeded)
+      setFlag('seeded')
+      return seeded
+    }
+    return stored
   })
   const ref = useRef(items)
   useEffect(() => {
@@ -117,12 +140,14 @@ export function PlanProvider({ children }: { children: ReactNode }) {
 
   const clearAll = useCallback(() => {
     write({})
+    setFlag('cleared')
     setItems({})
   }, [])
 
   const restoreSeed = useCallback(() => {
     const seeded = makeSeed(settings)
     write(seeded)
+    setFlag('seeded')
     setItems(seeded)
   }, [settings])
 

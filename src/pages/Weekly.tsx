@@ -3,6 +3,8 @@ import { DemandChart } from '../components/ops/OpsCharts'
 import { ModuleChart } from '../components/ops/FleetCharts'
 import { StatusChip } from '../components/ops/StatusChip'
 import { callApi } from '../lib/api'
+import { saveExcel } from '../lib/excel'
+import { weeklySheets } from '../lib/exportData'
 import { ROLE_LABEL, useAuth } from '../lib/auth'
 import { daysText, deadlineText, useFleet } from '../lib/fleet'
 import { ACTION_LABEL, usePlan } from '../lib/plan'
@@ -49,6 +51,8 @@ export function Weekly() {
     else setAi({ state: 'error' })
   }
 
+  const saveXlsx = () => void saveExcel('주간_정비_리포트', weeklySheets(stats, summary, ai.state === 'done' ? (ai.text ?? null) : null, settings))
+
   const headline =
     stats.fleet.now > 0
       ? `즉시 조치 ${stats.fleet.now}대 · 결재 대기 ${w.pending}건 — 이번 주 정비 요청 ${stats.demand[1]?.n ?? 0}대 도래 예정`
@@ -67,6 +71,9 @@ export function Weekly() {
         <div className="flex flex-row flex-wrap gap-2">
           <button onClick={askAi} disabled={ai.state === 'loading'} className="border px-3.5 py-1.5 text-[12.5px]" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}>
             {ai.state === 'loading' ? 'AI 요약 생성 중…' : 'AI 요약'}
+          </button>
+          <button onClick={saveXlsx} className="border px-3.5 py-1.5 text-[12.5px]" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}>
+            엑셀로 저장
           </button>
           <button onClick={printLight} className="cta-primary px-4 py-1.5 text-[12.5px] font-semibold" style={{ background: 'var(--accent)', color: 'var(--accent-ink)' }}>
             PDF로 저장

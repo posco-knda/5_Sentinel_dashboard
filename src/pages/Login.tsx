@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { Turbofan3D } from '../components/Turbofan3D'
 import { ACCOUNTS } from '../lib/accounts'
 import { ROLE_LABEL, useAuth } from '../lib/auth'
 
@@ -21,7 +22,20 @@ export function Login() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4" style={{ background: 'var(--page)', color: 'var(--text-primary)' }}>
+    <div className="relative flex min-h-screen" style={{ background: 'var(--page)', color: 'var(--text-primary)' }}>
+      <div className="hidden h-screen w-[56%] shrink-0 lg:block">
+        <Turbofan3D className="h-full">
+          <div className="absolute bottom-10 left-10 max-w-[420px]">
+            <p className="m-0 text-[22px] font-semibold leading-snug tracking-[-0.01em]" style={{ color: '#fff', wordBreak: 'keep-all' }}>
+              엔진이 멈추기 전에,<br />정비할 때를 먼저 알려드립니다
+            </p>
+            <p className="m-0 mt-2 text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,.7)', wordBreak: 'keep-all' }}>
+              비행 데이터로 남은 수명을 예측하고,<br />담당자 검토와 책임자 승인을 거쳐 정비 일정을 확정합니다.
+            </p>
+          </div>
+        </Turbofan3D>
+      </div>
+      <div className="flex flex-1 items-center justify-center px-4 py-10">
       <div className="w-full max-w-[380px]">
         <div className="mb-6 flex flex-row items-center gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center" style={{ background: 'var(--accent)', borderRadius: 'var(--radius-sm)' }}>
@@ -62,6 +76,7 @@ export function Login() {
             ))}
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

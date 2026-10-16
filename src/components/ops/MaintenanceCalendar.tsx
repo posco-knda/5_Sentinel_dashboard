@@ -30,7 +30,7 @@ const KINDS = [
 ] as const
 
 /** 정비 일정 달력 — 날짜별로 정비 요청 기한이 오는 엔진과 정비 예정·결재 대기 건을 보여 준다 */
-export function MaintenanceCalendar({ engines, plan, prepDays, slotsPerDay }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; prepDays: number; slotsPerDay: number }) {
+export function MaintenanceCalendar({ engines, plan, prepDays, slotsPerDay, large = false }: { engines: FleetEngine[]; plan: Record<number, PlanItem>; prepDays: number; slotsPerDay: number; large?: boolean }) {
   const today = todayStr()
   const rules = { today: todayStr(), prepDays, slotsPerDay }
   const [cursor, setCursor] = useState(() => {
@@ -122,7 +122,7 @@ export function MaintenanceCalendar({ engines, plan, prepDays, slotsPerDay }: { 
           const closed = closedReason(key, rules) !== null
           const full = (usedByDate.get(key) ?? 0) >= slotsPerDay
           if (full) counts.push({ key: 'full', label: '정비 만석', color: 'var(--status-critical)', n: '만석' })
-          const heat = d && d.due.length ? Math.round(10 + (d.due.length / maxDue) * 30) : 0
+          const heat = d && d.due.length ? Math.round(5 + (d.due.length / maxDue) * 33) : 0
           return (
             <button
               key={key}
@@ -133,9 +133,9 @@ export function MaintenanceCalendar({ engines, plan, prepDays, slotsPerDay }: { 
                 setSelected(key)
                 if (!inMonth) setCursor(new Date(c.getFullYear(), c.getMonth(), 1))
               }}
-              className="flex h-[52px] flex-col items-start justify-between px-1.5 py-1 text-left"
+              className={`flex ${large ? 'h-[84px] px-2 py-1.5' : 'h-[52px] px-1.5 py-1'} flex-col items-start justify-between text-left`}
               style={{
-                background: heat ? `color-mix(in oklab, var(--status-warning) ${heat}%, var(--surface-1))` : closed ? 'color-mix(in oklab, var(--surface-2) 70%, var(--surface-1))' : 'var(--surface-1)',
+                background: heat ? `color-mix(in oklab, #3b9fd6 ${heat}%, var(--surface-1))` : closed ? 'color-mix(in oklab, var(--surface-2) 70%, var(--surface-1))' : 'var(--surface-1)',
                 outline: isSel ? '2px solid var(--accent)' : 'none',
                 outlineOffset: -2,
                 opacity: inMonth ? 1 : 0.45,
@@ -170,7 +170,7 @@ export function MaintenanceCalendar({ engines, plan, prepDays, slotsPerDay }: { 
         ))}
       </div>
 
-      <div className="min-h-[216px] border-t pt-3" style={{ borderColor: 'var(--border-soft)' }}>
+      <div className={`${large ? 'min-h-[260px]' : 'min-h-[216px]'} border-t pt-3`} style={{ borderColor: 'var(--border-soft)' }}>
         <div className="mb-2 flex flex-row items-baseline justify-between gap-2">
           <span className="text-[13px] font-semibold">
             {selDate.getMonth() + 1}월 {selDate.getDate()}일 ({WEEK[selDate.getDay()]}){selected === today ? ' · 오늘' : ''}

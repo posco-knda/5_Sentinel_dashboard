@@ -100,6 +100,19 @@
   --focus-ring: 0 0 0 2px var(--page), 0 0 0 4px var(--accent);
 }
 
+/* 역할별 포인트 색 — 정비 담당자는 기본(남색), 운영 책임자는 청록. 버튼·강조·선택 표시가 모두 이 색을 따른다 */
+:root[data-role="manager"] {
+  --accent: #2dd4bf;
+  --accent-dim: rgba(45, 212, 191, 0.16);
+  --accent-ink: #04201d;
+}
+:root[data-role="manager"][data-theme="light"],
+:root[data-role="manager"] .force-light {
+  --accent: #0f8a82;
+  --accent-dim: rgba(15, 138, 130, 0.1);
+  --accent-ink: #ffffff;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -428,4 +441,17 @@ a[style*='radius-pill']:hover {
 button:not(:disabled):not(.tab-btn):not(.icon-btn):active,
 a[style*='radius-pill']:active {
   box-shadow: inset 0 0 0 999px rgba(128, 128, 128, 0.32);
+}
+
+/* 메신저의 추천 질문 버튼 */
+.chip-btn {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.chip-btn:hover {
+  background: var(--accent-dim);
+}
+.chip-btn:disabled {
+  cursor: default;
+  opacity: 0.5;
 }

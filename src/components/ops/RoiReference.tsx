@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { costModel, savingsSummary } from '../data/mock'
+import { costModel, savingsSummary } from '../../data/mock'
 
 function Slider({
   label,
@@ -124,7 +124,7 @@ function computeScenario(m: Mult) {
   }
 }
 
-export function Simulation() {
+export function RoiReference() {
   const [repairMult, setRepairMult] = useState(1)
   const [lossMult, setLossMult] = useState(1)
   const [unplannedMult, setUnplannedMult] = useState(1)
@@ -137,12 +137,9 @@ export function Simulation() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">비용 분석</h1>
-        <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          고장 난 뒤 수리하는 방식(사후 정비)과 예측으로 미리 정비하는 방식(예지 정비)의 비용을 비교합니다. 왼쪽 단가를 우리 기준으로 바꿔 보세요.
-        </p>
-      </div>
+      <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+        고장 난 뒤 수리하는 방식(사후 정비)과 예측으로 미리 정비하는 방식(예지 정비)을 엔진 1,000대 규모로 가정해 비교한 참고 자료입니다. 위의 실적과는 별개의 가상 비교입니다.
+      </p>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1.4fr]">
         <div className="surface-card flex flex-col gap-5 border p-6" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
