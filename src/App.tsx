@@ -104,14 +104,12 @@ function Logo() {
   )
 }
 
-const ROLE_DUTY = { planner: '엔진을 검토하고 결재를 올립니다', manager: '올라온 결재를 승인·반려합니다' } as const
-
 /** 사이드바 맨 위 카드 — 누구로, 어떤 역할로 쓰고 있는지와 로그아웃을 한곳에 모았다. 색은 역할마다 다르다 */
 function RoleBanner() {
   const { user, logout } = useAuth()
   if (!user) return null
   return (
-    <div className="flex flex-col gap-2 px-3 py-3" style={{ background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 'var(--radius-sm)' }}>
+    <div className="flex flex-col gap-2 px-3 py-2.5" style={{ background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 'var(--radius-sm)' }}>
       <div className="flex flex-row items-center gap-2.5">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center text-[13px] font-semibold" style={{ background: 'color-mix(in oklab, var(--accent-ink) 22%, transparent)', borderRadius: 'var(--radius-pill)' }}>
           {user.name.slice(0, 1)}
@@ -124,7 +122,6 @@ function RoleBanner() {
           로그아웃
         </button>
       </div>
-      <span className="text-[11.5px]" style={{ opacity: 0.9 }}>{ROLE_DUTY[user.role]}</span>
     </div>
   )
 }
