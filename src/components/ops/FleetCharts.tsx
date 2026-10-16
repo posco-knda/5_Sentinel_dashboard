@@ -153,9 +153,9 @@ export function ProgressChart({ engines, plan }: { engines: FleetEngine[]; plan:
     const max = Math.max(1, ...STATUS_ORDER.filter((k) => k !== 'new').flatMap((k) => urgencies.map((u) => cell[k][u])))
     return { cell, max }
   }, [engines, plan])
-  const head = 'flex items-center justify-center text-[11.5px] font-medium'
+  const head = 'flex items-center justify-center whitespace-nowrap text-[10.5px] font-medium'
   return (
-    <div className="grid min-h-[236px] flex-1 gap-1.5 text-[13px]" style={{ gridTemplateColumns: 'minmax(86px,1.3fr) repeat(3, minmax(0,1fr)) minmax(44px,.7fr)', gridTemplateRows: `auto repeat(${STATUS_ORDER.length}, minmax(30px, 1fr))` }}>
+    <div className="grid min-h-[236px] flex-1 gap-1 text-[13px]" style={{ gridTemplateColumns: 'minmax(66px,1fr) repeat(3, minmax(46px,1fr)) minmax(30px,.5fr)', gridTemplateRows: `auto repeat(${STATUS_ORDER.length}, minmax(30px, 1fr))` }}>
       <span />
       {urgencies.map((u) => (
         <span key={u} className={head} style={{ color: 'var(--text-muted)' }}>{FLEET_LABEL[u]}</span>
@@ -165,7 +165,7 @@ export function ProgressChart({ engines, plan }: { engines: FleetEngine[]; plan:
         const total = urgencies.reduce((n, u) => n + cell[k][u], 0)
         return (
           <Fragment key={k}>
-            <span className="flex flex-row items-center gap-2 pl-0.5" style={{ color: 'var(--text-secondary)' }}>
+            <span className="flex flex-row items-center gap-1.5 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: STATUS_COLOR[k] }} />
               {STATUS_LABEL[k]}
             </span>
