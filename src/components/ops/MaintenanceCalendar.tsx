@@ -122,7 +122,7 @@ export function MaintenanceCalendar({ engines, plan, prepDays, slotsPerDay }: { 
           const closed = closedReason(key, rules) !== null
           const full = (usedByDate.get(key) ?? 0) >= slotsPerDay
           if (full) counts.push({ key: 'full', label: '정비 만석', color: 'var(--status-critical)', n: '만석' })
-          const heat = d && d.due.length ? Math.round(6 + (d.due.length / maxDue) * 50) : 0
+          const heat = d && d.due.length ? Math.round(5 + (d.due.length / maxDue) * 33) : 0
           return (
             <button
               key={key}
