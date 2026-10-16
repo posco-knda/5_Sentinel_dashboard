@@ -24,12 +24,12 @@ export function Login() {
   return (
     <div className="relative flex min-h-screen" style={{ background: 'var(--page)', color: 'var(--text-primary)' }}>
       <div className="hidden h-screen w-[56%] shrink-0 lg:block">
-        <Turbofan3D full className="h-full">
-          <div className="absolute bottom-10 left-10 max-w-[380px]">
-            <p className="m-0 text-[22px] font-semibold leading-snug tracking-[-0.01em]" style={{ color: '#fff' }}>
+        <Turbofan3D className="h-full">
+          <div className="absolute bottom-10 left-10 max-w-[420px]">
+            <p className="m-0 text-[22px] font-semibold leading-snug tracking-[-0.01em]" style={{ color: '#fff', wordBreak: 'keep-all' }}>
               엔진이 멈추기 전에,<br />정비할 때를 먼저 알려드립니다
             </p>
-            <p className="m-0 mt-2 text-[13px]" style={{ color: 'rgba(255,255,255,.7)' }}>
+            <p className="m-0 mt-2 text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,.7)', wordBreak: 'keep-all', textWrap: 'balance' }}>
               비행 데이터로 남은 수명을 예측하고, 담당자 검토와 책임자 승인을 거쳐 정비 일정을 확정합니다.
             </p>
           </div>
