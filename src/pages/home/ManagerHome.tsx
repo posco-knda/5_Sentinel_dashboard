@@ -9,7 +9,7 @@ import { useFleet } from '../../lib/fleet'
 import { useSettings } from '../../lib/settings'
 import { lastSubmit, todayStr, usePlan } from '../../lib/plan'
 import { addDays, nextMonday } from '../../lib/schedule'
-import { EngineLine, StatLink } from './shared'
+import { StatLink } from './shared'
 
 const HOUR = 3600000
 const ago = (ms: number) => (ms < 24 * HOUR ? `${Math.max(1, Math.round(ms / HOUR))}시간` : `${Math.round(ms / (24 * HOUR))}일`)
@@ -79,14 +79,12 @@ export function ManagerHome() {
         <StatLink to="/cost" label="정비 효과 (추정)" value={eok(effect.doneGain)} sub={`완료 ${effect.done.length}건 · 방치 위험 ${eok(effect.neglected.exposure)}`} color="var(--status-good)" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_1fr]">
-        <Panel dense title="승인할 요청" sub="요청 기한이 급한 순 · 근거를 보고 바로 승인하거나 반려합니다" action={<Link to="/approvals" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 {pending.length}건 →</Link>}>
-          {pending.slice(0, 8).map((e) => {
-            const req = lastSubmit(plan.get(e.unit))
-            return <EngineLine key={e.unit} e={e} note={req?.note} noteLabel={req ? `${req.by} 요청${req.date ? ` · 희망 ${md(req.date)}` : ''}` : undefined} />
-          })}
-          {!pending.length && <p className="m-0 py-6 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>승인을 기다리는 요청이 없습니다</p>}
-        </Panel>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.7fr_1fr]">
+        <div className="xl:self-start">
+          <Panel dense title="정비 일정" sub="날짜를 누르면 그날의 엔진을 볼 수 있습니다 · 승인된 정비와 결재 대기, 만석인 날을 한눈에 봅니다">
+            <MaintenanceCalendar large engines={fleet} plan={plan.items} prepDays={settings.prepDays} slotsPerDay={settings.slotsPerDay} />
+          </Panel>
+        </div>
         <div className="flex flex-col gap-4">
           <Panel dense title="결재 지표">
             <div className="grid grid-cols-3 gap-3">
@@ -103,23 +101,15 @@ export function ManagerHome() {
               ))}
             </div>
           </Panel>
-          <Panel dense title="정비 일정" sub="날짜를 누르면 그날의 엔진을 볼 수 있습니다">
-            <MaintenanceCalendar engines={fleet} plan={plan.items} prepDays={settings.prepDays} slotsPerDay={settings.slotsPerDay} />
-          </Panel>
           <Panel dense title="주별 정비 요청" sub={`한 주 수용 능력 ${capacity}대 (하루 ${settings.slotsPerDay}대 × 5일)`}>
             <DemandChart engines={fleet} plan={plan.items} height={200} />
           </Panel>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        <Panel dense title="점검 예상 모듈" sub="부품·인력 준비용 · 위험·주의 엔진 기준 추정">
-          <ModuleChart engines={active} height={210} />
-        </Panel>
-        <Panel dense title="처리 현황" sub="긴급도별 처리 단계 · 단위: 대">
-          <ProgressChart engines={fleet} plan={plan.items} height="fill" />
-        </Panel>
-        <div className="lg:col-span-2 xl:col-span-1">
+          <Panel dense title="처리 현황" sub="긴급도별 처리 단계 · 단위: 대">
+            <ProgressChart engines={fleet} plan={plan.items} height="fill" />
+          </Panel>
+          <Panel dense title="점검 예상 모듈" sub="부품·인력 준비용 · 위험·주의 엔진 기준 추정">
+            <ModuleChart engines={active} height={210} />
+          </Panel>
           <Panel dense title="멈춰 있는 엔진" sub="기한이 지났는데 결재 전" action={<Link to="/plan" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 →</Link>}>
             <UrgentBars engines={stuck} dangerN={settings.dangerN} />
           </Panel>
