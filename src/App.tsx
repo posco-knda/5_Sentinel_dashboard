@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
-import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ThemeProvider } from './theme/ThemeContext'
 import { SettingsProvider } from './lib/SettingsProvider'
@@ -250,16 +250,7 @@ function MobileTopBar({ onMenuClick }: { onMenuClick: () => void }) {
 
 function Shell() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { user } = useAuth()
-  const nav = useNavigate()
-  const location = useLocation()
   useUrgentWatcher()
-  // 운영 책임자는 로그인하면 결재함부터 본다
-  useEffect(() => {
-    if (user?.role === 'manager' && location.pathname === '/') nav('/approvals', { replace: true })
-    // 처음 들어올 때만
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
   return (
     <div className="flex min-h-screen flex-col md:flex-row" style={{ background: 'var(--page)', color: 'var(--text-primary)' }}>
       <div className="no-print fixed inset-x-0 top-0 z-[60] h-[3px]" style={{ background: 'var(--accent)' }} />
