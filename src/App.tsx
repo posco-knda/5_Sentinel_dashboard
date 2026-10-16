@@ -104,7 +104,7 @@ function Logo() {
   )
 }
 
-/** 사이드바 맨 위 카드 — 누구로, 어떤 역할로 쓰고 있는지와 로그아웃을 한곳에 모았다. 색은 역할마다 다르다 */
+/** 사이드바 아래 카드 — 누구로, 어떤 역할로 쓰고 있는지와 로그아웃을 한곳에 모았다. 색은 역할마다 다르다 */
 function RoleBanner() {
   const { user, logout } = useAuth()
   if (!user) return null
@@ -198,8 +198,10 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
       <aside className="sticky top-0 hidden h-screen w-[228px] shrink-0 flex-col justify-between px-3 py-4 md:flex" style={{ borderRight: '1px solid var(--border)', background: 'var(--surface-1)' }}>
         <div className="flex flex-col gap-6">
           <Logo />
-          <RoleBanner />
           <SidebarNav />
+        </div>
+        <div className="px-1">
+          <RoleBanner />
         </div>
       </aside>
 
@@ -223,8 +225,10 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                     <CloseIcon />
                   </button>
                 </div>
-                <RoleBanner />
                 <SidebarNav onNavigate={onClose} />
+              </div>
+              <div className="px-1">
+                <RoleBanner />
               </div>
             </motion.aside>
           </>
