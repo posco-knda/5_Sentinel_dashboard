@@ -5,6 +5,8 @@ import { ThemeProvider } from './theme/ThemeContext'
 import { SettingsProvider } from './lib/SettingsProvider'
 import { PlanProvider } from './lib/PlanProvider'
 import { AuthProvider } from './lib/AuthProvider'
+import { ChatProvider } from './lib/ChatProvider'
+import { ChatDock } from './components/chat/ChatDock'
 import { ROLE_LABEL, useAuth } from './lib/auth'
 import { useFleet } from './lib/fleet'
 import { usePlan } from './lib/plan'
@@ -259,6 +261,7 @@ function Shell() {
     <div className="flex min-h-screen flex-col md:flex-row" style={{ background: 'var(--page)', color: 'var(--text-primary)' }}>
       <div className="no-print fixed inset-x-0 top-0 z-[60] h-[3px]" style={{ background: 'var(--accent)' }} />
       <NoticeStack />
+      <ChatDock />
       <MobileTopBar onMenuClick={() => setMobileOpen(true)} />
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6 lg:px-9 lg:py-8">
@@ -278,7 +281,13 @@ function Gate() {
     if (role) document.documentElement.setAttribute('data-role', role)
     else document.documentElement.removeAttribute('data-role')
   }, [role])
-  return user ? <Shell /> : <Login />
+  return user ? (
+    <ChatProvider>
+      <Shell />
+    </ChatProvider>
+  ) : (
+    <Login />
+  )
 }
 
 export default function App() {
