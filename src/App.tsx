@@ -21,7 +21,7 @@ const Alerts = lazy(() => import('./pages/Alerts').then((m) => ({ default: m.Ale
 const Engines = lazy(() => import('./pages/Engines').then((m) => ({ default: m.Engines })))
 const Detail = lazy(() => import('./pages/Detail').then((m) => ({ default: m.Detail })))
 const Report = lazy(() => import('./pages/Report').then((m) => ({ default: m.Report })))
-const Cost = lazy(() => import('./pages/Simulation').then((m) => ({ default: m.Simulation })))
+const Cost = lazy(() => import('./pages/Effect').then((m) => ({ default: m.Effect })))
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })))
 
 const icon = (children: React.ReactNode) => (
@@ -129,7 +129,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       title: '관리',
       items: [
         { to: '/weekly', label: '주간 리포트', icon: DocIcon, match: '/weekly' },
-        { to: '/cost', label: '비용 분석', icon: BarsIcon, match: '/cost' },
+        { to: '/cost', label: '정비 효과', icon: BarsIcon, match: '/cost' },
         { to: '/settings', label: '설정', icon: GearIcon, match: '/settings' },
       ],
     },

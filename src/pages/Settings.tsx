@@ -5,7 +5,7 @@ import { daysText, useFleet } from "../lib/fleet";
 import { usePlan } from "../lib/plan";
 import { resetUrgentBaseline } from "../lib/autoAlert";
 import { useTheme, type ThemeMode } from "../theme/theme";
-import { DEFAULT_SETTINGS, LIMITS, useSettings } from "../lib/settings";
+import { COST_LIMITS, COST_PRESETS, COST_PRESET_LABEL, DEFAULT_SETTINGS, LIMITS, useSettings, type CostBasis, type CostPreset } from "../lib/settings";
 
 interface SweepRow {
   n: number;
@@ -257,6 +257,77 @@ function Row({
       </div>
       {children}
     </div>
+  );
+}
+
+const COST_FIELDS: { key: keyof CostBasis; label: string; hint: string; unit: string; step: number }[] = [
+  { key: "planned", label: "계획 정비 1건", hint: "엔진을 미리 입고시켜 정비하는 비용", unit: "억원", step: 1 },
+  { key: "ratio", label: "비계획 정비 배율", hint: "고장 난 뒤 처리하면 계획 정비의 몇 배인가", unit: "배", step: 0.1 },
+  { key: "lossPerDay", label: "운항 중단 손실", hint: "항공기가 멈춰 있는 하루당 손실", unit: "억원/일", step: 0.1 },
+  { key: "downDays", label: "비계획 중단 일수", hint: "고장 때 운항이 멈추는 기간", unit: "일", step: 0.5 },
+  { key: "extra", label: "부대 비용", hint: "긴급 물류·야간 인력·항공기 재배치 (건당)", unit: "억원", step: 0.1 },
+  { key: "lifeCycles", label: "엔진 통상 수명", hint: "일찍 교체해서 버려지는 잔여 수명을 값으로 바꿀 때 쓰는 기준", unit: "cycle", step: 10 },
+];
+
+/** 정비 효과(/cost) 화면이 쓰는 비용 가정. 공개 자료의 범위에서 고른 값이라 항공사 계약에 맞게 고쳐 쓴다 */
+function CostBasisPanel() {
+  const { settings, update } = useSettings();
+  const c = settings.cost;
+  const pick = (p: "narrow" | "wide") => update({ costPreset: p, cost: COST_PRESETS[p] });
+  const edit = (key: keyof CostBasis, v: number) => update({ costPreset: "custom", cost: { ...c, [key]: v } });
+  const presets: CostPreset[] = ["narrow", "wide"];
+  return (
+    <Panel
+      title="비용 기준"
+      sub="정비 효과 금액을 계산할 때 쓰는 가정값입니다. 항공사·기종·정비 계약마다 다르니 실제 기준으로 고쳐 쓰세요"
+    >
+      <div className="mb-3 flex flex-row flex-wrap items-center gap-2">
+        {presets.map((p) => {
+          const active = settings.costPreset === p;
+          return (
+            <button
+              key={p}
+              onClick={() => pick(p as "narrow" | "wide")}
+              className="border px-3 py-1.5 text-[12.5px]"
+              style={{
+                borderRadius: "var(--radius-pill)",
+                borderColor: active ? "var(--accent)" : "var(--border)",
+                background: active ? "var(--accent-dim)" : "transparent",
+                color: active ? "var(--accent)" : "var(--text-secondary)",
+              }}
+            >
+              {COST_PRESET_LABEL[p]}
+            </button>
+          );
+        })}
+        {settings.costPreset === "custom" && (
+          <span className="text-[12px]" style={{ color: "var(--text-muted)" }}>
+            직접 입력한 값을 쓰는 중
+          </span>
+        )}
+      </div>
+      {COST_FIELDS.map((f) => (
+        <Row key={f.key} title={f.label} desc={f.hint}>
+          <label className="flex flex-row items-center gap-2 text-[12.5px]" style={{ color: "var(--text-muted)" }}>
+            <input
+              type="number"
+              value={c[f.key]}
+              min={COST_LIMITS[f.key][0]}
+              max={COST_LIMITS[f.key][1]}
+              step={f.step}
+              onChange={(e) => e.target.value !== "" && edit(f.key, Number(e.target.value))}
+              className="mono w-24 border px-3 py-1.5 text-right text-[13px]"
+              style={{ borderColor: "var(--border)", background: "var(--surface-2)", color: "var(--text-primary)", borderRadius: "var(--radius-pill)" }}
+            />
+            <span className="w-14">{f.unit}</span>
+          </label>
+        </Row>
+      ))}
+      <p className="mb-0 mt-3 text-[11.5px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+        기본값은 공개 자료의 범위에서 고른 가정값입니다(1달러 = 1,400원 환산). 협동체 엔진 입고 약 $1.5M~4M, 비계획 정비는 계획보다 30~50% 비쌈, 엔진 사고로 인한 운항 중단 손실 하루 약 $50K~150K 수준으로 보았습니다.
+        실제 금액은 정비 계약에 따라 크게 다를 수 있습니다.
+      </p>
+    </Panel>
   );
 }
 
@@ -622,6 +693,8 @@ export function Settings() {
           </li>
         </ul>
       </Panel>
+
+      <CostBasisPanel />
 
       <Panel title="데이터 관리">
         <Row
