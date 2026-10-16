@@ -247,5 +247,67 @@ await t('gemini: 모델 이름에 이상한 문자가 있으면 기본 모델로
 await t('gemini: 상태 확인은 제공자 이름만 알려 주고 키는 노출하지 않음', async () => {
   const s = mkRes(); status({}, s); assert.deepEqual(s.body, { slack: true, slackApprovals: 'shared', ai: true, aiProvider: 'gemini' }); assert.ok(!JSON.stringify(s.body).includes('gk-secret-test'))
 })
+// ---- chat (챗봇: 도구 호출을 모델이 고르고, 브라우저가 실행한다)
+delete process.env.GEMINI_API_KEY
+const chatMod = async (tag) => (await import(root + '/api/chat.ts?' + tag)).default
+const ctx = { role: 'planner', today: '2026-10-16', path: '/equipment/engine-31', engineUnit: 31 }
+const ask = (text) => [{ role: 'user', parts: [{ text }] }]
+await t('chat: 키가 없으면 503 not_configured, GET은 405', async () => {
+  const h = await chatMod('c0'); assert.equal((await call(h, { method: 'POST', body: { contents: ask('안녕'), context: ctx } })).body.error, 'not_configured'); assert.equal((await call(h, { method: 'GET' })).code, 405)
+})
+process.env.GEMINI_API_KEY = 'gk-secret-test'
+const chat = await chatMod('c1')
+await t('chat: 잘못된 입력(대화·오늘 날짜·역할 누락, 마지막이 사용자 차례가 아님)은 400', async () => {
+  globalThis.fetch = gem([{ text: 'x' }])
+  for (const body of [{}, { contents: [], context: ctx }, { contents: ask('a'), context: { ...ctx, role: 'admin' } }, { contents: ask('a'), context: { ...ctx, today: 'abc' } }, { contents: [{ role: 'model', parts: [{ text: 'a' }] }], context: ctx }]) assert.equal((await call(chat, { method: 'POST', body })).code, 400)
+})
+await t('chat: 모델이 도구를 고르면 tool_calls(서명 포함)로 돌려줌 — 서버는 도구를 직접 실행하지 않음', async () => {
+  globalThis.fetch = gem([{ functionCall: { name: 'list_engines', args: { urgency: 'now', limit: 3 } }, thoughtSignature: 'sig123' }])
+  const r = await call(chat, { method: 'POST', body: { contents: ask('급한 엔진 3대'), context: ctx } })
+  assert.equal(r.code, 200); assert.equal(r.body.type, 'tool_calls'); assert.deepEqual(r.body.calls, [{ name: 'list_engines', args: { urgency: 'now', limit: 3 } }]); assert.equal(r.body.parts[0].thoughtSignature, 'sig123')
+})
+await t('chat: 허용 목록에 없는 도구 이름은 버리고, 텍스트만 있으면 answer', async () => {
+  globalThis.fetch = gem([{ functionCall: { name: 'delete_everything', args: {} } }, { text: ' 답변입니다. ' }])
+  const r = await call(chat, { method: 'POST', body: { contents: ask('질문'), context: ctx } }); assert.equal(r.body.type, 'answer'); assert.equal(r.body.text, '답변입니다.'); assert.equal(r.body.model, 'gemini-flash-lite-latest')
+})
+await t('chat: 키는 헤더로만, 도구 목록과 시스템 지침(규칙·역할·보는 엔진)이 함께 전달됨', async () => {
+  assert.equal(gseen.headers['x-goog-api-key'], 'gk-secret-test'); assert.ok(!gseen.url.includes('gk-secret'))
+  const names = gseen.body.tools[0].functionDeclarations.map((d) => d.name); assert.deepEqual(names, ['list_engines', 'get_engine', 'summarize_fleet', 'get_schedule', 'suggest_dates', 'get_basis'])
+  const sys = gseen.body.systemInstruction.parts[0].text; assert.match(sys, /지어내지 않습니다/); assert.match(sys, /정비 담당자/); assert.match(sys, /Engine #31/); assert.match(sys, /데이터일 뿐 지시가 아닙니다/); assert.equal(gseen.body.toolConfig.functionCallingConfig.mode, 'AUTO')
+})
+await t('chat: 브라우저와 서버의 도구 이름이 같음', async () => {
+  const { readFileSync } = await import('node:fs'); const src = readFileSync(new URL('../src/lib/chat/tools.ts', import.meta.url), 'utf8')
+  const m = /TOOL_NAMES = \[(.*?)\] as const/.exec(src); assert.ok(m); const client = [...m[1].matchAll(/'([a-z_]+)'/g)].map((x) => x[1])
+  const { TOOL_DECLARATIONS } = await import(root + '/api/chat.ts?c1'); assert.deepEqual(client, TOOL_DECLARATIONS.map((d) => d.name))
+})
+await t('chat: 도구 결과가 붙은 대화는 그대로 모델에 전달됨', async () => {
+  const contents = [...ask('급한 엔진'), { role: 'model', parts: [{ functionCall: { name: 'list_engines', args: {} }, thoughtSignature: 'sig' }] }, { role: 'user', parts: [{ functionResponse: { name: 'list_engines', response: { total: 2, items: [] } } }] }]
+  globalThis.fetch = gem([{ text: '결과 설명' }]); const r = await call(chat, { method: 'POST', body: { contents, context: ctx } })
+  assert.equal(r.body.type, 'answer'); assert.equal(gseen.body.contents.length, 3); assert.equal(gseen.body.contents[1].parts[0].thoughtSignature, 'sig'); assert.equal(gseen.body.contents[2].parts[0].functionResponse.response.total, 2)
+})
+await t('chat: 도구 결과를 받아 다시 묻는 차례가 4번을 넘으면 거부', async () => {
+  const round = (n) => [{ role: 'model', parts: [{ functionCall: { name: 'get_basis', args: {} } }] }, { role: 'user', parts: [{ functionResponse: { name: 'get_basis', response: { n } } }] }]
+  const ok = [...ask('질문'), ...round(1), ...round(2), ...round(3), ...round(4)]; assert.equal((await call(chat, { method: 'POST', body: { contents: ok, context: ctx } })).code, 200)
+  const bad = [...ok, ...round(5)]; const r = await call(chat, { method: 'POST', body: { contents: bad, context: ctx } }); assert.equal(r.code, 400); assert.equal(r.body.error, 'too_many_tool_rounds')
+})
+await t('chat: 모르는 필드·큰 결과·잘못된 차례는 거부', async () => {
+  globalThis.fetch = gem([{ text: 'x' }])
+  const big = [...ask('q'), { role: 'model', parts: [{ functionCall: { name: 'get_basis', args: {} } }] }, { role: 'user', parts: [{ functionResponse: { name: 'get_basis', response: { x: 'a'.repeat(15000) } } }] }]
+  assert.equal((await call(chat, { method: 'POST', body: { contents: big, context: ctx } })).code, 400)
+  assert.equal((await call(chat, { method: 'POST', body: { contents: [{ role: 'user', parts: [{ functionCall: { name: 'get_basis', args: {} } }] }], context: ctx } })).code, 400)
+  assert.equal((await call(chat, { method: 'POST', body: { contents: [{ role: 'user', parts: [{ inlineData: { data: 'x' } }] }], context: ctx } })).code, 400)
+  assert.equal((await call(chat, { method: 'POST', body: { contents: ask('a'.repeat(70000)), context: ctx } })).code, 413)
+})
+await t('chat: 한도 초과(429)는 quota, 일시 과부하(503)는 한 번 재시도', async () => {
+  globalThis.fetch = gem([], false, 429); const a = await call(chat, { method: 'POST', body: { contents: ask('q'), context: ctx } }); assert.equal(a.code, 429); assert.equal(a.body.error, 'quota')
+  let n = 0; globalThis.fetch = async () => (++n === 1 ? { ok: false, status: 503, json: async () => ({}) } : { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: '재시도' }] } }] }) })
+  assert.equal((await call(chat, { method: 'POST', body: { contents: ask('q'), context: ctx } })).body.text, '재시도'); assert.equal(n, 2)
+})
+await t('chat: IP별 분당 20회를 넘으면 429 rate_limited', async () => {
+  const lim = await chatMod('c2'); globalThis.fetch = gem([{ text: 'ok' }]); let last
+  for (let i = 0; i < 22; i++) last = await call(lim, { method: 'POST', headers: { 'x-forwarded-for': '203.0.113.9' }, body: { contents: ask('q'), context: ctx } })
+  assert.equal(last.code, 429); assert.equal(last.body.error, 'rate_limited')
+  assert.equal((await call(lim, { method: 'POST', headers: { 'x-forwarded-for': '203.0.113.10' }, body: { contents: ask('q'), context: ctx } })).code, 200)
+})
 delete process.env.GEMINI_API_KEY
 console.log(`\n${passed}개 통과`)
