@@ -23,7 +23,7 @@ export function StatLink({ to, label, value, unit, sub, color }: { to: string; l
 /** 엔진 한 줄 — 이름·긴급도·남은 수명과, 지금 역할이 할 수 있는 처리 버튼 */
 export function EngineLine({ e, note, noteLabel }: { e: FleetEngine; note?: string; noteLabel?: string }) {
   return (
-    <div className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: '1px solid var(--border-soft)' }}>
+    <div data-row className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: '1px solid var(--border-soft)' }}>
       <div className="min-w-0 flex-1">
         <div className="flex flex-row flex-wrap items-center gap-2">
           <Link to={`/equipment/engine-${e.unit}?tab=diagnosis`} className="text-[13.5px] font-semibold no-underline" style={{ color: 'var(--text-primary)' }}>{e.name}</Link>

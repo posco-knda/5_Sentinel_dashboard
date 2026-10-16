@@ -140,8 +140,8 @@ export function ChatDock() {
             <div className="line-clamp-2 text-[12.5px]" style={{ color: 'var(--text-primary)' }}>{preview.text}</div>
           </button>
         )}
-        <button onClick={() => { setOpen(true); setView(unread > 0 ? 'thread' : 'list') }} aria-label="메신저 열기" className="relative flex h-11 w-11 items-center justify-center border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border-strong)', color: 'var(--accent)', borderRadius: 12 }}>
-          <ChatIcon />
+        <button onClick={() => { setOpen(true); setView(unread > 0 ? 'thread' : 'list') }} aria-label="메신저 열기" className="relative flex h-14 w-14 items-center justify-center border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border-strong)', color: 'var(--accent)', borderRadius: 14 }}>
+          <ChatIcon size={26} />
           {unread > 0 && <span className="mono absolute -right-1.5 -top-1.5 min-w-[18px] px-1 text-center text-[10.5px] font-semibold" style={{ background: 'var(--status-critical)', color: '#fff', borderRadius: 999 }}>{unread}</span>}
         </button>
       </div>

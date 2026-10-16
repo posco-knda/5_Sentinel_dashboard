@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Panel } from '../../components/Panel'
 import { MaintenanceCalendar } from '../../components/ops/MaintenanceCalendar'
@@ -7,6 +7,7 @@ import { useFleet } from '../../lib/fleet'
 import { useSettings } from '../../lib/settings'
 import { lastDecision, todayStr, usePlan } from '../../lib/plan'
 import { sendEngineAlert } from '../../lib/notify'
+import { useFitRows } from '../../lib/useFitRows'
 import type { SendState } from '../../lib/api'
 import { EngineLine, StatLink } from './shared'
 
@@ -16,6 +17,9 @@ export function PlannerHome() {
   const { settings } = useSettings()
   const plan = usePlan()
   const [slack, setSlack] = useState<SendState>({ state: 'idle' })
+  const listRef = useRef<HTMLDivElement>(null)
+  // 캘린더 높이에 맞춰 스크롤 없이 들어가는 줄 수만큼만 보여준다 (좁은 화면에서는 8줄)
+  const fit = useFitRows(listRef, { row: '[data-row]', head: null, minWidth: 1280, fallbackRow: 78, min: 3 })
   const today = todayStr()
   const horizon = todayStr(13)
 
@@ -84,8 +88,8 @@ export function PlannerHome() {
         <div className="relative">
           <div className="flex flex-col xl:absolute xl:inset-0">
             <Panel dense fill title="지금 처리할 엔진" sub="요청 기한이 급한 순 · 바로 검토하고 결재를 올릴 수 있습니다" action={<Link to="/plan" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 {todo.length}대 →</Link>}>
-              <div className="min-h-0 flex-1 xl:overflow-y-auto">
-                {todo.slice(0, 20).map((e) => (
+              <div ref={listRef} className="min-h-0 flex-1 xl:overflow-hidden">
+                {todo.slice(0, fit ?? 8).map((e) => (
                   <EngineLine key={e.unit} e={e} />
                 ))}
                 {!todo.length && <p className="m-0 py-6 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>처리할 엔진이 없습니다</p>}
