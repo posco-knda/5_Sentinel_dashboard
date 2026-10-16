@@ -65,6 +65,9 @@ function readUi(): UiState {
 
 const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 const roomOf = (m: ChatMessage): ChatRoom => m.room ?? 'peer'
+/** 봇을 부르는 말: @Sentinel · @센티널 · @봇 */
+const MENTION = /@(sentinel|센티널|봇)/i
+const MENTION_ALL = /@(sentinel|센티널|봇)\s*/gi
 
 /** 저장된 대화를 모델에 보낼 대화로 바꾼다 — 같은 쪽이 연달아 말하면 한 차례로 묶는다 */
 function toContents(msgs: ChatMessage[]): Content[] {
@@ -73,7 +76,7 @@ function toContents(msgs: ChatMessage[]): Content[] {
     if (m.error) continue
     const isBot = m.from === 'bot'
     const role = isBot ? 'model' : 'user'
-    const text = isBot ? m.text : `${m.name}(${ROLE_LABEL[m.from as 'planner' | 'manager']}): ${m.text.replace(/@sentinel\s*/gi, '')}`
+    const text = isBot ? m.text : `${m.name}(${ROLE_LABEL[m.from as 'planner' | 'manager']}): ${m.text.replace(MENTION_ALL, '')}`
     const last = out[out.length - 1]
     if (last && last.role === role) last.parts.push({ text })
     else out.push({ role, parts: [{ text }] })
@@ -207,14 +210,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (!user || busyRef.current) return
       busyRef.current = true
       setBusy({ room, label: '질문을 읽는 중' })
-      const recent = readMessages()
-        .filter((m) => roomOf(m) === room && (room === 'peer' || m.owner === user.role))
-        .slice(-HISTORY)
-      const result = await askBot(toContents(recent), { role: user.role, today: todayStr(), path: window.location.pathname, engineUnit }, envRef.current, (label) => setBusy({ room, label: `${label} 중` }))
       const base = { id: newId(), from: 'bot' as const, name: BOT_NAME, at: Date.now(), room, asker: user.role, ...(room === 'bot' ? { owner: user.role } : {}) }
-      append(result.ok ? { ...base, text: result.text, tools: result.tools, followups: followUps(result.tools, result.text) } : { ...base, text: result.message, error: true })
-      busyRef.current = false
-      setBusy(null)
+      try {
+        const recent = readMessages()
+          .filter((m) => roomOf(m) === room && (room === 'peer' || m.owner === user.role))
+          .slice(-HISTORY)
+        const result = await askBot(toContents(recent), { role: user.role, today: todayStr(), path: window.location.pathname, engineUnit }, envRef.current, (label) => setBusy({ room, label: `${label} 중` }))
+        append(result.ok ? { ...base, text: result.text, tools: result.tools, followups: followUps(result.tools, result.text) } : { ...base, text: result.message, error: true, at: Date.now() })
+      } catch {
+        // 어떤 이유로든 실패해도 '조회 중' 상태에 갇히지 않고 안내를 남긴다
+        append({ ...base, text: '답변을 만드는 중에 문제가 생겼습니다. 잠시 후 다시 물어봐 주세요.', error: true, at: Date.now() })
+      } finally {
+        busyRef.current = false
+        setBusy(null)
+      }
     },
     [user, engineUnit, append],
   )
@@ -223,7 +232,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     (text: string, room: ChatRoom = 'peer') => {
       const t = text.trim().slice(0, MAX_LENGTH)
       if (!t || !user) return
-      const toBot = room === 'bot' || /@sentinel/i.test(t)
+      const toBot = room === 'bot' || MENTION.test(t)
       if (toBot && busyRef.current) return
       append({ id: newId(), from: user.role, name: user.name, text: t, at: Date.now(), room, ...(room === 'bot' ? { owner: user.role } : {}) })
       if (toBot) void runBot(room)

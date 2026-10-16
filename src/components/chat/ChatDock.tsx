@@ -131,7 +131,7 @@ function Thread({ room }: { room: ChatRoom }) {
     if (botBusy) return
     send(room === 'peer' ? `@${BOT_NAME} ${q}` : q, room)
   }
-  const willAskBot = room === 'bot' || /@sentinel/i.test(text)
+  const willAskBot = room === 'bot' || /@(sentinel|센티널|봇)/i.test(text)
   const submit = () => {
     if (!text.trim() || (willAskBot && botBusy)) return
     send(text, room)
