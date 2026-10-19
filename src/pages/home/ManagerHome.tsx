@@ -80,9 +80,12 @@ export function ManagerHome() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.7fr_1fr]">
-        <div className="xl:self-start">
+        <div className="flex flex-col gap-4">
           <Panel dense title="정비 일정" sub="날짜를 누르면 그날의 엔진을 볼 수 있습니다 · 승인된 정비와 결재 대기, 만석인 날을 한눈에 봅니다">
             <MaintenanceCalendar large engines={fleet} plan={plan.items} prepDays={settings.prepDays} slotsPerDay={settings.slotsPerDay} />
+          </Panel>
+          <Panel dense title="점검 예상 모듈" sub="부품·인력 준비용 · 위험·주의 엔진 기준 추정">
+            <ModuleChart engines={active} height={210} />
           </Panel>
         </div>
         <div className="flex flex-col gap-4">
@@ -106,9 +109,6 @@ export function ManagerHome() {
           </Panel>
           <Panel dense title="처리 현황" sub="긴급도별 처리 단계 · 단위: 대">
             <ProgressChart engines={fleet} plan={plan.items} height="fill" />
-          </Panel>
-          <Panel dense title="점검 예상 모듈" sub="부품·인력 준비용 · 위험·주의 엔진 기준 추정">
-            <ModuleChart engines={active} height={210} />
           </Panel>
           <Panel dense title="멈춰 있는 엔진" sub="기한이 지났는데 결재 전" action={<Link to="/plan" className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>전체 →</Link>}>
             <UrgentBars engines={stuck} dangerN={settings.dangerN} />

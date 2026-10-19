@@ -133,7 +133,7 @@ export function MaintenanceCalendar({ engines, plan, prepDays, slotsPerDay, larg
                 setSelected(key)
                 if (!inMonth) setCursor(new Date(c.getFullYear(), c.getMonth(), 1))
               }}
-              className={`flex ${large ? 'h-[84px] px-2 py-1.5' : 'h-[52px] px-1.5 py-1'} flex-col items-start justify-between text-left`}
+              className={`flex ${large ? 'h-[72px] px-2 py-1.5' : 'h-[52px] px-1.5 py-1'} flex-col items-start justify-between text-left`}
               style={{
                 background: heat ? `color-mix(in oklab, #3b9fd6 ${heat}%, var(--surface-1))` : closed ? 'color-mix(in oklab, var(--surface-2) 70%, var(--surface-1))' : 'var(--surface-1)',
                 outline: isSel ? '2px solid var(--accent)' : 'none',
@@ -170,7 +170,7 @@ export function MaintenanceCalendar({ engines, plan, prepDays, slotsPerDay, larg
         ))}
       </div>
 
-      <div className={`${large ? 'min-h-[260px]' : 'min-h-[216px]'} border-t pt-3`} style={{ borderColor: 'var(--border-soft)' }}>
+      <div className={`${large ? 'min-h-[220px]' : 'min-h-[216px]'} border-t pt-3`} style={{ borderColor: 'var(--border-soft)' }}>
         <div className="mb-2 flex flex-row items-baseline justify-between gap-2">
           <span className="text-[13px] font-semibold">
             {selDate.getMonth() + 1}월 {selDate.getDate()}일 ({WEEK[selDate.getDay()]}){selected === today ? ' · 오늘' : ''}
