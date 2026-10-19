@@ -443,15 +443,6 @@ a[style*='radius-pill']:active {
   box-shadow: inset 0 0 0 999px rgba(128, 128, 128, 0.32);
 }
 
-/* 환영 배너의 터보팬 엔진 정면: 팬이 천천히 돈다 ('동작 줄이기' 설정이면 멈춘다) */
-@keyframes fan-spin {
-  to { transform: rotate(360deg); }
-}
-.fan-slow { animation: fan-spin 14s linear infinite; }
-@media (prefers-reduced-motion: reduce) {
-  .fan-slow { animation: none; }
-}
-
 /* 메신저의 추천 질문 버튼 */
 .chip-btn {
   cursor: pointer;
