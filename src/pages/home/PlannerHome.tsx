@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Panel } from '../../components/Panel'
+import { WelcomeBanner } from '../../components/home/WelcomeBanner'
+import { useAuth } from '../../lib/auth'
 import { MaintenanceCalendar } from '../../components/ops/MaintenanceCalendar'
 import { RecentAlerts } from '../../components/ops/FleetCharts'
 import { useFleet } from '../../lib/fleet'
@@ -16,6 +18,7 @@ export function PlannerHome() {
   const fleet = useFleet()
   const { settings } = useSettings()
   const plan = usePlan()
+  const { user } = useAuth()
   const [slack, setSlack] = useState<SendState>({ state: 'idle' })
   const listRef = useRef<HTMLDivElement>(null)
   // 캘린더 높이에 맞춰 스크롤 없이 들어가는 줄 수만큼만 보여준다 (좁은 화면에서는 8줄)
@@ -44,15 +47,16 @@ export function PlannerHome() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-row items-end justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">오늘의 업무</h1>
-          <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            {today.slice(5).replace('-', '/')} 기준 · 내가 처리할 엔진 {todo.length}대 · 예측은 각 엔진의 가장 최근 비행 직후 기준입니다
-          </p>
-        </div>
-        <Link to="/plan" className="shrink-0 text-[13px] font-medium no-underline" style={{ color: 'var(--accent)' }}>정비 계획 →</Link>
-      </div>
+      <WelcomeBanner
+        eyebrow={`${new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })} · 오늘의 업무`}
+        title={`${user?.name ?? ''} 님, 안녕하세요`}
+        chips={[
+          { label: '처리할 엔진', value: `${todo.length}대` },
+          { label: '기한 지난 미검토', value: `${overdue}대`, warn: overdue > 0 },
+          { label: '반려', value: `${rejected.length}건`, warn: rejected.length > 0 },
+        ]}
+        action={{ to: '/plan', label: '정비 계획' }}
+      />
 
       {nowCount > 0 && top && (
         <div className="flex flex-col gap-2.5 border px-4 py-3 sm:flex-row sm:items-center sm:justify-between" style={{ background: 'var(--status-critical-wash)', borderColor: 'color-mix(in oklab, var(--status-critical) 40%, transparent)', borderRadius: 'var(--radius-sm)' }}>

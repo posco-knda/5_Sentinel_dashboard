@@ -443,6 +443,24 @@ a[style*='radius-pill']:active {
   box-shadow: inset 0 0 0 999px rgba(128, 128, 128, 0.32);
 }
 
+/* 환영 배너의 여객기: 천천히 떠 있고, 비행운이 흐르며, 엔진 팬이 돈다 ('동작 줄이기' 설정이면 멈춘다) */
+@keyframes airliner-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes contrail-flow {
+  to { stroke-dashoffset: -28; }
+}
+@keyframes fan-spin {
+  to { transform: rotate(360deg); }
+}
+.airliner-float { animation: airliner-float 7s ease-in-out infinite; }
+.airliner-float .contrail { animation: contrail-flow 1.6s linear infinite; }
+.airliner-float .fan-spin { animation: fan-spin 0.9s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .airliner-float, .airliner-float .contrail, .airliner-float .fan-spin { animation: none; }
+}
+
 /* 메신저의 추천 질문 버튼 */
 .chip-btn {
   cursor: pointer;
