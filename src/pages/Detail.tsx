@@ -13,7 +13,8 @@ import { partMeta } from '../data/partFlowMeta'
 import { actionText, ruleSummary } from '../lib/diagnosis'
 import { PART_ROLE, partTone } from '../lib/parts'
 import { LEVEL, NOTABLE_Z, daysText, deadlineText, limitDate, requestDate, useFleet, type FleetEngine } from '../lib/fleet'
-import { ACTION_LABEL, usePlan } from '../lib/plan'
+import { ACTION_LABEL, todayStr, usePlan } from '../lib/plan'
+import { availableDays, earliest, label as dayLabel } from '../lib/schedule'
 import { ROLE_LABEL } from '../lib/auth'
 import { useSettings } from '../lib/settings'
 import { useEngineData, type EngineData } from '../lib/useEngine'
@@ -47,6 +48,15 @@ function OverviewTab({ data }: { data: EngineData }) {
   const cpd = settings.cyclesPerDay
   const color = LEVEL[engine.level].color
   const item = plan.get(engine.unit)
+  const rules = { today: todayStr(), prepDays: settings.prepDays, slotsPerDay: settings.slotsPerDay }
+  const limit = limitDate(engine.daysLeft)
+  const open = availableDays(earliest(rules), 60, rules, plan.items, engine.unit).filter((d) => d.date <= limit)
+  const fixed = item.status === 'scheduled' && item.date
+  const win = fixed
+    ? { tone: 'var(--status-good)', title: '확정된 정비 일정', text: `${dayLabel(item.date!)}에 정비가 확정되어 있습니다.` }
+    : open.length
+      ? { tone: 'var(--accent)', title: '추천 정비 기간', text: `${dayLabel(open[0].date)} ~ ${dayLabel(open[open.length - 1].date)} · 가동 한계(${mdy(limit)}) 전에 정비 가능한 날 ${open.length}일, 가장 이른 ${dayLabel(open[0].date)} 권장` }
+      : { tone: 'var(--status-critical)', title: '추천 정비 기간', text: `가동 한계(${mdy(limit)}) 전에 새로 잡을 수 있는 날이 없습니다 — 가장 이른 ${dayLabel(earliest(rules))}에 맞춰 책임자와 긴급 협의가 필요합니다.` }
   const recent = [
     ...[...item.history].reverse().map((ev) => ({ key: `p${ev.at}`, at: ev.at, color: ev.action === 'reject' ? 'var(--status-critical)' : ev.action === 'approve' || ev.action === 'complete' ? 'var(--status-good)' : 'var(--accent)', text: `${ACTION_LABEL[ev.action]} · ${ev.by}`, when: new Date(ev.at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' }) })),
   ].slice(0, 3)
@@ -65,6 +75,10 @@ function OverviewTab({ data }: { data: EngineData }) {
 
   return (
     <div className="flex flex-col gap-5">
+      <div className="flex flex-row flex-wrap items-baseline gap-x-4 gap-y-1 border px-5 py-3.5" style={{ background: `color-mix(in oklab, ${win.tone} 9%, var(--surface-1))`, borderColor: `color-mix(in oklab, ${win.tone} 40%, var(--border))`, borderRadius: 'var(--radius-xs)' }}>
+        <span className="shrink-0 text-[13px] font-semibold" style={{ color: win.tone }}>{win.title}</span>
+        <span className="text-[15px] font-medium" style={{ color: 'var(--text-primary)' }}>{win.text}</span>
+      </div>
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <div className="flex flex-col gap-5">
           <Panel fill title="엔진 구조" sub="부품에 마우스를 올리면 아래에 센서별 상태가 나옵니다 · 숫자는 처음 상태 대비 센서 변화 배수">
