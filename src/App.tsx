@@ -7,6 +7,7 @@ import { PlanProvider } from './lib/PlanProvider'
 import { AuthProvider } from './lib/AuthProvider'
 import { ChatProvider } from './lib/ChatProvider'
 import { ChatDock } from './components/chat/ChatDock'
+import { AVATARS } from './lib/accounts'
 import { ROLE_LABEL, useAuth } from './lib/auth'
 import { useFleet } from './lib/fleet'
 import { usePlan } from './lib/plan'
@@ -112,8 +113,8 @@ function RoleBanner() {
   return (
     <div className="flex flex-col gap-2 px-3 py-2.5" style={{ background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 'var(--radius-sm)' }}>
       <div className="flex flex-row items-center gap-2.5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center text-[13px] font-semibold" style={{ background: 'color-mix(in oklab, var(--accent-ink) 22%, transparent)', borderRadius: 'var(--radius-pill)' }}>
-          {user.name.slice(0, 1)}
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden text-[13px] font-semibold" style={{ background: 'color-mix(in oklab, var(--accent-ink) 22%, transparent)', borderRadius: 'var(--radius-pill)' }}>
+          {AVATARS[user.name] ? <img src={AVATARS[user.name]} alt="" className="h-full w-full object-cover" /> : user.name.slice(0, 1)}
         </span>
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-semibold leading-tight">{user.name}</div>
