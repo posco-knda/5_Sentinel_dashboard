@@ -2,43 +2,55 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 /**
- * 직접 그린 여객기 — 위에서 내려다본 모양(오른쪽이 기수)이라 날개 아래에 엔진이 하나씩 달린 구조가 한눈에 보인다.
+ * 직접 그린 여객기(옆모습, 오른쪽이 기수). 엔진은 날개 앞쪽 아래에 기둥으로 매달려 있고 흡입구(팬)가 진행 방향을 향한다.
  * 색은 역할별 포인트 색(--accent)과 그 위 글자색(--accent-ink)을 따른다.
  */
 function Airliner() {
-  // 날개에 매달린 엔진: 앞날개 가장자리보다 앞으로 튀어나오고, 흡입구(밝은 타원)는 진행 방향(오른쪽)
-  const pod = (cy: number) => (
-    <g key={cy}>
-      <rect x="330" y={cy - 8} width="62" height="16" rx="8" fill="var(--accent-ink)" />
-      <ellipse cx="389" cy={cy} rx="3.5" ry="6.5" fill="var(--accent)" fillOpacity="0.85" />
-      <path d={`M 338 ${cy - 8} L 352 ${cy - 8}`} stroke="var(--accent)" strokeOpacity="0.35" strokeWidth="2" />
-    </g>
-  )
   return (
     <svg viewBox="0 0 640 220" className="airliner-float h-full w-full" preserveAspectRatio="xMaxYMid meet" fill="none" aria-hidden="true">
-      <g transform="translate(372 112) rotate(-12) scale(0.74) translate(-330 -110)">
+      <g transform="rotate(-6 330 115)">
         {/* 꼬리에서 길게 이어지는 비행운 */}
-        <path className="contrail" d="M 36 106 L -900 106" stroke="var(--accent-ink)" strokeOpacity="0.55" strokeWidth="5" strokeLinecap="round" strokeDasharray="3 20" />
-        <path d="M 36 114 L -900 114" stroke="var(--accent-ink)" strokeOpacity="0.28" strokeWidth="3" strokeLinecap="round" strokeDasharray="3 26" />
+        <path className="contrail" d="M 44 118 C -40 126 -150 136 -330 146" stroke="var(--accent-ink)" strokeOpacity="0.55" strokeWidth="3" strokeLinecap="round" strokeDasharray="2 12" />
+        <path d="M 44 124 C -50 134 -160 146 -330 160" stroke="var(--accent-ink)" strokeOpacity="0.28" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 16" />
+
+        {/* 먼 쪽 날개 (동체 뒤에 살짝 보이는 부분) */}
+        <path d="M 330 104 L 262 74 L 292 74 L 392 102 Z" fill="var(--accent-ink)" fillOpacity="0.55" />
+
+        {/* 수직 꼬리날개 */}
+        <path d="M 74 96 L 36 30 L 82 30 L 148 96 Z" fill="var(--accent-ink)" fillOpacity="0.95" />
+        <path d="M 52 52 L 66 52" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
 
         {/* 수평 꼬리날개 */}
-        <path d="M 126 98 L 74 62 L 52 62 L 96 98 Z" fill="var(--accent-ink)" fillOpacity="0.85" />
-        <path d="M 126 122 L 74 158 L 52 158 L 96 122 Z" fill="var(--accent-ink)" fillOpacity="0.85" />
-
-        {/* 주날개: 뒤로 젖혀진 후퇴익 */}
-        <path d="M 436 98 L 274 8 L 238 8 L 338 98 Z" fill="var(--accent-ink)" fillOpacity="0.93" />
-        <path d="M 436 122 L 274 212 L 238 212 L 338 122 Z" fill="var(--accent-ink)" fillOpacity="0.93" />
-
-        {/* 엔진 */}
-        {pod(56)}
-        {pod(164)}
+        <path d="M 96 108 L 34 124 L 70 128 L 168 114 Z" fill="var(--accent-ink)" fillOpacity="0.75" />
 
         {/* 동체 */}
-        <path d="M 38 110 C 38 102 58 97 92 97 L 500 97 C 562 97 602 103 622 110 C 602 117 562 123 500 123 L 92 123 C 58 123 38 118 38 110 Z" fill="var(--accent-ink)" />
+        <path d="M 30 100 C 30 94 36 90 46 90 L 478 90 C 540 90 592 100 616 114 C 592 128 540 136 478 136 L 74 136 C 48 136 30 122 30 100 Z" fill="var(--accent-ink)" />
         {/* 조종석 창 */}
-        <path d="M 568 103 C 586 104 600 107 606 110 C 600 113 586 116 568 117 Z" fill="var(--accent)" fillOpacity="0.85" />
-        {/* 동체 중심선 */}
-        <path d="M 110 110 L 540 110" stroke="var(--accent)" strokeOpacity="0.32" strokeWidth="2.5" strokeDasharray="1 9" strokeLinecap="round" />
+        <path d="M 556 100 L 588 106 C 580 110 566 112 552 110 Z" fill="var(--accent)" fillOpacity="0.85" />
+        {/* 객실 창 */}
+        <g fill="var(--accent)" fillOpacity="0.55">
+          {Array.from({ length: 22 }, (_, i) => (
+            <circle key={i} cx={128 + i * 16} cy={108} r={3} />
+          ))}
+        </g>
+        {/* 동체 띠 */}
+        <path d="M 74 124 L 500 124" stroke="var(--accent)" strokeOpacity="0.4" strokeWidth="3" />
+
+        {/* 주날개 */}
+        <path d="M 300 128 L 196 196 L 252 196 L 408 128 Z" fill="var(--accent-ink)" fillOpacity="0.95" />
+        <path d="M 196 196 L 252 196 L 262 188 L 206 188 Z" fill="var(--accent)" fillOpacity="0.5" />
+
+        {/* 엔진: 날개 앞쪽, 동체 아래에 기둥으로 매달림 (날개와 겹치지 않고 흡입구가 오른쪽) */}
+        <path d="M 372 134 L 406 134 L 400 152 L 378 152 Z" fill="var(--accent-ink)" fillOpacity="0.85" />
+        <path d="M 340 160 L 324 166 L 340 174 Z" fill="var(--accent-ink)" fillOpacity="0.7" />
+        <rect x="338" y="150" width="108" height="32" rx="16" fill="var(--accent-ink)" />
+        <ellipse cx="440" cy="166" rx="8" ry="13" fill="var(--accent)" fillOpacity="0.9" />
+        <g className="fan-spin" style={{ transformOrigin: '440px 166px' }} stroke="var(--accent-ink)" strokeWidth="2" strokeLinecap="round">
+          {Array.from({ length: 8 }, (_, i) => {
+            const a = (i * Math.PI) / 4
+            return <line key={i} x1={440 + Math.cos(a) * 1.5} y1={166 + Math.sin(a) * 2.5} x2={440 + Math.cos(a) * 6.5} y2={166 + Math.sin(a) * 11} />
+          })}
+        </g>
       </g>
     </svg>
   )
