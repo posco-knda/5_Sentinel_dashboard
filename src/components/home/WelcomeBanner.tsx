@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 /**
- * 직접 그린 여객기(옆모습, 오른쪽이 기수). 엔진은 날개 앞쪽 아래에 기둥으로 매달려 있고 흡입구(팬)가 진행 방향을 향한다.
+ * 직접 그린 여객기(옆모습, 오른쪽이 기수).
  * 색은 역할별 포인트 색(--accent)과 그 위 글자색(--accent-ink)을 따른다.
  */
 function Airliner() {
@@ -36,21 +36,11 @@ function Airliner() {
         {/* 동체 띠 */}
         <path d="M 74 124 L 500 124" stroke="var(--accent)" strokeOpacity="0.4" strokeWidth="3" />
 
-        {/* 주날개 */}
-        <path d="M 300 128 L 196 196 L 252 196 L 408 128 Z" fill="var(--accent-ink)" fillOpacity="0.95" />
-        <path d="M 196 196 L 252 196 L 262 188 L 206 188 Z" fill="var(--accent)" fillOpacity="0.5" />
-
-        {/* 엔진: 날개 앞쪽, 동체 아래에 기둥으로 매달림 (날개와 겹치지 않고 흡입구가 오른쪽) */}
-        <path d="M 372 134 L 406 134 L 400 152 L 378 152 Z" fill="var(--accent-ink)" fillOpacity="0.85" />
-        <path d="M 340 160 L 324 166 L 340 174 Z" fill="var(--accent-ink)" fillOpacity="0.7" />
-        <rect x="338" y="150" width="108" height="32" rx="16" fill="var(--accent-ink)" />
-        <ellipse cx="440" cy="166" rx="8" ry="13" fill="var(--accent)" fillOpacity="0.9" />
-        <g className="fan-spin" style={{ transformOrigin: '440px 166px' }} stroke="var(--accent-ink)" strokeWidth="2" strokeLinecap="round">
-          {Array.from({ length: 8 }, (_, i) => {
-            const a = (i * Math.PI) / 4
-            return <line key={i} x1={440 + Math.cos(a) * 1.5} y1={166 + Math.sin(a) * 2.5} x2={440 + Math.cos(a) * 6.5} y2={166 + Math.sin(a) * 11} />
-          })}
-        </g>
+        {/* 주날개: 동체 아래에서 뒤쪽·아래로 뻗는 후퇴익. 앞날개 가장자리는 완만한 곡선이고 끝에 작은 윙렛이 있다 */}
+        <path d="M 440 126 C 404 142 322 172 236 192 L 206 192 C 252 170 302 146 336 128 Z" fill="var(--accent-ink)" fillOpacity="0.96" />
+        <path d="M 208 192 L 236 192 L 230 168 L 220 174 Z" fill="var(--accent-ink)" fillOpacity="0.96" />
+        {/* 뒷날개 가장자리의 플랩 선 */}
+        <path d="M 216 188 C 258 167 302 146 332 132" stroke="var(--accent)" strokeOpacity="0.35" strokeWidth="2" strokeLinecap="round" />
       </g>
     </svg>
   )
