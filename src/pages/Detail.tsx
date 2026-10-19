@@ -269,7 +269,7 @@ function EngineView({ unit }: { unit: number }) {
         ))}
       </div>
 
-      <div className="flex flex-row gap-5 overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
+      <div className="flex flex-row gap-5" style={{ borderBottom: '1px solid var(--border)' }}>
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)} className={`tab-btn shrink-0 ${tab === t.id ? 'is-active' : ''}`}>
             {t.label}
