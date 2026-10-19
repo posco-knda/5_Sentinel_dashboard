@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ACCOUNTS } from '../../lib/accounts'
+import { ACCOUNTS, AVATARS, BOT_AVATAR } from '../../lib/accounts'
 import { ROLE_LABEL, useAuth } from '../../lib/auth'
 import { BOT_NAME, MAX_LENGTH, useChat, type ChatMessage, type ChatRoom } from '../../lib/chat'
 
@@ -18,15 +18,10 @@ function ChatIcon({ size = 18 }: { size?: number }) {
 }
 
 function Avatar({ name, online, size = 36, bot = false }: { name: string; online?: boolean; size?: number; bot?: boolean }) {
+  const src = bot ? BOT_AVATAR : AVATARS[name]
   return (
-    <span className="relative flex shrink-0 items-center justify-center text-[13px] font-semibold" style={{ width: size, height: size, background: bot ? 'var(--accent)' : 'var(--surface-2)', color: bot ? 'var(--accent-ink)' : 'var(--text-secondary)', borderRadius: bot ? 10 : 'var(--radius-pill)' }}>
-      {bot ? (
-        <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
-        </svg>
-      ) : (
-        name.slice(0, 1)
-      )}
+    <span className="relative flex shrink-0 items-center justify-center text-[13px] font-semibold" style={{ width: size, height: size, background: bot ? 'color-mix(in oklab, var(--accent) 18%, var(--surface-1))' : 'var(--surface-2)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}>
+      {src ? <img src={src} alt="" className="h-full w-full object-cover" style={{ borderRadius: 'inherit' }} /> : name.slice(0, 1)}
       {online !== undefined && <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2" style={{ background: online ? 'var(--status-good)' : 'var(--text-muted)', borderColor: 'var(--surface-1)' }} />}
     </span>
   )

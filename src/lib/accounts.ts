@@ -15,3 +15,7 @@ export const ACCOUNTS: Account[] = [
   { id: 'planner', password: 'sentinel-plan', name: '김정비', role: 'planner' },
   { id: 'manager', password: 'sentinel-ops', name: '박운영', role: 'manager' },
 ]
+
+/** 프로필 사진 — 계정 이름으로 찾는다. 없으면 이름 첫 글자를 쓴다 */
+export const AVATARS: Record<string, string> = { 김정비: '/avatars/planner.webp', 박운영: '/avatars/manager.webp' }
+export const BOT_AVATAR = '/avatars/bot.webp'
