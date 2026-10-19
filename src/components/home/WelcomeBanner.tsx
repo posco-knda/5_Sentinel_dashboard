@@ -1,46 +1,53 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
-/**
- * 직접 그린 여객기(옆모습, 오른쪽이 기수).
- * 색은 역할별 포인트 색(--accent)과 그 위 글자색(--accent-ink)을 따른다.
- */
-function Airliner() {
+const FAN = { cx: 430, cy: 80 }
+const BLADES = 18
+
+/** 터보팬 엔진을 정면에서 본 모양 — 바깥 덮개, 휘어진 팬 날개 18장, 중앙 스피너. 천천히 돈다 */
+function FanFace() {
+  const polar = (r: number, deg: number) => `${(FAN.cx + Math.cos((deg * Math.PI) / 180) * r).toFixed(1)} ${(FAN.cy + Math.sin((deg * Math.PI) / 180) * r).toFixed(1)}`
   return (
-    <svg viewBox="0 0 640 220" className="airliner-float h-full w-full" preserveAspectRatio="xMaxYMid meet" fill="none" aria-hidden="true">
-      <g transform="rotate(-6 330 115)">
-        {/* 꼬리에서 길게 이어지는 비행운 */}
-        <path className="contrail" d="M 44 118 C -40 126 -150 136 -330 146" stroke="var(--accent-ink)" strokeOpacity="0.55" strokeWidth="3" strokeLinecap="round" strokeDasharray="2 12" />
-        <path d="M 44 124 C -50 134 -160 146 -330 160" stroke="var(--accent-ink)" strokeOpacity="0.28" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 16" />
+    <g>
+      <circle cx={FAN.cx} cy={FAN.cy} r="112" stroke="var(--accent-ink)" strokeOpacity="0.2" strokeWidth="2" />
+      <circle cx={FAN.cx} cy={FAN.cy} r="104" fill="var(--accent-ink)" fillOpacity="0.1" stroke="var(--accent-ink)" strokeOpacity="0.9" strokeWidth="7" />
+      <g className="fan-slow" style={{ transformOrigin: `${FAN.cx}px ${FAN.cy}px` }}>
+        {Array.from({ length: BLADES }, (_, i) => {
+          const a = (360 / BLADES) * i
+          // 날개 뿌리에서 끝으로 갈수록 휘어지며 넓어지는 모양
+          return <path key={i} d={`M ${polar(26, a)} Q ${polar(60, a + 4)} ${polar(98, a + 15)} L ${polar(98, a + 30)} Q ${polar(62, a + 22)} ${polar(28, a + 12)} Z`} fill="var(--accent-ink)" fillOpacity={i % 2 ? 0.88 : 0.62} />
+        })}
+      </g>
+      <circle cx={FAN.cx} cy={FAN.cy} r="27" fill="var(--accent-ink)" />
+      <circle cx={FAN.cx} cy={FAN.cy} r="17" fill="var(--accent)" fillOpacity="0.85" />
+      <circle cx={FAN.cx} cy={FAN.cy} r="5" fill="var(--accent-ink)" />
+    </g>
+  )
+}
 
-        {/* 먼 쪽 날개 (동체 뒤에 살짝 보이는 부분) */}
-        <path d="M 330 104 L 262 74 L 292 74 L 392 102 Z" fill="var(--accent-ink)" fillOpacity="0.55" />
+// 항로 위를 지나가는 작은 비행기 모양(위에서 본 모양, 위쪽이 기수 → 오른쪽을 보게 돌린다)
+const PLANE_GLYPH = 'M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z'
+const ROUTE = 'M 8 138 C 110 40 230 6 340 26'
 
-        {/* 수직 꼬리날개 */}
-        <path d="M 74 96 L 36 30 L 82 30 L 148 96 Z" fill="var(--accent-ink)" fillOpacity="0.95" />
-        <path d="M 52 52 L 66 52" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
-
-        {/* 수평 꼬리날개 */}
-        <path d="M 96 108 L 34 124 L 70 128 L 168 114 Z" fill="var(--accent-ink)" fillOpacity="0.75" />
-
-        {/* 동체 */}
-        <path d="M 30 100 C 30 94 36 90 46 90 L 478 90 C 540 90 592 100 616 114 C 592 128 540 136 478 136 L 74 136 C 48 136 30 122 30 100 Z" fill="var(--accent-ink)" />
-        {/* 조종석 창 */}
-        <path d="M 556 100 L 588 106 C 580 110 566 112 552 110 Z" fill="var(--accent)" fillOpacity="0.85" />
-        {/* 객실 창 */}
-        <g fill="var(--accent)" fillOpacity="0.55">
-          {Array.from({ length: 22 }, (_, i) => (
-            <circle key={i} cx={128 + i * 16} cy={108} r={3} />
-          ))}
-        </g>
-        {/* 동체 띠 */}
-        <path d="M 74 124 L 500 124" stroke="var(--accent)" strokeOpacity="0.4" strokeWidth="3" />
-
-        {/* 주날개: 동체 아래에서 뒤쪽·아래로 뻗는 후퇴익. 앞날개 가장자리는 완만한 곡선이고 끝에 작은 윙렛이 있다 */}
-        <path d="M 440 126 C 404 142 322 172 236 192 L 206 192 C 252 170 302 146 336 128 Z" fill="var(--accent-ink)" fillOpacity="0.96" />
-        <path d="M 208 192 L 236 192 L 230 168 L 220 174 Z" fill="var(--accent-ink)" fillOpacity="0.96" />
-        {/* 뒷날개 가장자리의 플랩 선 */}
-        <path d="M 216 188 C 258 167 302 146 332 132" stroke="var(--accent)" strokeOpacity="0.35" strokeWidth="2" strokeLinecap="round" />
+/** 로그인 직후 첫 화면 위쪽에 깔리는 그림: 항로와 그 위의 비행기, 그리고 터보팬 엔진 정면 */
+function BannerArt() {
+  const reduced = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  return (
+    <svg viewBox="0 0 520 160" className="h-full w-full" preserveAspectRatio="xMaxYMid slice" fill="none" aria-hidden="true">
+      <path id="banner-route" d={ROUTE} stroke="var(--accent-ink)" strokeOpacity="0.5" strokeWidth="2" strokeDasharray="2 9" strokeLinecap="round" />
+      <path d="M 8 150 C 130 70 250 36 350 52" stroke="var(--accent-ink)" strokeOpacity="0.22" strokeWidth="1.5" strokeDasharray="2 12" strokeLinecap="round" />
+      {[[8, 138], [340, 26]].map(([x, y]) => (
+        <circle key={x} cx={x} cy={y} r="3.5" fill="var(--accent-ink)" fillOpacity="0.7" />
+      ))}
+      <FanFace />
+      {/* 항로 위의 비행기: 움직이는 동안은 경로를 따라 날고, '동작 줄이기' 설정이면 경로 중간에 멈춰 있다 */}
+      <g fill="var(--accent-ink)" transform={reduced ? 'translate(171 38) rotate(-18)' : undefined}>
+        {!reduced && (
+          <animateMotion dur="7s" repeatCount="indefinite" rotate="auto">
+            <mpath href="#banner-route" />
+          </animateMotion>
+        )}
+        <path d={PLANE_GLYPH} transform="scale(1.35) translate(-12 -12) rotate(90 12 12)" />
       </g>
     </svg>
   )
@@ -54,15 +61,8 @@ export function WelcomeBanner({ eyebrow, title, chips, action }: { eyebrow: stri
       style={{ borderRadius: 'var(--radius-sm)', color: 'var(--accent-ink)', background: 'linear-gradient(112deg, var(--accent) 0%, color-mix(in oklab, var(--accent) 62%, #0a1222) 100%)' }}
       aria-label="환영"
     >
-      {/* 배경: 레이더 같은 동심원과 옅은 격자 */}
-      <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="xMaxYMid slice" viewBox="0 0 800 160" fill="none" aria-hidden="true">
-        {[60, 110, 160, 210].map((r) => (
-          <circle key={r} cx="640" cy="90" r={r} stroke="var(--accent-ink)" strokeOpacity={0.12 - r / 3000} />
-        ))}
-        <path d="M 0 140 L 800 140" stroke="var(--accent-ink)" strokeOpacity="0.1" />
-      </svg>
-      <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[62%] items-center sm:flex" style={{ opacity: 0.96 }}>
-        <Airliner />
+      <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[58%] sm:block">
+        <BannerArt />
       </div>
       <div className="relative flex min-h-[148px] flex-col justify-center gap-3 px-6 py-5">
         <div>
