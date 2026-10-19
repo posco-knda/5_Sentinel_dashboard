@@ -67,7 +67,7 @@ function OverviewTab({ data }: { data: EngineData }) {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <div className="flex flex-col gap-5">
-          <Panel title="엔진 구조" sub="부품을 누르면 아래에 센서별 상태가 나옵니다 · 숫자는 처음 상태 대비 센서 변화 배수">
+          <Panel fill title="엔진 구조" sub="부품에 마우스를 올리면 아래에 센서별 상태가 나옵니다 · 숫자는 처음 상태 대비 센서 변화 배수">
             <EngineSchematic parts={parts} selected={selPart.id} onSelect={setSel} topId={engine.topPart?.id} />
             <div className="mt-2 flex flex-row flex-wrap gap-x-4 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
               {[
@@ -114,7 +114,7 @@ function OverviewTab({ data }: { data: EngineData }) {
         </div>
 
         <div className="order-first flex flex-col gap-5">
-          <Panel title="엔진 정보">
+          <Panel fill title="엔진 정보">
             <div className="mb-3 grid grid-cols-2 gap-3">
               <div className="border p-4" style={{ background: 'var(--page)', borderColor: 'var(--border-soft)', borderRadius: 'var(--radius-xs)' }}>
                 <div className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>예측 남은 수명</div>

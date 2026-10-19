@@ -20,7 +20,7 @@ const SHAPES: Record<string, { d: string; lx: number }> = {
 const SHORT: Record<string, string> = { fan: '팬', lpc: 'LPC', hpc: 'HPC', core: '연소실', hpt: 'HPT', lpt: 'LPT' }
 
 /** 엔진 단면 구조도 — 모듈을 누르면 선택되고, 색은 센서 변화 정도를 뜻한다 */
-export function EngineSchematic({ parts, selected, onSelect, topId }: { parts: SchematicPart[]; selected: string; onSelect: (id: string) => void; topId?: string | null }) {
+export function EngineSchematic({ parts, selected, onSelect, topId }: { parts: SchematicPart[]; selected: string; onSelect: (id: string | null) => void; topId?: string | null }) {
   const byId = Object.fromEntries(parts.map((p) => [p.id, p]))
   return (
     <svg viewBox="0 0 900 260" className="block h-auto w-full" role="group" aria-label="엔진 구조도">
@@ -41,17 +41,13 @@ export function EngineSchematic({ parts, selected, onSelect, topId }: { parts: S
         return (
           <g
             key={id}
-            role="button"
+            role="img"
             tabIndex={0}
-            aria-pressed={on}
             aria-label={`${p.label}${p.score != null ? ` 변화 ×${p.score.toFixed(1)}` : ''}`}
-            onClick={() => onSelect(id)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onSelect(id)
-              }
-            }}
+            onMouseEnter={() => onSelect(id)}
+            onMouseLeave={() => onSelect(null)}
+            onFocus={() => onSelect(id)}
+            onBlur={() => onSelect(null)}
             style={{ cursor: 'pointer', outline: 'none' }}
           >
             <path d={s.d} fill={`color-mix(in oklab, ${tone.color} ${on ? 38 : 22}%, var(--surface-1))`} stroke={on ? 'var(--accent)' : tone.color} strokeWidth={on ? 3 : 1.6} strokeLinejoin="round" />
