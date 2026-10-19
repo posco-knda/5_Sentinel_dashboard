@@ -62,7 +62,7 @@ function OverviewTab({ data }: { data: EngineData }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.6fr_1fr]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_1.6fr]">
         <Panel title="엔진 구조" sub="부품을 누르면 아래에 센서별 상태가 나옵니다 · 숫자는 처음 상태 대비 센서 변화 배수">
           <EngineSchematic parts={parts} selected={selPart.id} onSelect={setSel} topId={engine.topPart?.id} />
           <div className="mt-2 flex flex-row flex-wrap gap-x-4 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
@@ -108,7 +108,7 @@ function OverviewTab({ data }: { data: EngineData }) {
           </div>
         </Panel>
 
-        <div className="flex flex-col gap-5">
+        <div className="order-first flex flex-col gap-5">
           <Panel title="엔진 정보">
             <dl className="m-0">
               <SpecRow k="상태">
