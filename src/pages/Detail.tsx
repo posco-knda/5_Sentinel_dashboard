@@ -33,9 +33,9 @@ const mdy = (s: string) => s.slice(5).replace('-', '/')
 
 function SpecRow({ k, children }: { k: string; children: ReactNode }) {
   return (
-    <div className="flex flex-row items-baseline justify-between gap-4 py-2.5" style={{ borderBottom: '1px solid var(--border-soft)' }}>
-      <dt className="shrink-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{k}</dt>
-      <dd className="m-0 min-w-0 text-right text-[13.5px] font-medium" style={{ color: 'var(--text-primary)' }}>{children}</dd>
+    <div className="flex flex-row items-baseline justify-between gap-4 py-3.5" style={{ borderBottom: '1px solid var(--border-soft)' }}>
+      <dt className="shrink-0 text-[14px]" style={{ color: 'var(--text-muted)' }}>{k}</dt>
+      <dd className="m-0 min-w-0 text-right text-[16px] font-semibold" style={{ color: 'var(--text-primary)' }}>{children}</dd>
     </div>
   )
 }
@@ -62,54 +62,79 @@ function OverviewTab({ data }: { data: EngineData }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_1.6fr]">
-        <Panel title="엔진 구조" sub="부품을 누르면 아래에 센서별 상태가 나옵니다 · 숫자는 처음 상태 대비 센서 변화 배수">
-          <EngineSchematic parts={parts} selected={selPart.id} onSelect={setSel} topId={engine.topPart?.id} />
-          <div className="mt-2 flex flex-row flex-wrap gap-x-4 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-            {[
-              ['var(--status-critical)', `뚜렷한 변화 (×${NOTABLE_Z} 이상)`],
-              ['var(--status-warning)', '변화 시작'],
-              ['var(--status-good)', '평소 수준'],
-            ].map(([c, l]) => (
-              <span key={l} className="inline-flex flex-row items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full" style={{ background: c }} />
-                {l}
-              </span>
-            ))}
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-5 border-t pt-4 md:grid-cols-[1fr_1.3fr]" style={{ borderColor: 'var(--border-soft)' }}>
-            <div>
-              <div className="flex flex-row items-center gap-2">
-                <span className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{selPart.label}</span>
-                <span className="border px-2 py-0.5 text-[11px] font-medium" style={{ color: tone.color, borderColor: `color-mix(in oklab, ${tone.color} 45%, transparent)`, borderRadius: 'var(--radius-pill)' }}>{tone.label}</span>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <div className="flex flex-col gap-5">
+          <Panel title="엔진 구조" sub="부품을 누르면 아래에 센서별 상태가 나옵니다 · 숫자는 처음 상태 대비 센서 변화 배수">
+            <EngineSchematic parts={parts} selected={selPart.id} onSelect={setSel} topId={engine.topPart?.id} />
+            <div className="mt-2 flex flex-row flex-wrap gap-x-4 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+              {[
+                ['var(--status-critical)', `뚜렷한 변화 (×${NOTABLE_Z} 이상)`],
+                ['var(--status-warning)', '변화 시작'],
+                ['var(--status-good)', '평소 수준'],
+              ].map(([c, l]) => (
+                <span key={l} className="inline-flex flex-row items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ background: c }} />
+                  {l}
+                </span>
+              ))}
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-5 border-t pt-4 md:grid-cols-[1fr_1.3fr]" style={{ borderColor: 'var(--border-soft)' }}>
+              <div>
+                <div className="flex flex-row items-center gap-2">
+                  <span className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{selPart.label}</span>
+                  <span className="border px-2 py-0.5 text-[11px] font-medium" style={{ color: tone.color, borderColor: `color-mix(in oklab, ${tone.color} 45%, transparent)`, borderRadius: 'var(--radius-pill)' }}>{tone.label}</span>
+                </div>
+                <p className="m-0 mt-2 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{PART_ROLE[selPart.id]}</p>
+                {engine.topPart?.id === selPart.id && (
+                  <p className="m-0 mt-2 text-[12.5px] font-medium" style={{ color: 'var(--status-critical)' }}>이 엔진에서 가장 크게 변한 부품입니다 — 우선 점검 대상으로 추정됩니다.</p>
+                )}
               </div>
-              <p className="m-0 mt-2 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{PART_ROLE[selPart.id]}</p>
-              {engine.topPart?.id === selPart.id && (
-                <p className="m-0 mt-2 text-[12.5px] font-medium" style={{ color: 'var(--status-critical)' }}>이 엔진에서 가장 크게 변한 부품입니다 — 우선 점검 대상으로 추정됩니다.</p>
-              )}
-            </div>
-            <div className="flex flex-col gap-2.5">
-              {selPart.sensors.map((x) => {
-                const z = flow?.z[x.id]
-                const hot = z != null && Math.abs(z) >= NOTABLE_Z
-                return (
-                  <div key={x.id} className="flex flex-col gap-1">
-                    <div className="flex flex-row items-center justify-between gap-2 text-[12px]">
-                      <span className="min-w-0 truncate" style={{ color: 'var(--text-secondary)' }} title={x.name}>{x.name}</span>
-                      <span className="mono shrink-0" style={{ color: hot ? 'var(--status-critical)' : 'var(--text-muted)' }}>{z == null ? '…' : `${z >= 0 ? '↑' : '↓'} ×${Math.abs(z).toFixed(1)}`}</span>
+              <div className="flex flex-col gap-2.5">
+                {selPart.sensors.map((x) => {
+                  const z = flow?.z[x.id]
+                  const hot = z != null && Math.abs(z) >= NOTABLE_Z
+                  return (
+                    <div key={x.id} className="flex flex-col gap-1">
+                      <div className="flex flex-row items-center justify-between gap-2 text-[12px]">
+                        <span className="min-w-0 truncate" style={{ color: 'var(--text-secondary)' }} title={x.name}>{x.name}</span>
+                        <span className="mono shrink-0" style={{ color: hot ? 'var(--status-critical)' : 'var(--text-muted)' }}>{z == null ? '…' : `${z >= 0 ? '↑' : '↓'} ×${Math.abs(z).toFixed(1)}`}</span>
+                      </div>
+                      <div className="h-1.5" style={{ background: 'var(--surface-2)', borderRadius: 2 }}>
+                        <div className="h-full" style={{ width: `${Math.min(100, ((z == null ? 0 : Math.abs(z)) / 10) * 100)}%`, background: hot ? 'var(--status-critical)' : 'var(--text-muted)', borderRadius: 2 }} />
+                      </div>
                     </div>
-                    <div className="h-1.5" style={{ background: 'var(--surface-2)', borderRadius: 2 }}>
-                      <div className="h-full" style={{ width: `${Math.min(100, ((z == null ? 0 : Math.abs(z)) / 10) * 100)}%`, background: hot ? 'var(--status-critical)' : 'var(--text-muted)', borderRadius: 2 }} />
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        </Panel>
+          </Panel>
+            <Panel title="요약과 권고">
+              <p className="m-0 text-[15px] font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>{actionText(facts)}</p>
+              <ul className="m-0 mt-3 flex list-disc flex-col gap-2 pl-5 text-[13.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                {ruleSummary(facts).slice(0, -2).map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+              <Link to={`/report/engine-${engine.unit}`} className="mt-4 inline-block self-start border px-3.5 py-1.5 text-[12.5px] font-medium no-underline" style={{ borderColor: 'var(--border-strong)', color: 'var(--text-primary)', borderRadius: 'var(--radius-pill)' }}>
+                진단 리포트 열기 (PDF 저장)
+              </Link>
+            </Panel>
+        </div>
 
         <div className="order-first flex flex-col gap-5">
           <Panel title="엔진 정보">
+            <div className="mb-3 grid grid-cols-2 gap-3">
+              <div className="border p-4" style={{ background: 'var(--page)', borderColor: 'var(--border-soft)', borderRadius: 'var(--radius-xs)' }}>
+                <div className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>예측 남은 수명</div>
+                <div className="mt-1 text-[34px] font-bold leading-none" style={{ color }}><span className="mono">{engine.pred}</span><span className="ml-1 text-[15px] font-medium">cycle</span></div>
+                <div className="mt-1.5 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{daysText(engine.daysLeft)} · 하루 {cpd}회 비행 기준</div>
+              </div>
+              <div className="border p-4" style={{ background: 'var(--page)', borderColor: 'var(--border-soft)', borderRadius: 'var(--radius-xs)' }}>
+                <div className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>정비 요청 기한</div>
+                <div className="mt-1 text-[34px] font-bold leading-none" style={{ color: engine.requestIn <= 0 ? 'var(--status-critical)' : 'var(--text-primary)' }}>{engine.requestIn <= 0 ? '기한 지남' : deadlineText(engine.requestIn)}</div>
+                <div className="mt-1.5 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{mdy(requestDate(engine.requestIn))} 까지</div>
+              </div>
+            </div>
             <dl className="m-0">
               <SpecRow k="상태">
                 <span className="inline-flex flex-row items-center justify-end gap-2">
@@ -117,19 +142,11 @@ function OverviewTab({ data }: { data: EngineData }) {
                   <UrgencyChip urgency={engine.urgency} />
                 </span>
               </SpecRow>
-              <SpecRow k="예측 남은 수명">
-                <span style={{ color }}>약 <span className="mono">{engine.pred}</span> cycle</span>
-                <span className="block text-[11.5px] font-normal" style={{ color: 'var(--text-muted)' }}>{daysText(engine.daysLeft)} · 하루 {cpd}회 비행 기준</span>
-              </SpecRow>
               {interval && (
                 <SpecRow k="수명 범위(90%)">
                   <span className="mono">{interval[0]}~{interval[1]}</span> cycle
                 </SpecRow>
               )}
-              <SpecRow k="정비 요청 기한">
-                <span style={{ color: engine.requestIn <= 0 ? 'var(--status-critical)' : undefined }}>{engine.requestIn <= 0 ? '기한 지남' : deadlineText(engine.requestIn)}</span>
-                <span className="block text-[11.5px] font-normal" style={{ color: 'var(--text-muted)' }}>{mdy(requestDate(engine.requestIn))}</span>
-              </SpecRow>
               <SpecRow k="가동 한계 예상">{mdy(limitDate(engine.daysLeft))}</SpecRow>
               <SpecRow k="점검 예상 부품">{engine.topPart ? engine.topPart.label : '뚜렷한 변화 없음'}</SpecRow>
               <SpecRow k="누적 비행">{facts.cycles != null ? <><span className="mono">{facts.cycles}</span> cycle</> : '—'}</SpecRow>
@@ -140,18 +157,6 @@ function OverviewTab({ data }: { data: EngineData }) {
                 </span>
               </SpecRow>
             </dl>
-          </Panel>
-
-          <Panel title="요약과 권고">
-            <p className="m-0 text-[13.5px] font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>{actionText(facts)}</p>
-            <ul className="m-0 mt-3 flex list-disc flex-col gap-1.5 pl-5 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              {ruleSummary(facts).slice(0, -2).map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
-            <Link to={`/report/engine-${engine.unit}`} className="mt-4 inline-block self-start border px-3.5 py-1.5 text-[12.5px] font-medium no-underline" style={{ borderColor: 'var(--border-strong)', color: 'var(--text-primary)', borderRadius: 'var(--radius-pill)' }}>
-              진단 리포트 열기 (PDF 저장)
-            </Link>
           </Panel>
         </div>
       </div>

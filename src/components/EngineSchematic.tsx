@@ -17,6 +17,8 @@ const SHAPES: Record<string, { d: string; lx: number }> = {
   lpt: { d: 'M 532 96 L 660 82 L 660 178 L 532 164 Z', lx: 596 },
 }
 
+const SHORT: Record<string, string> = { fan: '팬', lpc: 'LPC', hpc: 'HPC', core: '연소실', hpt: 'HPT', lpt: 'LPT' }
+
 /** 엔진 단면 구조도 — 모듈을 누르면 선택되고, 색은 센서 변화 정도를 뜻한다 */
 export function EngineSchematic({ parts, selected, onSelect, topId }: { parts: SchematicPart[]; selected: string; onSelect: (id: string) => void; topId?: string | null }) {
   const byId = Object.fromEntries(parts.map((p) => [p.id, p]))
@@ -57,17 +59,17 @@ export function EngineSchematic({ parts, selected, onSelect, topId }: { parts: S
             {id === 'hpc' && [225, 255, 285, 315].map((x) => <line key={x} x1={x} y1={112 - (x - 198) * 0.05} x2={x} y2={148 + (x - 198) * 0.05} stroke={tone.color} strokeOpacity="0.4" strokeWidth="1.2" />)}
             {id === 'core' && <circle cx="407" cy="130" r="22" fill={tone.color} fillOpacity="0.2" />}
             {p.score != null && (
-              <text x={s.lx} y="130" textAnchor="middle" dominantBaseline="middle" fontSize="12.5" fontWeight="700" className="mono" fill="var(--text-primary)" style={{ pointerEvents: 'none' }}>
+              <text x={s.lx} y="130" textAnchor="middle" dominantBaseline="middle" fontSize="16" fontWeight="700" className="mono" fill="var(--text-primary)" style={{ pointerEvents: 'none' }}>
                 ×{p.score.toFixed(1)}
               </text>
             )}
-            <text x={s.lx} y={id === 'fan' ? 244 : 250} textAnchor="middle" fontSize="12.5" fontWeight={on ? 700 : 500} fill={on ? 'var(--text-primary)' : 'var(--text-secondary)'}>
-              {p.label.replace(/\(.*\)/, '')}
+            <text x={s.lx} y={id === 'fan' ? 248 : 252} textAnchor="middle" fontSize="19" fontWeight={on ? 700 : 500} fill={on ? 'var(--text-primary)' : 'var(--text-secondary)'}>
+              {SHORT[id] ?? p.label}
             </text>
             {topId === id && (
               <g style={{ pointerEvents: 'none' }}>
-                <rect x={s.lx - 22} y={id === 'fan' ? 14 : 58} width="44" height="17" rx="8.5" fill="var(--status-critical)" />
-                <text x={s.lx} y={id === 'fan' ? 26 : 70} textAnchor="middle" fontSize="10.5" fontWeight="700" fill="#fff">점검</text>
+                <rect x={s.lx - 26} y={id === 'fan' ? 12 : 56} width="52" height="21" rx="10.5" fill="var(--status-critical)" />
+                <text x={s.lx} y={id === 'fan' ? 27 : 71} textAnchor="middle" fontSize="13" fontWeight="700" fill="#fff">점검</text>
               </g>
             )}
           </g>
