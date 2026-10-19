@@ -4,9 +4,7 @@ import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-r
 import { Badge } from '../components/Badge'
 import { EngineSchematic, type SchematicPart } from '../components/EngineSchematic'
 import { EngineSwitcher } from '../components/EngineSwitcher'
-import { EngineRulChart } from '../components/EngineRulChart'
 import { Panel } from '../components/Panel'
-import { SurvivalCurveChart } from '../components/SurvivalCurveChart'
 import { DiagnosisFlow, SensorTrendCard } from '../components/flow/DiagnosisFlow'
 import { PlanControl } from '../components/ops/PlanControl'
 import { StatusChip } from '../components/ops/StatusChip'
@@ -44,11 +42,16 @@ function OverviewTab({ data }: { data: EngineData }) {
   const { settings } = useSettings()
   const plan = usePlan()
   const [sel, setSel] = useState<string | null>(null)
-  const { engine, facts, survival, interval, curve, runs, flow } = data
+  const { engine, facts, interval, runs, flow } = data
   if (!engine || !facts) return null
   const cpd = settings.cyclesPerDay
   const color = LEVEL[engine.level].color
   const item = plan.get(engine.unit)
+  const recent = [
+    ...[...item.history].reverse().map((ev) => ({ key: `p${ev.at}`, at: ev.at, color: ev.action === 'reject' ? 'var(--status-critical)' : ev.action === 'approve' || ev.action === 'complete' ? 'var(--status-good)' : 'var(--accent)', text: `${ACTION_LABEL[ev.action]} · ${ev.by}`, when: new Date(ev.at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' }) })),
+  ].slice(0, 3)
+  if (runs?.dangerSince != null) recent.push({ key: 'danger', at: 0, color: 'var(--status-critical)', text: '위험 구간 진입', when: `${runs.lastCycle - runs.dangerSince} cycle 전` })
+  else if (runs?.warnSince != null) recent.push({ key: 'warn', at: 0, color: 'var(--status-warning)', text: '주의 구간 진입', when: `${runs.lastCycle - runs.warnSince} cycle 전` })
 
   const parts: SchematicPart[] = partMeta.parts.map((p) => ({
     id: p.id,
@@ -108,17 +111,6 @@ function OverviewTab({ data }: { data: EngineData }) {
               </div>
             </div>
           </Panel>
-            <Panel title="요약과 권고">
-              <p className="m-0 text-[15px] font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>{actionText(facts)}</p>
-              <ul className="m-0 mt-3 flex list-disc flex-col gap-2 pl-5 text-[13.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                {ruleSummary(facts).slice(0, -2).map((t) => (
-                  <li key={t}>{t}</li>
-                ))}
-              </ul>
-              <Link to={`/report/engine-${engine.unit}`} className="mt-4 inline-block self-start border px-3.5 py-1.5 text-[12.5px] font-medium no-underline" style={{ borderColor: 'var(--border-strong)', color: 'var(--text-primary)', borderRadius: 'var(--radius-pill)' }}>
-                진단 리포트 열기 (PDF 저장)
-              </Link>
-            </Panel>
         </div>
 
         <div className="order-first flex flex-col gap-5">
@@ -161,18 +153,41 @@ function OverviewTab({ data }: { data: EngineData }) {
         </div>
       </div>
 
-      <Panel title="수명 예측 근거" sub="남은 수명을 이렇게 계산했습니다 · 음영은 예측의 불확실성 범위">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div>
-            <p className="m-0 mb-1 text-[12.5px] font-medium" style={{ color: 'var(--text-secondary)' }}>남은 수명 분포</p>
-            {survival && interval ? <SurvivalCurveChart data={survival} predictedRul={{ median: engine.pred, lower: interval[0], upper: interval[1] }} /> : null}
-          </div>
-          <div>
-            <p className="m-0 mb-1 text-[12.5px] font-medium" style={{ color: 'var(--text-secondary)' }}>비행할수록 줄어드는 과정</p>
-            {curve ? <EngineRulChart curve={curve} runs={runs} dangerN={settings.dangerN} /> : <p className="m-0 text-[13px]" style={{ color: 'var(--text-secondary)' }}>경보 구간에 들어간 적이 없어 추이를 따로 보여 줄 필요가 없습니다.</p>}
-          </div>
-        </div>
-      </Panel>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <Panel
+          title="최근 이력"
+          action={
+            <Link to={`/equipment/engine-${engine.unit}?tab=history`} className="text-[12.5px] no-underline" style={{ color: 'var(--accent)' }}>
+              전체 보기 →
+            </Link>
+          }
+        >
+          {recent.length ? (
+            <div className="flex flex-col">
+              {recent.map((ev) => (
+                <div key={ev.key} className="flex flex-row items-baseline gap-3 py-2.5" style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                  <span className="relative top-[-1px] h-2 w-2 shrink-0 rounded-full" style={{ background: ev.color }} />
+                  <span className="min-w-0 flex-1 truncate text-[14px]" style={{ color: 'var(--text-primary)' }}>{ev.text}</span>
+                  <span className="mono shrink-0 text-[12px]" style={{ color: 'var(--text-muted)' }}>{ev.when}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="m-0 text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>아직 경보나 처리 이력이 없습니다.</p>
+          )}
+        </Panel>
+          <Panel title="요약과 권고">
+            <p className="m-0 text-[15px] font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>{actionText(facts)}</p>
+            <ul className="m-0 mt-3 flex list-disc flex-col gap-2 pl-5 text-[13.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              {ruleSummary(facts).slice(0, -2).map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+            <Link to={`/report/engine-${engine.unit}`} className="mt-4 inline-block self-start border px-3.5 py-1.5 text-[12.5px] font-medium no-underline" style={{ borderColor: 'var(--border-strong)', color: 'var(--text-primary)', borderRadius: 'var(--radius-pill)' }}>
+              진단 리포트 열기 (PDF 저장)
+            </Link>
+          </Panel>
+      </div>
     </div>
   )
 }
