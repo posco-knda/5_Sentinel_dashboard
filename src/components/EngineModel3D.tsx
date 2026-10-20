@@ -99,16 +99,17 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
     rim.position.set(-5, -2, -4)
     scene.add(rim)
 
-    const mats: Record<string, THREE.MeshStandardMaterial[]> = {}
+    // body: 금속 몸체(색을 살짝만 입힌다) / mark: 단 구분 링(상태 색을 또렷하게 보여 주는 표시)
+    const mats: Record<string, { m: THREE.MeshStandardMaterial; mark: boolean }[]> = {}
     const pickable: THREE.Object3D[] = []
-    const add = (id: string, obj: THREE.Object3D, mat: THREE.MeshStandardMaterial) => {
+    const add = (id: string, obj: THREE.Object3D, mat: THREE.MeshStandardMaterial, mark: THREE.MeshStandardMaterial) => {
       obj.traverse((o) => {
         if ((o as THREE.Mesh).isMesh) {
           o.userData.part = id
           pickable.push(o)
         }
       })
-      ;(mats[id] ??= []).push(mat)
+      ;(mats[id] ??= []).push({ m: mat, mark: false }, { m: mark, mark: true })
       root.add(obj)
     }
     const baseMat = () => new THREE.MeshStandardMaterial({ color: 0x9aa4b5, metalness: 0.55, roughness: 0.4, side: THREE.DoubleSide, emissive: 0x000000 })
@@ -116,6 +117,7 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
     // 압축기·연소실·터빈: 축 방향 몸체 + 단 구분 링
     for (const id of Object.keys(PROFILES)) {
       const m = baseMat()
+      const mk = baseMat()
       const g = new THREE.Group()
       g.add(new THREE.Mesh(lathe(PROFILES[id]), m))
       const xs = PROFILES[id].map((p) => p[1])
@@ -124,12 +126,12 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
       const [r0, r1, n] = RINGS[id]
       for (let i = 1; i <= n; i++) {
         const t = i / (n + 1)
-        const ring = new THREE.Mesh(new THREE.TorusGeometry((r0 + (r1 - r0) * t) * 1.01, 0.016, 8, 48), m)
+        const ring = new THREE.Mesh(new THREE.TorusGeometry((r0 + (r1 - r0) * t) * 1.01, 0.03, 8, 48), mk)
         ring.rotation.y = Math.PI / 2
         ring.position.x = x0 + (x1 - x0) * t
         g.add(ring)
       }
-      add(id, g, m)
+      add(id, g, m, mk)
     }
 
     // 팬: 허브 + 블레이드(천천히 돈다)
@@ -147,10 +149,11 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
       blade.rotation.set(a, 0.35, 0, 'YXZ')
       fan.add(blade)
     }
-    const fanRim = new THREE.Mesh(new THREE.TorusGeometry(1.02, 0.025, 8, 64), fanMat)
+    const fanMarkMat = baseMat()
+    const fanRim = new THREE.Mesh(new THREE.TorusGeometry(1.02, 0.045, 8, 64), fanMarkMat)
     fanRim.rotation.y = Math.PI / 2
     fan.add(fanRim)
-    add('fan', fan, fanMat)
+    add('fan', fan, fanMat, fanMarkMat)
 
     // 바깥 케이스(나셀)와 배기 노즐 — 반투명, 고르지 않는다
     const shell = new THREE.Mesh(
@@ -172,11 +175,18 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
     const paint = () => {
       for (const [id, list] of Object.entries(mats)) {
         const on = id === sel
-        for (const m of list) {
+        for (const { m, mark } of list) {
           const c = colors[id] ?? new THREE.Color(0x9aa4b5)
-          m.color.copy(c).lerp(new THREE.Color(0xffffff), on ? 0.1 : 0.35)
-          m.emissive.copy(c)
-          m.emissiveIntensity = on ? 0.75 : 0.12
+          if (mark) {
+            m.color.copy(c)
+            m.emissive.copy(c)
+            m.emissiveIntensity = on ? 0.9 : 0.45
+          } else {
+            // 몸체는 강철색에 상태 색을 조금만 섞고, 고른 부품만 밝게 켠다
+            m.color.set(0xaab3c2).lerp(c, on ? 0.45 : 0.14)
+            m.emissive.copy(c)
+            m.emissiveIntensity = on ? 0.4 : 0
+          }
         }
       }
     }
@@ -254,7 +264,7 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
         const m = o as THREE.Mesh
         m.geometry?.dispose()
       })
-      Object.values(mats).flat().forEach((m) => m.dispose())
+      Object.values(mats).flat().forEach(({ m }) => m.dispose())
       renderer.dispose()
       renderer.domElement.remove()
       api.current = null

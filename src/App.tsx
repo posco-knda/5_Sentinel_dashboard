@@ -7,6 +7,7 @@ import { PlanProvider } from './lib/PlanProvider'
 import { AuthProvider } from './lib/AuthProvider'
 import { ChatProvider } from './lib/ChatProvider'
 import { ChatDock } from './components/chat/ChatDock'
+import { FlyLoading } from './components/FlyLoading'
 import { AVATARS } from './lib/accounts'
 import { ROLE_LABEL, useAuth } from './lib/auth'
 import { useFleet } from './lib/fleet'
@@ -55,11 +56,7 @@ const CloseIcon = () => (
 )
 
 function PageLoading() {
-  return (
-    <div className="flex h-[40vh] items-center justify-center text-[13px]" style={{ color: 'var(--text-muted)' }}>
-      불러오는 중…
-    </div>
-  )
+  return <FlyLoading />
 }
 
 function AnimatedRoutes() {

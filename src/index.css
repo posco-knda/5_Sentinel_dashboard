@@ -464,6 +464,14 @@ a[style*='radius-pill']:active {
 .todo-row.is-new .todo-fly { animation: todo-fly 0.8s ease-in-out both; }
 .todo-row.is-new .todo-stamp { animation: todo-stamp 0.4s 0.75s cubic-bezier(0.3, 1.5, 0.5, 1) both; opacity: 0; }
 
+/* 불러오는 중: 비행기가 항로 위를 슉 지나간다 */
+.fly-plane { position: absolute; top: 50%; left: 0; display: flex; flex-direction: row; align-items: center; margin-top: -11px; animation: fly-by 1.25s cubic-bezier(0.55, 0.05, 0.35, 1) infinite; }
+.fly-trail { width: 96px; height: 2px; margin-right: -6px; border-radius: 2px; background: linear-gradient(90deg, transparent, currentColor); }
+@keyframes fly-by {
+  from { left: 0; transform: translateX(-100%); }
+  to { left: 100%; transform: translateX(0); }
+}
+
 /* 메신저의 추천 질문 버튼 */
 .chip-btn {
   cursor: pointer;

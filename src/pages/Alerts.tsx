@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FlyLoading } from '../components/FlyLoading'
 import { PageHead } from '../components/PageHead'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Panel } from '../components/Panel'
@@ -145,7 +146,7 @@ export function Alerts() {
 
           <div ref={boxRef} className="min-h-0 flex-1 overflow-auto">
             {!events ? (
-              <div className="py-10 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>불러오는 중…</div>
+              <FlyLoading height="160px" />
             ) : visible.length === 0 ? (
               <div className="py-10 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>해당하는 알림이 없습니다</div>
             ) : (

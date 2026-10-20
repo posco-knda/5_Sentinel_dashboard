@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Badge } from '../components/Badge'
+import { FlyLoading } from '../components/FlyLoading'
 import type { SchematicPart } from '../components/EngineSchematic'
 import { EngineSwitcher } from '../components/EngineSwitcher'
 import { Panel } from '../components/Panel'
@@ -84,7 +85,7 @@ function OverviewTab({ data }: { data: EngineData }) {
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <div className="flex flex-col gap-5">
           <Panel fill title="엔진 구조" sub="부품에 마우스를 올리면 아래에 센서별 상태가 나옵니다 · 끌어서 돌려 볼 수 있습니다 · 숫자는 처음 상태 대비 센서 변화 배수">
-            <Suspense fallback={<div className="flex h-[340px] items-center justify-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>3D 모델 불러오는 중…</div>}>
+            <Suspense fallback={<FlyLoading label="3D 모델 불러오는 중…" height="340px" />}>
             <EngineModel3D parts={parts} selected={selPart.id} onSelect={setSel} topId={engine.topPart?.id} />
           </Suspense>
             <div className="mt-2 flex flex-row flex-wrap gap-x-4 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
@@ -212,7 +213,7 @@ function OverviewTab({ data }: { data: EngineData }) {
 
 function SensorsTab({ data }: { data: EngineData }) {
   const { flow } = data
-  if (!flow) return <div className="flex h-[200px] items-center justify-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>불러오는 중…</div>
+  if (!flow) return <FlyLoading height="200px" />
   return (
     <div className="flex flex-col gap-5">
       <Panel title="모듈별 센서 변화" sub={`처음 ${partMeta.baselineCycles}사이클 평균 대비 최근 ${partMeta.recentCycles}사이클 평균 · ×N = 평소 흔들림의 N배, 빨강은 ×${NOTABLE_Z} 이상`}>
