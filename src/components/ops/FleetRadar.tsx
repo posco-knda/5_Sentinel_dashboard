@@ -230,6 +230,13 @@ export function FleetRadar() {
       }
       canvas.style.cursor = best >= 0 ? 'pointer' : 'default'
     }
+    // 터치: 처음 누르면 정보 카드만 띄우고, 같은 비행기를 한 번 더 누르면 엔진 상세로 간다
+    let armed = false
+    const onDown = (e: PointerEvent) => {
+      const { best } = near(e)
+      armed = e.pointerType !== 'touch' || (best >= 0 && best === hoverRef.current)
+      onMove(e)
+    }
     const onLeave = () => {
       hoverRef.current = -1
       setHover(null)
@@ -237,10 +244,10 @@ export function FleetRadar() {
     }
     const onClick = (e: PointerEvent) => {
       const { best } = near(e)
-      if (best >= 0) nav(`/equipment/engine-${infoRef.current[best].unit}`)
+      if (best >= 0 && armed) nav(`/equipment/engine-${infoRef.current[best].unit}`)
     }
     canvas.addEventListener('pointermove', onMove)
-    canvas.addEventListener('pointerdown', onMove)
+    canvas.addEventListener('pointerdown', onDown)
     canvas.addEventListener('pointerleave', onLeave)
     canvas.addEventListener('click', onClick as EventListener)
 
@@ -378,7 +385,7 @@ export function FleetRadar() {
       mo.disconnect()
       mq.removeEventListener('change', refreshPal)
       canvas.removeEventListener('pointermove', onMove)
-      canvas.removeEventListener('pointerdown', onMove)
+      canvas.removeEventListener('pointerdown', onDown)
       canvas.removeEventListener('pointerleave', onLeave)
       canvas.removeEventListener('click', onClick as EventListener)
     }
@@ -389,6 +396,7 @@ export function FleetRadar() {
   const cycles = sel && curves?.[sel.e.unit] ? curves[sel.e.unit].c[curves[sel.e.unit].c.length - 1] : null
   const tone = sel ? { ok: 'var(--status-good)', warn: 'var(--status-warning)', red: 'var(--status-critical)' }[sel.kind] : ''
   const status = sel ? plan.get(sel.e.unit).status : null
+  const compact = !!hover && hover.w < 520
 
   return (
     <section className="no-print relative overflow-hidden" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }} aria-label="운항 현황">
@@ -405,9 +413,9 @@ export function FleetRadar() {
 
       {hover && sel && (
         <div
-          className="pointer-events-none absolute z-10 w-[236px] border p-3 text-[12px]"
+          className={`pointer-events-none absolute z-10 border text-[12px] ${compact ? 'w-[206px] p-2.5 text-[11.5px]' : 'w-[236px] p-3'}`}
           style={{
-            left: Math.max(8, Math.min(hover.w - 244, hover.x + 18)),
+            left: Math.max(8, Math.min(hover.w - (compact ? 214 : 244), hover.x + 18)),
             // 비행기가 위쪽이면 카드를 아래로, 아래쪽이면 위로 펼쳐서 카드 높이와 상관없이 판 안에 들어오게 한다
             top: Math.max(0, Math.min(hover.h, hover.y)),
             transform: `translateY(-${Math.min(1, Math.max(0, hover.y / hover.h)) * 100}%)`,
@@ -428,14 +436,18 @@ export function FleetRadar() {
             <dd className="m-0 text-right">{cycles != null ? <><b className="mono">{cycles}</b> cycle</> : '—'}</dd>
             <dt style={{ color: 'var(--text-muted)' }}>정비 요청</dt>
             <dd className="m-0 text-right" style={{ color: sel.e.requestIn <= 0 ? 'var(--status-critical)' : undefined }}>{deadlineText(sel.e.requestIn)}</dd>
-            <dt style={{ color: 'var(--text-muted)' }}>점검 부위</dt>
-            <dd className="m-0 text-right">{sel.e.topPart ? sel.e.topPart.label.replace(/\(.*\)/, '') : '뚜렷한 변화 없음'}</dd>
-            <dt style={{ color: 'var(--text-muted)' }}>처리 상태</dt>
-            <dd className="m-0 text-right">{status ? STATUS_LABEL[status] : '—'}</dd>
+            {!compact && (
+              <>
+                <dt style={{ color: 'var(--text-muted)' }}>점검 부위</dt>
+                <dd className="m-0 text-right">{sel.e.topPart ? sel.e.topPart.label.replace(/\(.*\)/, '') : '뚜렷한 변화 없음'}</dd>
+                <dt style={{ color: 'var(--text-muted)' }}>처리 상태</dt>
+                <dd className="m-0 text-right">{status ? STATUS_LABEL[status] : '—'}</dd>
+              </>
+            )}
             <dt style={{ color: 'var(--text-muted)' }}>운항 노선</dt>
             <dd className="mono m-0 text-right">{hover.route[0]} → {hover.route[1]} · {Math.round(hover.progress * 100)}%</dd>
           </dl>
-          <div className="mt-2 border-t pt-1.5 text-[11px]" style={{ borderColor: 'var(--border-soft)', color: 'var(--accent)' }}>눌러서 엔진 상세 보기 →</div>
+          <div className="mt-2 border-t pt-1.5 text-[11px]" style={{ borderColor: 'var(--border-soft)', color: 'var(--accent)' }}>{compact ? '한 번 더 누르면 엔진 상세 →' : '눌러서 엔진 상세 보기 →'}</div>
         </div>
       )}
     </section>
