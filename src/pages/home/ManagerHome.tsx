@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Panel } from '../../components/Panel'
 import { PageHead } from '../../components/PageHead'
 import { TodoPanel } from '../../components/TodoPanel'
+import { FleetRadar } from '../../components/ops/FleetRadar'
 import { MaintenanceCalendar } from '../../components/ops/MaintenanceCalendar'
 import { DemandChart } from '../../components/ops/OpsCharts'
 import { ModuleChart, ProgressChart, UrgentBars } from '../../components/ops/FleetCharts'
@@ -67,6 +68,8 @@ export function ManagerHome() {
       <PageHead title="결재와 운영 현황" sub={<>{md(today)} 기준 · 승인할 요청 {pending.length}건 · 엔진 {fleet.length}대</>} action={
         <Link to="/approvals" className="shrink-0 text-[13px] font-medium no-underline" style={{ color: 'var(--accent)' }}>결재함 →</Link>
       } />
+
+      <FleetRadar />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatLink to="/approvals" label="결재 대기" value={pending.length} unit="건" color="var(--accent)" sub={pending.length ? `가장 오래된 요청 ${ago(now - oldest)} 전` : '대기 중인 요청 없음'} />
