@@ -405,7 +405,9 @@ export function FleetRadar() {
           className="pointer-events-none absolute z-10 w-[236px] border p-3 text-[12px]"
           style={{
             left: Math.max(8, Math.min(hover.w - 244, hover.x + 18)),
-            top: Math.max(8, Math.min(hover.h - 172, hover.y - 20)),
+            // 비행기가 위쪽이면 카드를 아래로, 아래쪽이면 위로 펼쳐서 카드 높이와 상관없이 판 안에 들어오게 한다
+            top: Math.max(0, Math.min(hover.h, hover.y)),
+            transform: `translateY(-${Math.min(1, Math.max(0, hover.y / hover.h)) * 100}%)`,
             background: 'var(--surface-raised)',
             borderColor: 'var(--border-strong)',
             borderRadius: 'var(--radius-xs)',
