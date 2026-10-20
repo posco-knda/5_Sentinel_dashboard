@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PageHead } from '../components/PageHead'
 import { Panel } from '../components/Panel'
 import { Pagination, type SizeMode } from '../components/Pagination'
 import { Badge } from '../components/Badge'
@@ -67,12 +68,7 @@ export function Engines() {
 
   return (
     <div className="flex flex-col gap-4 lg:h-[calc(100dvh-4rem)] lg:min-h-[520px]">
-      <div className="flex shrink-0 flex-col gap-1">
-        <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">엔진</h1>
-        <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          플릿의 모든 엔진 {fleet.length}대 · 행을 누르면 엔진 상세로 이동합니다
-        </p>
-      </div>
+      <PageHead title="엔진" sub={<>플릿의 모든 엔진 {fleet.length}대 · 행을 누르면 엔진 상세로 이동합니다</>} />
 
       <Panel dense fill>
         <div className="mb-3 flex shrink-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

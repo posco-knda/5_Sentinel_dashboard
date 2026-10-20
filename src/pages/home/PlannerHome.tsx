@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Panel } from '../../components/Panel'
+import { PageHead } from '../../components/PageHead'
 import { MaintenanceCalendar } from '../../components/ops/MaintenanceCalendar'
 import { RecentAlerts } from '../../components/ops/FleetCharts'
 import { useFleet } from '../../lib/fleet'
@@ -44,15 +45,9 @@ export function PlannerHome() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-row items-end justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">오늘의 업무</h1>
-          <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-            {today.slice(5).replace('-', '/')} 기준 · 내가 처리할 엔진 {todo.length}대 · 예측은 각 엔진의 가장 최근 비행 직후 기준입니다
-          </p>
-        </div>
+      <PageHead title="오늘의 업무" sub={<>{today.slice(5).replace('-', '/')} 기준 · 내가 처리할 엔진 {todo.length}대 · 예측은 각 엔진의 가장 최근 비행 직후 기준입니다</>} action={
         <Link to="/plan" className="shrink-0 text-[13px] font-medium no-underline" style={{ color: 'var(--accent)' }}>정비 계획 →</Link>
-      </div>
+      } />
 
       {nowCount > 0 && top && (
         <div className="flex flex-col gap-2.5 border px-4 py-3 sm:flex-row sm:items-center sm:justify-between" style={{ background: 'var(--status-critical-wash)', borderColor: 'color-mix(in oklab, var(--status-critical) 40%, transparent)', borderRadius: 'var(--radius-sm)' }}>
