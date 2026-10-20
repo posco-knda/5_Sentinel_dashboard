@@ -125,10 +125,10 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
         const on = id === sel
         const c = colors[id] ?? new THREE.Color(0x9aa4b5)
         for (const m of list) {
-          // 원래 재질색에 상태 색을 조금만 섞고, 고른 부품만 밝게 켠다
-          m.color.copy(base.get(m) ?? m.color).lerp(c, on ? 0.5 : 0.24)
+          // 모델의 원래 색은 그대로 두고, 고른 부품만 상태 색으로 은은하게 빛나게 한다
+          m.color.copy(base.get(m) ?? m.color)
           m.emissive.copy(c)
-          m.emissiveIntensity = on ? 0.45 : 0
+          m.emissiveIntensity = on ? 0.5 : 0
         }
       }
     }
@@ -156,8 +156,6 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
           const src = mesh.material as THREE.MeshStandardMaterial
           const m = src.clone()
           m.side = THREE.DoubleSide
-          m.metalness = Math.max(m.metalness, 0.5)
-          m.roughness = Math.min(m.roughness, 0.55)
           mesh.material = m
           if (mesh.name === 'Nacelle') {
             m.transparent = true
