@@ -9,7 +9,8 @@ import { useTodos } from '../lib/todos'
 export function PageHead({ title, sub, action }: { title: string; sub?: ReactNode; action?: ReactNode }) {
   const { user } = useAuth()
   const { ratio, shown, busy, todos } = useTodos(user?.role)
-  const pct = `${(shown * 100).toFixed(1)}%`
+  // 출발 점과 도착 원에 겹치지 않게, 비행기 중심은 양 끝에서 조금 안쪽 구간만 오간다
+  const pct = `calc(14px + ${shown.toFixed(3)} * (100% - 42px))`
   const done = Math.round(ratio * todos.length)
   return (
     <div className="no-print flex shrink-0 flex-row items-start gap-4">
