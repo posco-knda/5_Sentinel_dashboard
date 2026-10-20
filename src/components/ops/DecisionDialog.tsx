@@ -34,6 +34,8 @@ export function DecisionDialog({ mode, engine, onClose }: { mode: DecisionMode; 
   const needDate = mode !== 'reject'
   const tooLate = needDate && !!date && date > limitDate(engine.daysLeft)
   const issue = needDate ? problem(date, rules, plan.items, engine.unit) : null
+  // 가동 한계일보다 늦은 일정을 승인하는 것은 일반 승인이 아니라 '긴급 예외 승인'이다 — 사유가 필수이고 이력에 예외로 남는다
+  const exception = mode === 'approve' && tooLate
   const left = date ? settings.slotsPerDay - used(plan.items, date, engine.unit) : 0
   const picks = needDate ? availableDays(rules.today, 5, rules, plan.items, engine.unit) : []
 
@@ -45,20 +47,22 @@ export function DecisionDialog({ mode, engine, onClose }: { mode: DecisionMode; 
 
   const confirm = () => {
     if (issue) return setErr(issue)
-    const r = plan.act(engine.unit, mode, { note, date: needDate ? date : undefined })
+    if (exception && note.trim().length < 5) return setErr('가동 한계일보다 늦은 일정은 예외 승인 사유를 적어야 합니다')
+    const finalNote = exception ? `[긴급 예외] ${note.trim()}` : note
+    const r = plan.act(engine.unit, mode, { note: finalNote, date: needDate ? date : undefined })
     if (r.ok) {
-      if (settings.notifyWorkflow && user) void announceWorkflow(engine, mode, user, { note, date: needDate ? date : undefined })
+      if (settings.notifyWorkflow && user) void announceWorkflow(engine, mode, user, { note: finalNote, date: needDate ? date : undefined })
       onClose()
     }
     else setErr(r.error ?? '처리하지 못했습니다')
   }
 
-  const label = mode === 'submit' ? '판단 사유 (필수)' : mode === 'reject' ? '반려 사유 (필수)' : '의견 (선택)'
+  const label = mode === 'submit' ? '판단 사유 (필수)' : mode === 'reject' ? '반려 사유 (필수)' : exception ? '예외 승인 사유 (필수)' : '의견 (선택)'
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ background: 'rgba(0, 0, 0, 0.55)' }} onClick={onClose} role="presentation">
       <div role="dialog" aria-modal="true" aria-label={`${engine.name} ${TITLE[mode]}`} className="w-full max-w-[480px] border p-5" style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-sm)' }} onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-row items-baseline justify-between gap-3">
-          <h2 className="m-0 text-[16px] font-semibold">{TITLE[mode]}</h2>
+          <h2 className="m-0 text-[16px] font-semibold">{exception ? '정비 긴급 예외 승인' : TITLE[mode]}</h2>
           <span className="mono text-[13px]" style={{ color: 'var(--text-secondary)' }}>{engine.name}</span>
         </div>
 
@@ -98,7 +102,7 @@ export function DecisionDialog({ mode, engine, onClose }: { mode: DecisionMode; 
             ) : (
               <span>정비 가능 자리 <span className="mono" style={{ color: 'var(--text-primary)' }}>{left}/{settings.slotsPerDay}</span>대 · 주간 계획이라 다음 주부터, 월~금</span>
             )}
-            {tooLate && <span style={{ color: 'var(--status-critical)' }}>남은 수명이 다하는 날({md(limitDate(engine.daysLeft))})보다 늦은 일정입니다</span>}
+            {tooLate && <span style={{ color: 'var(--status-critical)' }}>남은 수명이 다하는 날({md(limitDate(engine.daysLeft))})보다 늦은 일정입니다{exception && ' — 승인하면 긴급 예외로 기록됩니다'}</span>}
             {picks.length > 0 && (
               <div className="flex flex-row flex-wrap items-center gap-1.5 pt-0.5">
                 <span title="규칙에 맞는 날 중 가장 빠른 순서로 보여 줍니다">추천 날짜</span>
@@ -142,7 +146,7 @@ export function DecisionDialog({ mode, engine, onClose }: { mode: DecisionMode; 
             취소
           </button>
           <button onClick={confirm} disabled={!!issue} className="px-4 py-1.5 text-[13px] font-semibold" style={{ opacity: issue ? 0.45 : 1, background: mode === 'reject' ? 'var(--status-critical)' : 'var(--accent)', color: mode === 'reject' ? '#fff' : 'var(--accent-ink)', borderRadius: 'var(--radius-pill)' }}>
-            {CONFIRM[mode]}
+            {exception ? '예외 승인하기' : CONFIRM[mode]}
           </button>
         </div>
       </div>

@@ -456,6 +456,11 @@ a[style*='radius-pill']:active {
   table.m-cards td[data-wide], table.m-cards td[colspan] { grid-column: 1 / -1; }
 }
 
+/* 영상용 마우스 표시(?present=1) */
+.present-dot { position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%; background: color-mix(in oklab, var(--accent) 22%, transparent); box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 70%, transparent); }
+.present-ripple { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 3px solid var(--accent); animation: present-ripple 0.65s ease-out forwards; }
+@keyframes present-ripple { from { transform: scale(0.6); opacity: 0.9; } to { transform: scale(4.2); opacity: 0; } }
+
 /* 오늘 할 일: 끝낸 일은 줄이 그어지고 오른쪽에 비행기 체크가 남는다. 방금 끝낸 일(is-new)은 비행기가 글자를 가로질러 날며 줄을 긋는다 */
 .todo-row .todo-strike { position: absolute; left: 0; top: 50%; height: 1.5px; width: 0; background: currentColor; }
 .todo-row .todo-fly { position: absolute; left: 0; top: 50%; margin-top: -8px; opacity: 0; pointer-events: none; }

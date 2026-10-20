@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test:api": "node scripts/api-test.mjs",
+    "demo:check": "node scripts/demo-check.mjs",
     "test:logic": "node scripts/schedule-test.mjs && node scripts/seed-test.mjs && node scripts/policy-test.mjs"
   },
   "dependencies": {
