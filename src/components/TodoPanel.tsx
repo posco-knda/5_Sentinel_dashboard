@@ -24,7 +24,7 @@ export function TodoPanel({ fill = false }: { fill?: boolean }) {
   const { todos } = useTodos(role)
   const [fresh, setFresh] = useState<number | null>(null)
   const [text, setText] = useState('')
-  const [leave, setLeave] = useState(0)
+  const [leave, setLeave] = useState({ n: 0, last: false })
   if (!role) return null
 
   const commit = (next: Todo[], animate = false) => setTodos(role, next, animate)
@@ -40,8 +40,8 @@ export function TodoPanel({ fill = false }: { fill?: boolean }) {
     if (!cur) return
     setFresh(cur.done ? null : id)
     commit(todos.map((x) => (x.id === id ? { ...x, done: !x.done } : x)), !cur.done)
-    // 마지막 할 일까지 끝내면 퇴근 연출
-    if (!cur.done && todos.every((x) => x.id === id || x.done)) setLeave((n) => n + 1)
+    // 하나 끝낼 때마다 프로필 인물이 비행기를 타고 날아가고, 마지막 할 일이면 퇴근 인사를 한다
+    if (!cur.done) setLeave({ n: leave.n + 1, last: todos.every((x) => x.id === id || x.done) })
   }
   const doneN = todos.filter((x) => x.done).length
 
@@ -86,7 +86,7 @@ export function TodoPanel({ fill = false }: { fill?: boolean }) {
           </div>
         ))}
       </div>
-      {leave > 0 && <LeaveFx key={leave} name={user?.name ?? ''} onDone={() => setLeave(0)} />}
+      {leave.n > 0 && <LeaveFx key={leave.n} name={user?.name ?? ''} last={leave.last} onDone={() => setLeave((l) => ({ ...l, n: 0 }))} />}
     </Panel>
   )
 }
