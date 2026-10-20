@@ -46,6 +46,63 @@ function Card({ title, sub, s, base, hi, note }: { title: string; sub: string; s
   )
 }
 
+/** 절감 효과 한눈에 — 예측 정비가 다른 방식보다 얼마나 아끼는지 큰 숫자와 막대로 보여 준다 */
+function SavingsHero({ react, per, pre }: { react: Summary; per: Summary; pre: Summary }) {
+  const saved = react.cost - pre.cost
+  const pct = react.cost > 0 ? (saved / react.cost) * 100 : 0
+  const savedPer = per.cost - pre.cost
+  const pctPer = per.cost > 0 ? (savedPer / per.cost) * 100 : 0
+  const max = Math.max(react.perEngine, per.perEngine, pre.perEngine, 1)
+  const bars = [
+    { k: '사후 정비', s: react, c: 'var(--status-critical)' },
+    { k: '정기 정비', s: per, c: 'var(--status-warning)' },
+    { k: '예측 정비', s: pre, c: 'var(--status-good)' },
+  ]
+  return (
+    <div className="mb-4 grid grid-cols-1 gap-5 border p-5 lg:grid-cols-[1.1fr_1fr]" style={{ background: 'linear-gradient(120deg, color-mix(in oklab, var(--status-good) 14%, var(--surface-1)), var(--surface-1))', borderColor: 'color-mix(in oklab, var(--status-good) 45%, var(--border))', borderRadius: 'var(--radius-sm)' }}>
+      <div className="flex flex-col gap-3">
+        <div className="text-[13px] font-semibold" style={{ color: 'var(--status-good)' }}>예측 정비로 얻는 절감 효과</div>
+        <div className="flex flex-row flex-wrap items-end gap-x-5 gap-y-1">
+          <div className="mono text-[56px] font-bold leading-none" style={{ color: 'var(--status-good)' }}>−{pct.toFixed(0)}%</div>
+          <div className="pb-1">
+            <div className="mono text-[26px] font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{eokTotal(saved)} 절감</div>
+            <div className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>사후 정비 대비 · 엔진 {pre.n}대 기준</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <div className="mono text-[22px] font-bold leading-tight" style={{ color: 'var(--status-good)' }}>{react.failures}→{pre.failures}건</div>
+            <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>고장 건수</div>
+          </div>
+          <div>
+            <div className="mono text-[22px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>−{pctPer.toFixed(0)}%</div>
+            <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>정기 정비 대비 ({eokTotal(savedPer)})</div>
+          </div>
+          <div>
+            <div className="mono text-[22px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{eok(react.perEngine - pre.perEngine)}</div>
+            <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>엔진 1대당 절감</div>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col justify-center gap-2.5">
+        {bars.map((b) => (
+          <div key={b.k} className="flex flex-row items-center gap-3">
+            <span className="w-[68px] shrink-0 text-[12.5px] font-medium" style={{ color: 'var(--text-secondary)' }}>{b.k}</span>
+            <div className="relative h-[22px] flex-1" style={{ background: 'var(--surface-2)', borderRadius: 4 }}>
+              <div className="h-full" style={{ width: `${(b.s.perEngine / max) * 100}%`, background: b.c, borderRadius: 4, transition: 'width .4s' }} />
+              {b.k === '예측 정비' && b.s.perEngine < max && (
+                <div className="absolute inset-y-0 border border-dashed" style={{ left: `${(b.s.perEngine / max) * 100}%`, width: `${((max - b.s.perEngine) / max) * 100}%`, borderColor: 'var(--status-good)', borderRadius: 4, background: 'color-mix(in oklab, var(--status-good) 12%, transparent)' }} />
+              )}
+            </div>
+            <span className="mono w-[58px] shrink-0 text-right text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{eok(b.s.perEngine)}</span>
+          </div>
+        ))}
+        <div className="pl-[80px] text-[11px]" style={{ color: 'var(--text-muted)' }}>엔진 1대당 비용 · 점선 칸이 아낀 금액</div>
+      </div>
+    </div>
+  )
+}
+
 function CostChart({ data, x, label, cur, bestV, unit }: { data: { v: number; y: number }[]; x: number; label: string; cur: number; bestV: { v: number; y: number }; unit: string }) {
   const curPt = data.find((d) => d.v === x) ?? data[0]
   return (
@@ -113,6 +170,7 @@ export function PolicyCompare() {
 
   return (
     <Panel title="정비 방식 비교" sub={`경보 구간에 들어온 엔진 ${lives.length}대를 고장 날 때까지 운용했다고 보고, 정비 방식에 따른 비용을 비교합니다 · 단가는 설정의 비용 기준`}>
+      <SavingsHero react={react} per={per} pre={pre} />
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <Card title="사후 정비" sub="고장 난 뒤에 처리" s={react} base={react} note="고장 때문에 계획 정비보다 추가 비용이 모두 듭니다." />
         <Card title="정기 정비" sub={`${T} cycle마다 교체`} s={per} base={react} note={`가장 유리한 주기(${bestPer.v} cycle)를 골라도 수명이 짧은 엔진은 고장 나고, 긴 엔진은 아깝게 교체합니다.`} />
