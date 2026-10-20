@@ -1,41 +1,8 @@
 import { useState, type CSSProperties, type FormEvent } from 'react'
-import { useAuth, type Role } from '../lib/auth'
+import { useAuth } from '../lib/auth'
+import { MAX_ITEMS, setTodos, useTodos, type Todo } from '../lib/todos'
 import { LeaveFx } from './LeaveFx'
 import { Panel } from './Panel'
-
-const KEY = 'sentinel-todos-v1'
-const MAX_ITEMS = 30
-
-interface Todo {
-  id: number
-  text: string
-  done: boolean
-}
-type Store = Partial<Record<Role, Todo[]>>
-
-/** 처음 열었을 때 비어 보이지 않게 두는 예시 (지우거나 고쳐도 된다) */
-const SAMPLE: Record<Role, string[]> = {
-  planner: ['기한 지난 엔진 검토하기', '반려된 요청 사유 확인', '주간 리포트 확인'],
-  manager: ['결재 대기 요청 확인', '이번 주 정비 일정 점검', '주간 리포트 확인'],
-}
-
-function load(): Store {
-  try {
-    const s = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Store | null
-    if (s && typeof s === 'object') return s
-  } catch {
-    // 저장소를 못 읽으면 예시 목록으로 시작한다
-  }
-  return {}
-}
-
-function save(s: Store) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(s))
-  } catch {
-    // 저장하지 못해도 화면은 그대로 동작한다
-  }
-}
 
 const PLANE = 'M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'
 
@@ -54,18 +21,13 @@ function Plane({ size, className, style }: { size: number; className?: string; s
 export function TodoPanel({ fill = false }: { fill?: boolean }) {
   const { user } = useAuth()
   const role = user?.role
-  const [store, setStore] = useState<Store>(load)
+  const { todos } = useTodos(role)
   const [fresh, setFresh] = useState<number | null>(null)
   const [text, setText] = useState('')
   const [leave, setLeave] = useState(0)
   if (!role) return null
 
-  const todos = store[role] ?? SAMPLE[role].map((t, i) => ({ id: i + 1, text: t, done: false }))
-  const commit = (next: Todo[]) => {
-    const s = { ...store, [role]: next }
-    setStore(s)
-    save(s)
-  }
+  const commit = (next: Todo[], animate = false) => setTodos(role, next, animate)
   const add = (e: FormEvent) => {
     e.preventDefault()
     const t = text.trim()
@@ -77,7 +39,7 @@ export function TodoPanel({ fill = false }: { fill?: boolean }) {
     const cur = todos.find((x) => x.id === id)
     if (!cur) return
     setFresh(cur.done ? null : id)
-    commit(todos.map((x) => (x.id === id ? { ...x, done: !x.done } : x)))
+    commit(todos.map((x) => (x.id === id ? { ...x, done: !x.done } : x)), !cur.done)
     // 마지막 할 일까지 끝내면 퇴근 연출
     if (!cur.done && todos.every((x) => x.id === id || x.done)) setLeave((n) => n + 1)
   }
