@@ -12,8 +12,8 @@ export function PageHead({ title, sub, action }: { title: string; sub?: ReactNod
   const pct = `${(shown * 100).toFixed(1)}%`
   const done = Math.round(ratio * todos.length)
   return (
-    <div className="no-print flex shrink-0 flex-row items-start gap-4">
-      <div className="flex min-w-0 flex-col gap-1">
+    <div className="no-print flex shrink-0 flex-row flex-wrap items-start gap-x-4 gap-y-2 lg:flex-nowrap">
+      <div className="flex min-w-0 flex-1 flex-col gap-1 lg:flex-none">
         <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">{title}</h1>
         {sub && (
           <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
@@ -21,7 +21,7 @@ export function PageHead({ title, sub, action }: { title: string; sub?: ReactNod
           </p>
         )}
       </div>
-      <div className="mt-[4px] hidden min-w-[96px] flex-1 lg:block" style={{ color: 'var(--accent)' }} title={todos.length ? `오늘 할 일 ${done}/${todos.length} 완료` : '오늘 할 일'}>
+      <div className="min-w-[96px] basis-full pr-2.5 max-lg:order-last lg:mt-[4px] lg:flex-1 lg:basis-auto" style={{ color: 'var(--accent)' }} title={todos.length ? `오늘 할 일 ${done}/${todos.length} 완료` : '오늘 할 일'}>
         <div className="relative h-6" aria-hidden="true">
           <span className="absolute left-0 top-1/2 h-[7px] w-[7px] -translate-y-1/2 rounded-full" style={{ background: 'currentColor', opacity: shown <= 0 ? 0 : 0.6, transition: 'opacity 0.3s' }} />
           {/* 지나온 길은 실선, 남은 길은 점선 */}

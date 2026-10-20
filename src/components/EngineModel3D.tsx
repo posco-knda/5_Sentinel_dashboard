@@ -8,6 +8,7 @@ import { FlyLoading } from './FlyLoading'
 import { partTone } from '../lib/parts'
 
 const MODEL_URL = '/models/turbofan-cutaway.glb'
+const ORDER = ['fan', 'lpc', 'hpc', 'core', 'hpt', 'lpt']
 const SHORT: Record<string, string> = { fan: '팬', lpc: 'LPC', hpc: 'HPC', core: '연소실', hpt: 'HPT', lpt: 'LPT' }
 
 /** 모델 파일의 부품 이름 → 우리 6개 모듈. 여기에 없는 것(케이스·축·노즐·나셀)은 고를 수 없는 외형이다 */
@@ -102,6 +103,8 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
     controls.enableDamping = true
     controls.minAzimuthAngle = -0.6
     controls.maxAzimuthAngle = 1.0
+    // 터치: 세로로 쓸면 페이지가 스크롤되고, 가로로 끌면 모델이 돈다
+    renderer.domElement.style.touchAction = 'pan-y'
 
     // 금속 재질은 주변을 비춰 줄 환경(반사)이 있어야 검게 죽지 않는다
     const pmrem = new THREE.PMREMGenerator(renderer)
@@ -215,6 +218,7 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
       sway = true
     }
     renderer.domElement.addEventListener('pointermove', onMove)
+    renderer.domElement.addEventListener('pointerdown', onMove) // 터치는 누른 곳의 부품을 고른다
     renderer.domElement.addEventListener('pointerleave', onLeave)
 
     const size = () => {
@@ -222,6 +226,8 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
       const h = el.clientHeight
       renderer.setSize(w, h)
       camera.aspect = w / h
+      // 좁은 화면(세로 폰)에서는 모델 전체가 가로로 들어오도록 줄여서 보여 준다
+      camera.zoom = Math.min(1, camera.aspect / 1.7)
       camera.updateProjectionMatrix()
     }
     size()
@@ -240,11 +246,13 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
       renderer.render(scene, camera)
       const w = el.clientWidth
       const h = el.clientHeight
+      // 좁은 화면에서는 이웃한 라벨이 겹치지 않게 번갈아 위아래로 엇갈려 놓는다
+      const narrow = w < 520
       for (const [id, node] of Object.entries(labels.current)) {
         if (!node) continue
         // 모델 z → 화면 가로(앞쪽 팬이 왼쪽)
         v.set(-CENTER_Z[id] * SCALE, 0, 0).applyMatrix4(root.matrixWorld).project(camera)
-        node.style.transform = `translate(-50%, -50%) translate(${((v.x + 1) / 2) * w}px, ${h - 26}px)`
+        node.style.transform = `translate(-50%, -50%) translate(${((v.x + 1) / 2) * w}px, ${h - 26 - (narrow && ORDER.indexOf(id) % 2 === 1 ? 34 : 0)}px)`
       }
     }
     tick()
@@ -254,6 +262,7 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
       cancelAnimationFrame(raf)
       ro.disconnect()
       renderer.domElement.removeEventListener('pointermove', onMove)
+      renderer.domElement.removeEventListener('pointerdown', onMove)
       renderer.domElement.removeEventListener('pointerleave', onLeave)
       controls.dispose()
       scene.traverse((o) => {
@@ -283,7 +292,7 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
 
   if (failed) return <EngineSchematic parts={parts} selected={selected} onSelect={onSelect} topId={topId} />
   return (
-    <div ref={host} className="relative h-[340px] w-full touch-pan-y select-none overflow-hidden" role="img" aria-label="엔진 3D 단면 구조 — 끌어서 돌려 볼 수 있습니다">
+    <div ref={host} className="relative h-[260px] w-full touch-pan-y sm:h-[340px] select-none overflow-hidden" role="img" aria-label="엔진 3D 단면 구조 — 끌어서 돌려 볼 수 있습니다">
       {!loaded && (
         <div className="absolute inset-0 z-10">
           <FlyLoading label="3D 모델 불러오는 중…" height="100%" />
@@ -295,7 +304,7 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
           ref={(n) => {
             labels.current[p.id] = n
           }}
-          className="pointer-events-none absolute left-0 top-0 flex flex-col items-center whitespace-nowrap text-[12px] leading-tight"
+          className="pointer-events-none absolute left-0 top-0 flex flex-col items-center whitespace-nowrap text-[12px] leading-tight max-sm:text-[11px]"
           style={{ fontWeight: p.id === selected ? 700 : 500, color: p.id === selected ? 'var(--text-primary)' : 'var(--text-secondary)', opacity: loaded ? 1 : 0 }}
         >
           {topId === p.id && <span className="mb-0.5 rounded-full px-1.5 py-px text-[10px] font-bold text-white" style={{ background: 'var(--status-critical)' }}>점검</span>}

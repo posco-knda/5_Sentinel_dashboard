@@ -182,7 +182,7 @@ function ReportSheet({ unit }: { unit: number }) {
 
         <Section title="결재 이력">
           {item.history.length ? (
-            <table className="w-full border-collapse">
+            <table className="m-cards w-full border-collapse">
               <thead>
                 <tr style={{ color: 'var(--text-muted)' }}>
                   {['시각', '처리', '담당', '내용'].map((h) => (
@@ -193,10 +193,10 @@ function ReportSheet({ unit }: { unit: number }) {
               <tbody>
                 {item.history.map((ev) => (
                   <tr key={ev.at} style={{ borderBottom: '1px solid var(--border-soft)' }}>
-                    <td className="mono whitespace-nowrap px-2 py-1.5 align-top text-[12px]" style={{ color: 'var(--text-muted)' }}>{when(ev.at)}</td>
-                    <td className="whitespace-nowrap px-2 py-1.5 align-top text-[12px] font-medium" style={{ color: ev.action === 'reject' ? 'var(--status-critical)' : undefined }}>{ACTION_LABEL[ev.action]}</td>
-                    <td className="whitespace-nowrap px-2 py-1.5 align-top text-[12px]">{ev.by}({ROLE_LABEL[ev.role]})</td>
-                    <td className="px-2 py-1.5 align-top text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                    <td data-label="시각" data-main className="mono whitespace-nowrap px-2 py-1.5 align-top text-[12px]" style={{ color: 'var(--text-muted)' }}>{when(ev.at)}</td>
+                    <td data-label="처리" className="whitespace-nowrap px-2 py-1.5 align-top text-[12px] font-medium" style={{ color: ev.action === 'reject' ? 'var(--status-critical)' : undefined }}>{ACTION_LABEL[ev.action]}</td>
+                    <td data-label="담당" className="whitespace-nowrap px-2 py-1.5 align-top text-[12px]">{ev.by}({ROLE_LABEL[ev.role]})</td>
+                    <td data-label="내용" data-wide className="px-2 py-1.5 align-top text-[12px]" style={{ color: 'var(--text-secondary)' }}>
                       {ev.date && <span className="mono">{ev.date.slice(5).replace('-', '/')} 정비 · </span>}
                       {ev.note ?? '—'}
                     </td>

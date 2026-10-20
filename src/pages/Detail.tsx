@@ -85,7 +85,7 @@ function OverviewTab({ data }: { data: EngineData }) {
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <div className="flex flex-col gap-5">
           <Panel fill title="엔진 구조" sub="부품에 마우스를 올리면 아래에 센서별 상태가 나옵니다 · 끌어서 돌려 볼 수 있습니다 · 숫자는 처음 상태 대비 센서 변화 배수">
-            <Suspense fallback={<FlyLoading label="3D 모델 불러오는 중…" height="340px" />}>
+            <Suspense fallback={<FlyLoading label="3D 모델 불러오는 중…" height="280px" />}>
             <EngineModel3D parts={parts} selected={selPart.id} onSelect={setSel} topId={engine.topPart?.id} />
           </Suspense>
             <div className="mt-2 flex flex-row flex-wrap gap-x-4 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
@@ -137,12 +137,12 @@ function OverviewTab({ data }: { data: EngineData }) {
             <div className="mb-3 grid grid-cols-2 gap-3">
               <div className="border p-4" style={{ background: 'var(--page)', borderColor: 'var(--border-soft)', borderRadius: 'var(--radius-xs)' }}>
                 <div className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>예측 남은 수명</div>
-                <div className="mt-1 text-[34px] font-bold leading-none" style={{ color }}><span className="mono">{engine.pred}</span><span className="ml-1 text-[15px] font-medium">cycle</span></div>
+                <div className="mt-1 text-[28px] font-bold leading-none sm:text-[34px]" style={{ color }}><span className="mono">{engine.pred}</span><span className="ml-1 text-[15px] font-medium">cycle</span></div>
                 <div className="mt-1.5 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{daysText(engine.daysLeft)} · 하루 {cpd}회 비행 기준</div>
               </div>
               <div className="border p-4" style={{ background: 'var(--page)', borderColor: 'var(--border-soft)', borderRadius: 'var(--radius-xs)' }}>
                 <div className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>정비 요청 기한</div>
-                <div className="mt-1 text-[34px] font-bold leading-none" style={{ color: engine.requestIn <= 0 ? 'var(--status-critical)' : 'var(--text-primary)' }}>{engine.requestIn <= 0 ? '기한 지남' : deadlineText(engine.requestIn)}</div>
+                <div className="mt-1 whitespace-nowrap text-[24px] font-bold leading-none sm:text-[34px]" style={{ color: engine.requestIn <= 0 ? 'var(--status-critical)' : 'var(--text-primary)' }}>{engine.requestIn <= 0 ? '기한 지남' : deadlineText(engine.requestIn)}</div>
                 <div className="mt-1.5 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{mdy(requestDate(engine.requestIn))} 까지</div>
               </div>
             </div>
