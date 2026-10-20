@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { Panel } from '../../components/Panel'
 import { PageHead } from '../../components/PageHead'
 import { TodoPanel } from '../../components/TodoPanel'
-import { FlightBoard } from '../../components/ops/FlightBoard'
 import { MaintenanceCalendar } from '../../components/ops/MaintenanceCalendar'
 import { RecentAlerts } from '../../components/ops/FleetCharts'
 import { useFleet } from '../../lib/fleet'
@@ -72,8 +71,6 @@ export function PlannerHome() {
           </div>
         </div>
       )}
-
-      <FlightBoard />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatLink to="/plan" label="기한 지났는데 검토 전" value={overdue} unit="대" color="var(--status-critical)" sub="지금 바로 검토가 필요한 엔진" />
