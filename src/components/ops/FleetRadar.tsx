@@ -32,7 +32,30 @@ const ROUTES: [string, string][] = [
   ['PUS', 'NRT'],
   ['GMP', 'CJU'],
 ]
-const COLORS = { ok: '#3fe08a', warn: '#ffcc33', red: '#ff5d5d' }
+
+type Kind = 'ok' | 'warn' | 'red'
+
+/** CSS 변수(테마마다 값이 다름)를 캔버스가 쓸 수 있는 rgb 값으로 바꾼다 */
+function resolve(v: string): [number, number, number] {
+  const probe = document.createElement('span')
+  probe.style.color = v
+  document.body.appendChild(probe)
+  const rgb = getComputedStyle(probe).color
+  probe.remove()
+  const m = /(\d+(?:\.\d+)?)[ ,]+(\d+(?:\.\d+)?)[ ,]+(\d+(?:\.\d+)?)/.exec(rgb)
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [128, 128, 128]
+}
+const rgba = (c: [number, number, number], a: number) => `rgba(${c[0]},${c[1]},${c[2]},${a})`
+
+/** 지금 테마에 맞는 색 — 라이트에서는 밝은 바탕에 진한 선, 다크에서는 어두운 바탕에 밝은 선 */
+function palette() {
+  return {
+    ink: resolve('var(--text-primary)'),
+    muted: resolve('var(--text-muted)'),
+    line: resolve('var(--accent)'),
+    kind: { ok: resolve('var(--status-good)'), warn: resolve('var(--status-warning)'), red: resolve('var(--status-critical)') },
+  }
+}
 
 /** 같은 난수 순서를 쓰는 간단한 생성기 — 새로고침해도 비행기 배치가 같다 */
 function rng(seed: number) {
@@ -64,7 +87,7 @@ export function FleetRadar() {
     const N = 16
     const nRed = Math.max(1, Math.round((N * red) / total))
     const nWarn = Math.round((N * warn) / total)
-    const kinds: (keyof typeof COLORS)[] = Array.from({ length: N }, (_, i) => (i < nRed ? 'red' : i < nRed + nWarn ? 'warn' : 'ok'))
+    const kinds: Kind[] = Array.from({ length: N }, (_, i) => (i < nRed ? 'red' : i < nRed + nWarn ? 'warn' : 'ok'))
     const rand = rng(31)
     const planes = kinds
       .map((k) => ({ k, r: Math.floor(rand() * ROUTES.length), t: rand(), v: 0.012 + rand() * 0.014, dir: rand() < 0.5 ? 1 : -1 }))
@@ -72,6 +95,13 @@ export function FleetRadar() {
     let w = 0
     let h = 0
     let dpr = 1
+    let pal = palette()
+    // 라이트/다크 전환을 따라간다
+    const refreshPal = () => (pal = palette())
+    const mo = new MutationObserver(refreshPal)
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class', 'data-role'] })
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    mq.addEventListener('change', refreshPal)
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2)
       w = canvas.clientWidth
@@ -107,7 +137,7 @@ export function FleetRadar() {
       t0 = now
       ctx.clearRect(0, 0, w, h)
       // 바탕: 위도·경도 격자
-      ctx.strokeStyle = 'rgba(120,150,210,0.09)'
+      ctx.strokeStyle = rgba(pal.muted, 0.16)
       ctx.lineWidth = 1
       for (let i = 0; i <= 12; i++) {
         const x = 24 + (i / 12) * (w - 48)
@@ -125,7 +155,7 @@ export function FleetRadar() {
       }
       // 노선
       ctx.setLineDash([4, 6])
-      ctx.strokeStyle = 'rgba(140,170,255,0.28)'
+      ctx.strokeStyle = rgba(pal.line, 0.4)
       ctx.lineWidth = 1
       for (const [a, b] of ROUTES) {
         const c = curve(a, b)
@@ -140,15 +170,15 @@ export function FleetRadar() {
       ctx.textAlign = 'center'
       for (const code of Object.keys(AIRPORTS)) {
         const [x, y] = P(code)
-        ctx.fillStyle = 'rgba(200,215,255,0.9)'
+        ctx.fillStyle = rgba(pal.ink, 0.85)
         ctx.beginPath()
         ctx.arc(x, y, 2.6, 0, Math.PI * 2)
         ctx.fill()
-        ctx.strokeStyle = 'rgba(140,170,255,0.35)'
+        ctx.strokeStyle = rgba(pal.line, 0.5)
         ctx.beginPath()
         ctx.arc(x, y, 6, 0, Math.PI * 2)
         ctx.stroke()
-        ctx.fillStyle = 'rgba(170,185,220,0.85)'
+        ctx.fillStyle = rgba(pal.muted, 1)
         ctx.fillText(code, x, y + 17)
       }
       // 비행기: 꼬리 흔적 + 기체
@@ -164,12 +194,12 @@ export function FleetRadar() {
         const cc = curve(a, b)
         const [x, y, dx, dy] = at(cc, p.t)
         const ang = Math.atan2(p.dir * dy, p.dir * dx)
-        const col = COLORS[p.k]
+        const col = rgba(pal.kind[p.k], 1)
         for (let i = 1; i <= 9; i++) {
           const back = Math.max(0, Math.min(1, p.t - i * 0.012 * p.dir))
           const [bx, by] = at(cc, back)
           ctx.fillStyle = col
-          ctx.globalAlpha = 0.5 * (1 - i / 10)
+          ctx.globalAlpha = 0.55 * (1 - i / 10)
           ctx.beginPath()
           ctx.arc(bx, by, 1.6, 0, Math.PI * 2)
           ctx.fill()
@@ -180,8 +210,8 @@ export function FleetRadar() {
         ctx.rotate(ang + Math.PI / 4)
         ctx.scale(0.95 * s, 0.95 * s)
         ctx.translate(-12, -12)
-        ctx.shadowColor = col
-        ctx.shadowBlur = p.k === 'red' ? 10 : 6
+        ctx.shadowColor = rgba(pal.kind[p.k], 0.45)
+        ctx.shadowBlur = p.k === 'red' ? 8 : 4
         ctx.fillStyle = col
         ctx.fill(PLANE)
         ctx.restore()
@@ -195,21 +225,23 @@ export function FleetRadar() {
     return () => {
       cancelAnimationFrame(raf)
       ro.disconnect()
+      mo.disconnect()
+      mq.removeEventListener('change', refreshPal)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sig])
 
   return (
-    <section className="no-print relative overflow-hidden" style={{ background: 'radial-gradient(120% 140% at 70% 0%, #1a2233 0%, #0b0e13 60%)', borderRadius: 'var(--radius-sm)', boxShadow: '0 0 0 1px rgba(255,255,255,0.08), 0 8px 24px rgba(0,0,0,0.18)' }} aria-label="운항 현황">
+    <section className="no-print relative overflow-hidden" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }} aria-label="운항 현황">
       <canvas ref={ref} className="block h-[190px] w-full sm:h-[250px]" role="img" aria-label="항공기가 노선을 따라 비행하는 운항 현황 화면" />
       <div className="pointer-events-none absolute left-4 top-3 flex flex-col">
-        <span className="text-[15px] font-bold text-white">운항 현황</span>
-        <span className="mono text-[10.5px] tracking-[0.18em]" style={{ color: '#ffcc33' }}>FLEET TRACKING</span>
+        <span className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>운항 현황</span>
+        <span className="mono text-[10.5px] tracking-[0.18em]" style={{ color: 'var(--accent)' }}>FLEET TRACKING</span>
       </div>
-      <div className="pointer-events-none absolute right-4 top-3 flex flex-row gap-3 text-[11.5px]" style={{ color: '#c4ccda' }}>
-        <span className="flex flex-row items-center gap-1.5"><i className="inline-block h-2 w-2 rounded-full" style={{ background: COLORS.red }} />위험 <b className="mono text-white">{red}</b></span>
-        <span className="flex flex-row items-center gap-1.5"><i className="inline-block h-2 w-2 rounded-full" style={{ background: COLORS.warn }} />주의 <b className="mono text-white">{warn}</b></span>
-        <span className="flex flex-row items-center gap-1.5"><i className="inline-block h-2 w-2 rounded-full" style={{ background: COLORS.ok }} />정상 <b className="mono text-white">{ok}</b></span>
+      <div className="pointer-events-none absolute right-4 top-3 flex flex-row gap-3 text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>
+        <span className="flex flex-row items-center gap-1.5"><i className="inline-block h-2 w-2 rounded-full" style={{ background: 'var(--status-critical)' }} />위험 <b className="mono" style={{ color: 'var(--text-primary)' }}>{red}</b></span>
+        <span className="flex flex-row items-center gap-1.5"><i className="inline-block h-2 w-2 rounded-full" style={{ background: 'var(--status-warning)' }} />주의 <b className="mono" style={{ color: 'var(--text-primary)' }}>{warn}</b></span>
+        <span className="flex flex-row items-center gap-1.5"><i className="inline-block h-2 w-2 rounded-full" style={{ background: 'var(--status-good)' }} />정상 <b className="mono" style={{ color: 'var(--text-primary)' }}>{ok}</b></span>
       </div>
     </section>
   )
