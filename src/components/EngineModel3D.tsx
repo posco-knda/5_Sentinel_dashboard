@@ -1,28 +1,38 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { EngineSchematic, type SchematicPart } from './EngineSchematic'
+import { FlyLoading } from './FlyLoading'
 import { partTone } from '../lib/parts'
 
+const MODEL_URL = '/models/turbofan-cutaway.glb'
 const SHORT: Record<string, string> = { fan: '팬', lpc: 'LPC', hpc: 'HPC', core: '연소실', hpt: 'HPT', lpt: 'LPT' }
 
-/** 모듈별 외형 — [반지름, 축 방향 위치] 점들을 엔진 축(x)으로 회전시켜 만든다 */
-const PROFILES: Record<string, [number, number][]> = {
-  lpc: [[0.34, -2.55], [0.5, -2.55], [0.46, -1.75], [0.34, -1.75]],
-  hpc: [[0.24, -1.7], [0.46, -1.7], [0.3, 0.3], [0.2, 0.3]],
-  core: [[0.26, 0.35], [0.36, 0.35], [0.43, 0.7], [0.43, 1.05], [0.38, 1.35], [0.26, 1.35]],
-  hpt: [[0.26, 1.4], [0.4, 1.4], [0.44, 1.9], [0.26, 1.9]],
-  lpt: [[0.26, 1.95], [0.46, 1.95], [0.66, 3.2], [0.34, 3.2]],
+/** 모델 파일의 부품 이름 → 우리 6개 모듈. 여기에 없는 것(케이스·축·노즐·나셀)은 고를 수 없는 외형이다 */
+const PART_OF: Record<string, string> = {
+  Fan_20_blades: 'fan',
+  Spinner: 'fan',
+  Compressor_rotor_1: 'lpc',
+  Compressor_rotor_2: 'lpc',
+  Compressor_rotor_3: 'lpc',
+  Compressor_rotor_4: 'hpc',
+  Compressor_rotor_5: 'hpc',
+  Compressor_rotor_6: 'hpc',
+  Compressor_rotor_7: 'hpc',
+  Perforated_combustor_liner: 'core',
+  High_pressure_turbine_1: 'hpt',
+  High_pressure_turbine_2: 'hpt',
+  Low_pressure_turbine_3: 'lpt',
+  Low_pressure_turbine_4: 'lpt',
 }
-/** 단 구분 링의 [시작 반지름, 끝 반지름, 개수] */
-const RINGS: Record<string, [number, number, number]> = {
-  lpc: [0.5, 0.46, 3],
-  hpc: [0.46, 0.3, 6],
-  core: [0.43, 0.43, 2],
-  hpt: [0.4, 0.44, 2],
-  lpt: [0.46, 0.66, 3],
-}
-const CENTER_X: Record<string, number> = { fan: -3.0, lpc: -2.15, hpc: -0.7, core: 0.85, hpt: 1.65, lpt: 2.6 }
+/** 돌아가는 부품과 속도(라디안/프레임) */
+const SPIN: Record<string, number> = { Fan_20_blades: 0.012, Spinner: 0.012 }
+/** 모델 좌표: 엔진 축은 z, 축의 높이는 y=0.8, 앞(팬)이 +z */
+const AXIS_Y = 0.8
+const SCALE = 2.1
+/** 각 모듈의 축 방향 중심(모델 z) — 라벨 위치용 */
+const CENTER_Z: Record<string, number> = { fan: 1.32, lpc: 0.84, hpc: 0.53, core: -0.07, hpt: -0.52, lpt: -0.84 }
 
 function cssColor(v: string): THREE.Color {
   const probe = document.createElement('span')
@@ -34,20 +44,14 @@ function cssColor(v: string): THREE.Color {
   return m ? new THREE.Color(Number(m[1]) / 255, Number(m[2]) / 255, Number(m[3]) / 255) : new THREE.Color('#888888')
 }
 
-function lathe(points: [number, number][]) {
-  const g = new THREE.LatheGeometry(points.map(([r, x]) => new THREE.Vector2(r, x)), 48)
-  g.rotateZ(-Math.PI / 2) // 회전축 y → 엔진 축 x
-  return g
-}
-
 interface Handle {
   setSelected: (id: string | null) => void
   setColors: (c: Record<string, THREE.Color>) => void
 }
 
 /**
- * 엔진 3D 구조 — 드래그로 돌려 볼 수 있고, 부품에 마우스를 올리면 그 부품이 켜지며 onSelect가 불린다.
- * 색은 2D 구조도와 같은 기준(센서 변화 배수)이다. WebGL을 쓸 수 없으면 2D 구조도를 대신 보여 준다.
+ * 엔진 3D 구조(단면 모델) — 드래그로 돌려 볼 수 있고, 부품에 마우스를 올리면 그 부품이 켜지며 onSelect가 불린다.
+ * 팬·압축기·연소실·터빈의 색은 2D 구조도와 같은 기준(센서 변화 배수)이다. 모델을 못 불러오면 2D 구조도를 대신 보여 준다.
  */
 export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: SchematicPart[]; selected: string; onSelect: (id: string | null) => void; topId?: string | null }) {
   const host = useRef<HTMLDivElement>(null)
@@ -55,6 +59,7 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
   const api = useRef<Handle | null>(null)
   const pick = useRef(onSelect)
   const [failed, setFailed] = useState(false)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     pick.current = onSelect
@@ -70,6 +75,7 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
       setFailed(true)
       return
     }
+    let alive = true
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setClearColor(0x000000, 0)
     el.appendChild(renderer.domElement)
@@ -77,116 +83,52 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
     renderer.domElement.style.cursor = 'grab'
 
     const scene = new THREE.Scene()
+    // 모델의 z축(엔진 축)을 화면의 가로(x)로 눕히고, 축 높이를 원점으로 옮긴다
     const root = new THREE.Group()
     scene.add(root)
+    const model = new THREE.Group()
+    model.rotation.y = -Math.PI / 2
+    model.scale.setScalar(SCALE)
+    model.position.y = -AXIS_Y * SCALE
+    root.add(model)
+
     const camera = new THREE.PerspectiveCamera(30, 2, 0.1, 60)
-    camera.position.set(2.2, 2.6, 8.4)
+    camera.position.set(1.8, 3.2, 8.6)
     const controls = new OrbitControls(camera, renderer.domElement)
-    controls.target.set(0.2, 0, 0)
+    controls.target.set(0, 0, 0)
     controls.enablePan = false
     controls.enableZoom = false
     controls.enableDamping = true
-    controls.minAzimuthAngle = -0.5
-    controls.maxAzimuthAngle = 1.1
-    controls.minPolarAngle = 0.5
-    controls.maxPolarAngle = Math.PI - 0.5
+    controls.minAzimuthAngle = -0.6
+    controls.maxAzimuthAngle = 1.0
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x8892a8, 1.1))
-    const sun = new THREE.DirectionalLight(0xffffff, 1.6)
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8892a8, 1.2))
+    const sun = new THREE.DirectionalLight(0xffffff, 1.7)
     sun.position.set(4, 6, 5)
     scene.add(sun)
     const rim = new THREE.DirectionalLight(0xaecbff, 0.7)
     rim.position.set(-5, -2, -4)
     scene.add(rim)
 
-    // body: 금속 몸체(색을 살짝만 입힌다) / mark: 단 구분 링(상태 색을 또렷하게 보여 주는 표시)
-    const mats: Record<string, { m: THREE.MeshStandardMaterial; mark: boolean }[]> = {}
+    const mats: Record<string, THREE.MeshStandardMaterial[]> = {}
+    const base = new Map<THREE.MeshStandardMaterial, THREE.Color>()
     const pickable: THREE.Object3D[] = []
-    const add = (id: string, obj: THREE.Object3D, mat: THREE.MeshStandardMaterial, mark: THREE.MeshStandardMaterial) => {
-      obj.traverse((o) => {
-        if ((o as THREE.Mesh).isMesh) {
-          o.userData.part = id
-          pickable.push(o)
-        }
-      })
-      ;(mats[id] ??= []).push({ m: mat, mark: false }, { m: mark, mark: true })
-      root.add(obj)
-    }
-    const baseMat = () => new THREE.MeshStandardMaterial({ color: 0x9aa4b5, metalness: 0.55, roughness: 0.4, side: THREE.DoubleSide, emissive: 0x000000 })
-
-    // 압축기·연소실·터빈: 축 방향 몸체 + 단 구분 링
-    for (const id of Object.keys(PROFILES)) {
-      const m = baseMat()
-      const mk = baseMat()
-      const g = new THREE.Group()
-      g.add(new THREE.Mesh(lathe(PROFILES[id]), m))
-      const xs = PROFILES[id].map((p) => p[1])
-      const x0 = Math.min(...xs)
-      const x1 = Math.max(...xs)
-      const [r0, r1, n] = RINGS[id]
-      for (let i = 1; i <= n; i++) {
-        const t = i / (n + 1)
-        const ring = new THREE.Mesh(new THREE.TorusGeometry((r0 + (r1 - r0) * t) * 1.01, 0.03, 8, 48), mk)
-        ring.rotation.y = Math.PI / 2
-        ring.position.x = x0 + (x1 - x0) * t
-        g.add(ring)
-      }
-      add(id, g, m, mk)
-    }
-
-    // 팬: 허브 + 블레이드(천천히 돈다)
-    const fanMat = baseMat()
-    const fan = new THREE.Group()
-    fan.position.x = CENTER_X.fan
-    const hub = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.6, 32), fanMat)
-    hub.rotation.z = Math.PI / 2
-    hub.position.x = -0.15
-    fan.add(hub)
-    for (let i = 0; i < 22; i++) {
-      const a = (i / 22) * Math.PI * 2
-      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.74, 0.3), fanMat)
-      blade.position.set(0, Math.cos(a) * 0.66, Math.sin(a) * 0.66)
-      blade.rotation.set(a, 0.35, 0, 'YXZ')
-      fan.add(blade)
-    }
-    const fanMarkMat = baseMat()
-    const fanRim = new THREE.Mesh(new THREE.TorusGeometry(1.02, 0.045, 8, 64), fanMarkMat)
-    fanRim.rotation.y = Math.PI / 2
-    fan.add(fanRim)
-    add('fan', fan, fanMat, fanMarkMat)
-
-    // 바깥 케이스(나셀)와 배기 노즐 — 반투명, 고르지 않는다
-    const shell = new THREE.Mesh(
-      lathe([[1.0, -3.45], [1.1, -3.3], [1.08, -2.6], [1.02, 0.6], [0.9, 2.4], [0.7, 3.4], [0.62, 3.75]]),
-      new THREE.MeshStandardMaterial({ color: 0xdfe6f2, metalness: 0.2, roughness: 0.5, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false }),
-    )
-    root.add(shell)
-    const nozzle = new THREE.Mesh(lathe([[0.34, 3.2], [0.4, 3.25], [0.2, 3.9], [0.0, 3.95]]), new THREE.MeshStandardMaterial({ color: 0x6f7787, metalness: 0.7, roughness: 0.35, side: THREE.DoubleSide }))
-    root.add(nozzle)
-    const axis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-3.6, 0, 0), new THREE.Vector3(4.1, 0, 0)]), new THREE.LineDashedMaterial({ color: 0x8892a8, dashSize: 0.12, gapSize: 0.1, transparent: true, opacity: 0.5 }))
-    axis.computeLineDistances()
-    root.add(axis)
-
-    let sway = true
-    let t0 = 0
+    const spinners: { pivot: THREE.Group; speed: number }[] = []
+    const colors: Record<string, THREE.Color> = {}
     let sel: string | null = null
     let hover: string | null = null
-    const colors: Record<string, THREE.Color> = {}
+    let sway = true
+    let t0 = 0
+
     const paint = () => {
       for (const [id, list] of Object.entries(mats)) {
         const on = id === sel
-        for (const { m, mark } of list) {
-          const c = colors[id] ?? new THREE.Color(0x9aa4b5)
-          if (mark) {
-            m.color.copy(c)
-            m.emissive.copy(c)
-            m.emissiveIntensity = on ? 0.9 : 0.45
-          } else {
-            // 몸체는 강철색에 상태 색을 조금만 섞고, 고른 부품만 밝게 켠다
-            m.color.set(0xaab3c2).lerp(c, on ? 0.45 : 0.14)
-            m.emissive.copy(c)
-            m.emissiveIntensity = on ? 0.4 : 0
-          }
+        const c = colors[id] ?? new THREE.Color(0x9aa4b5)
+        for (const m of list) {
+          // 원래 재질색에 상태 색을 조금만 섞고, 고른 부품만 밝게 켠다
+          m.color.copy(base.get(m) ?? m.color).lerp(c, on ? 0.5 : 0.24)
+          m.emissive.copy(c)
+          m.emissiveIntensity = on ? 0.45 : 0
         }
       }
     }
@@ -200,6 +142,54 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
         paint()
       },
     }
+
+    new GLTFLoader().load(
+      MODEL_URL,
+      (gltf) => {
+        if (!alive) return
+        const meshes: THREE.Mesh[] = []
+        gltf.scene.traverse((o) => {
+          if ((o as THREE.Mesh).isMesh) meshes.push(o as THREE.Mesh)
+        })
+        for (const mesh of meshes) {
+          const part = PART_OF[mesh.name]
+          const src = mesh.material as THREE.MeshStandardMaterial
+          const m = src.clone()
+          m.side = THREE.DoubleSide
+          m.metalness = Math.max(m.metalness, 0.5)
+          m.roughness = Math.min(m.roughness, 0.55)
+          mesh.material = m
+          if (mesh.name === 'Nacelle') {
+            m.transparent = true
+            m.opacity = 0.28
+            m.depthWrite = false
+          }
+          if (part) {
+            mesh.userData.part = part
+            pickable.push(mesh)
+            ;(mats[part] ??= []).push(m)
+            base.set(m, m.color.clone())
+          }
+          // 회전축(엔진 축)을 지나는 피벗에 달아 돌릴 수 있게 한다
+          if (SPIN[mesh.name]) {
+            const pivot = new THREE.Group()
+            pivot.position.set(0, AXIS_Y, 0)
+            mesh.removeFromParent()
+            mesh.position.set(0, -AXIS_Y, 0)
+            pivot.add(mesh)
+            model.add(pivot)
+            spinners.push({ pivot, speed: SPIN[mesh.name] })
+          } else {
+            mesh.removeFromParent()
+            model.add(mesh)
+          }
+        }
+        paint()
+        setLoaded(true)
+      },
+      undefined,
+      () => alive && setFailed(true),
+    )
 
     const ray = new THREE.Raycaster()
     const mouse = new THREE.Vector2()
@@ -239,22 +229,25 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
     let raf = 0
     const tick = () => {
       raf = requestAnimationFrame(tick)
-      fan.rotation.x += 0.012
+      for (const s of spinners) s.pivot.rotation.z += s.speed
       if (sway) t0 += 0.012
-      root.rotation.y = Math.sin(t0) * 0.28
+      root.rotation.y = Math.sin(t0) * 0.22
       controls.update()
+      root.updateMatrixWorld(true)
       renderer.render(scene, camera)
       const w = el.clientWidth
       const h = el.clientHeight
       for (const [id, node] of Object.entries(labels.current)) {
         if (!node) continue
-        v.set(CENTER_X[id], 0, 0).applyMatrix4(root.matrixWorld).project(camera)
+        // 모델 z → 화면 가로(앞쪽 팬이 왼쪽)
+        v.set(-CENTER_Z[id] * SCALE, 0, 0).applyMatrix4(root.matrixWorld).project(camera)
         node.style.transform = `translate(-50%, -50%) translate(${((v.x + 1) / 2) * w}px, ${h - 26}px)`
       }
     }
     tick()
 
     return () => {
+      alive = false
       cancelAnimationFrame(raf)
       ro.disconnect()
       renderer.domElement.removeEventListener('pointermove', onMove)
@@ -263,8 +256,9 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
       scene.traverse((o) => {
         const m = o as THREE.Mesh
         m.geometry?.dispose()
+        const mat = m.material as THREE.Material | undefined
+        mat?.dispose?.()
       })
-      Object.values(mats).flat().forEach(({ m }) => m.dispose())
       renderer.dispose()
       renderer.domElement.remove()
       api.current = null
@@ -277,14 +271,19 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
     for (const p of parts) c[p.id] = cssColor(partTone(p.score).color)
     api.current?.setColors(c)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorKey])
+  }, [colorKey, loaded])
   useEffect(() => {
     api.current?.setSelected(selected)
-  }, [selected, colorKey])
+  }, [selected, colorKey, loaded])
 
   if (failed) return <EngineSchematic parts={parts} selected={selected} onSelect={onSelect} topId={topId} />
   return (
-    <div ref={host} className="relative h-[340px] w-full touch-pan-y select-none overflow-hidden" role="img" aria-label="엔진 3D 구조 — 끌어서 돌려 볼 수 있습니다">
+    <div ref={host} className="relative h-[340px] w-full touch-pan-y select-none overflow-hidden" role="img" aria-label="엔진 3D 단면 구조 — 끌어서 돌려 볼 수 있습니다">
+      {!loaded && (
+        <div className="absolute inset-0 z-10">
+          <FlyLoading label="3D 모델 불러오는 중…" height="100%" />
+        </div>
+      )}
       {parts.map((p) => (
         <span
           key={p.id}
@@ -292,7 +291,7 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
             labels.current[p.id] = n
           }}
           className="pointer-events-none absolute left-0 top-0 flex flex-col items-center whitespace-nowrap text-[12px] leading-tight"
-          style={{ fontWeight: p.id === selected ? 700 : 500, color: p.id === selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+          style={{ fontWeight: p.id === selected ? 700 : 500, color: p.id === selected ? 'var(--text-primary)' : 'var(--text-secondary)', opacity: loaded ? 1 : 0 }}
         >
           {topId === p.id && <span className="mb-0.5 rounded-full px-1.5 py-px text-[10px] font-bold text-white" style={{ background: 'var(--status-critical)' }}>점검</span>}
           <span>{SHORT[p.id] ?? p.label}</span>
