@@ -1,8 +1,8 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Badge } from '../components/Badge'
-import { EngineSchematic, type SchematicPart } from '../components/EngineSchematic'
+import type { SchematicPart } from '../components/EngineSchematic'
 import { EngineSwitcher } from '../components/EngineSwitcher'
 import { Panel } from '../components/Panel'
 import { DiagnosisFlow, SensorTrendCard } from '../components/flow/DiagnosisFlow'
@@ -19,6 +19,8 @@ import { ROLE_LABEL } from '../lib/auth'
 import { useSettings } from '../lib/settings'
 import { useEngineData, type EngineData } from '../lib/useEngine'
 import type { EquipmentRow } from '../data/mock'
+
+const EngineModel3D = lazy(() => import('../components/EngineModel3D').then((m) => ({ default: m.EngineModel3D })))
 
 const TABS = [
   { id: 'overview', label: '개요' },
@@ -81,8 +83,10 @@ function OverviewTab({ data }: { data: EngineData }) {
       </div>
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <div className="flex flex-col gap-5">
-          <Panel fill title="엔진 구조" sub="부품에 마우스를 올리면 아래에 센서별 상태가 나옵니다 · 숫자는 처음 상태 대비 센서 변화 배수">
-            <EngineSchematic parts={parts} selected={selPart.id} onSelect={setSel} topId={engine.topPart?.id} />
+          <Panel fill title="엔진 구조" sub="부품에 마우스를 올리면 아래에 센서별 상태가 나옵니다 · 끌어서 돌려 볼 수 있습니다 · 숫자는 처음 상태 대비 센서 변화 배수">
+            <Suspense fallback={<div className="flex h-[340px] items-center justify-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>3D 모델 불러오는 중…</div>}>
+            <EngineModel3D parts={parts} selected={selPart.id} onSelect={setSel} topId={engine.topPart?.id} />
+          </Suspense>
             <div className="mt-2 flex flex-row flex-wrap gap-x-4 gap-y-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
               {[
                 ['var(--status-critical)', `뚜렷한 변화 (×${NOTABLE_Z} 이상)`],
