@@ -62,9 +62,10 @@ function SavingsHero({ react, per, pre }: { react: Summary; per: Summary; pre: S
     <div className="mb-4 grid grid-cols-1 gap-5 border p-5 lg:grid-cols-[1.1fr_1fr]" style={{ background: 'linear-gradient(120deg, color-mix(in oklab, var(--status-good) 14%, var(--surface-1)), var(--surface-1))', borderColor: 'color-mix(in oklab, var(--status-good) 45%, var(--border))', borderRadius: 'var(--radius-sm)' }}>
       <div className="flex flex-col gap-3">
         <div className="text-[13px] font-semibold" style={{ color: 'var(--status-good)' }}>예측 정비로 얻는 절감 효과</div>
-        <div className="flex flex-row flex-wrap items-end gap-x-5 gap-y-1">
+        {/* 아래 세 칸과 같은 3열 격자: 절감 금액이 두 번째 열(−22%)과 같은 줄에서 시작한다 */}
+        <div className="grid grid-cols-3 items-end gap-3">
           <div className="mono text-[56px] font-bold leading-none" style={{ color: 'var(--status-good)' }}>−{pct.toFixed(0)}%</div>
-          <div className="pb-1">
+          <div className="col-span-2 pb-1">
             <div className="mono text-[26px] font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{eokTotal(saved)} 절감</div>
             <div className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>사후 정비 대비 · 엔진 {pre.n}대 기준</div>
           </div>
