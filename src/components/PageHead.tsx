@@ -9,8 +9,7 @@ import { useTodos } from '../lib/todos'
 export function PageHead({ title, sub, action }: { title: string; sub?: ReactNode; action?: ReactNode }) {
   const { user } = useAuth()
   const { ratio, shown, busy, todos } = useTodos(user?.role)
-  // 출발 점과 도착 원에 겹치지 않게, 비행기 중심은 양 끝에서 조금 안쪽 구간만 오간다
-  const pct = `calc(14px + ${shown.toFixed(3)} * (100% - 42px))`
+  const pct = `${(shown * 100).toFixed(1)}%`
   const done = Math.round(ratio * todos.length)
   return (
     <div className="no-print flex shrink-0 flex-row items-start gap-4">
@@ -24,11 +23,11 @@ export function PageHead({ title, sub, action }: { title: string; sub?: ReactNod
       </div>
       <div className="mt-[4px] hidden min-w-[96px] flex-1 lg:block" style={{ color: 'var(--accent)' }} title={todos.length ? `오늘 할 일 ${done}/${todos.length} 완료` : '오늘 할 일'}>
         <div className="relative h-6" aria-hidden="true">
-          <span className="absolute left-0 top-1/2 h-[7px] w-[7px] -translate-y-1/2 rounded-full" style={{ background: 'currentColor', opacity: 0.6 }} />
+          <span className="absolute left-0 top-1/2 h-[7px] w-[7px] -translate-y-1/2 rounded-full" style={{ background: 'currentColor', opacity: shown <= 0 ? 0 : 0.6, transition: 'opacity 0.3s' }} />
           {/* 지나온 길은 실선, 남은 길은 점선 */}
           <span className="absolute left-0 top-1/2 h-[2px] -translate-y-1/2 rounded-full" style={{ width: pct, background: 'currentColor', opacity: 0.55, transition: 'width 1.1s ease-in-out' }} />
           <span className="absolute right-0 top-1/2 h-px -translate-y-1/2" style={{ left: pct, opacity: 0.45, backgroundImage: 'repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 11px)', transition: 'left 1.1s ease-in-out' }} />
-          <span className="absolute right-0 top-1/2 h-[9px] w-[9px] -translate-y-1/2 rounded-full border-2" style={{ borderColor: 'currentColor', background: ratio >= 1 ? 'currentColor' : 'var(--page)', opacity: 0.7 }} />
+          <span className="absolute right-0 top-1/2 h-[9px] w-[9px] -translate-y-1/2 rounded-full border-2" style={{ borderColor: 'currentColor', background: 'var(--page)', opacity: shown >= 1 ? 0 : 0.7, transition: `opacity 0.3s ${shown >= 1 ? '0.9s' : '0s'}` }} />
           <svg
             width="20"
             height="20"
