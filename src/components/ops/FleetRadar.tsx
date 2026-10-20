@@ -44,6 +44,9 @@ const ROUTES: [string, string][] = [
   ['DXB', 'FRA'],
   ['PVG', 'DXB'],
 ]
+/** 비행기마다 맡는 노선 — 한국 근처에 몰리지 않게 먼 노선과 한국 밖 노선을 골고루 섞는다 (ROUTES의 번호) */
+const SPREAD = [10, 8, 7, 12, 14, 11, 13, 15, 9, 6]
+
 const LON0 = -25
 const LAT_TOP = 72
 const LAT_BOTTOM = -40
@@ -152,7 +155,7 @@ export function FleetRadar() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     const rand = rng(17)
-    const planes = assignedRef.current.map((a, i) => ({ i, kind: a.kind, r: (i * 7 + 3) % ROUTES.length, t: rand(), v: 0.012 + rand() * 0.012, dir: rand() < 0.5 ? 1 : -1 }))
+    const planes = assignedRef.current.map((a, i) => ({ i, kind: a.kind, r: SPREAD[i % SPREAD.length], t: 0.14 + 0.72 * (((i + 1) * 0.6180339) % 1), v: 0.012 + rand() * 0.012, dir: rand() < 0.5 ? 1 : -1 }))
     infoRef.current = planes.map((p) => ({ unit: assignedRef.current[p.i].e.unit, kind: p.kind, route: ROUTES[p.r], progress: p.t, x: -99, y: -99 }))
     let w = 0
     let h = 0
