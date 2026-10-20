@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { Panel } from '../components/Panel'
+import { PageHead } from '../components/PageHead'
 import { Pagination, type SizeMode } from '../components/Pagination'
 import { KpiTile } from '../components/ops/FleetCharts'
 import { QueueTable } from '../components/ops/QueueTable'
@@ -67,12 +68,7 @@ export function Plan() {
 
   return (
     <div className="flex flex-col gap-4 lg:h-[calc(100dvh-4rem)] lg:min-h-[520px]">
-      <div className="flex shrink-0 flex-col gap-1">
-        <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">정비 계획</h1>
-        <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          정비 요청 기한 = 예측 남은 수명(일) − 부품·인력 준비 {settings.prepDays}일 · 행을 누르면 엔진 상세로 이동합니다
-        </p>
-      </div>
+      <PageHead title="정비 계획" sub={<>정비 요청 기한 = 예측 남은 수명(일) − 부품·인력 준비 {settings.prepDays}일 · 행을 누르면 엔진 상세로 이동합니다</>} />
 
       <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiTile label="검토 필요" value={status.new + status.review} unit="대" sub={`미검토 ${status.new} · 검토 중 ${status.review}`} />

@@ -443,6 +443,35 @@ a[style*='radius-pill']:active {
   box-shadow: inset 0 0 0 999px rgba(128, 128, 128, 0.32);
 }
 
+/* 오늘 할 일: 끝낸 일은 줄이 그어지고 오른쪽에 비행기 체크가 남는다. 방금 끝낸 일(is-new)은 비행기가 글자를 가로질러 날며 줄을 긋는다 */
+.todo-row .todo-strike { position: absolute; left: 0; top: 50%; height: 1.5px; width: 0; background: currentColor; }
+.todo-row .todo-fly { position: absolute; left: 0; top: 50%; margin-top: -8px; opacity: 0; pointer-events: none; }
+.todo-row .todo-stamp { flex-shrink: 0; opacity: 0; }
+.todo-row.is-done .todo-strike { width: 100%; }
+.todo-row.is-done .todo-stamp { opacity: 1; }
+@keyframes todo-strike { from { width: 0; } to { width: 100%; } }
+@keyframes todo-fly {
+  0% { left: 0; opacity: 1; }
+  88% { left: calc(100% - 44px); opacity: 1; }
+  100% { left: calc(100% - 44px); opacity: 0; }
+}
+@keyframes todo-stamp {
+  0% { opacity: 0; transform: rotate(45deg) scale(2.2); }
+  60% { opacity: 1; transform: rotate(45deg) scale(0.85); }
+  100% { opacity: 1; transform: rotate(45deg) scale(1); }
+}
+.todo-row.is-new .todo-strike { animation: todo-strike 0.8s ease-in-out both; }
+.todo-row.is-new .todo-fly { animation: todo-fly 0.8s ease-in-out both; }
+.todo-row.is-new .todo-stamp { animation: todo-stamp 0.4s 0.75s cubic-bezier(0.3, 1.5, 0.5, 1) both; opacity: 0; }
+
+/* 불러오는 중: 비행기가 항로 위를 슉 지나간다 */
+.fly-plane { position: absolute; top: 50%; left: 0; display: flex; flex-direction: row; align-items: center; margin-top: -11px; animation: fly-by 1.25s cubic-bezier(0.55, 0.05, 0.35, 1) infinite; }
+.fly-trail { width: 96px; height: 2px; margin-right: -6px; border-radius: 2px; background: linear-gradient(90deg, transparent, currentColor); }
+@keyframes fly-by {
+  from { left: 0; transform: translateX(-100%); }
+  to { left: 100%; transform: translateX(0); }
+}
+
 /* 메신저의 추천 질문 버튼 */
 .chip-btn {
   cursor: pointer;

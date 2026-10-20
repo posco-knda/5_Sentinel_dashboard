@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { PageHead } from '../components/PageHead'
 import { Panel } from '../components/Panel'
+import { PolicyCompare } from '../components/ops/PolicyCompare'
 import { RoiReference } from '../components/ops/RoiReference'
 import { eok, summarize } from '../lib/cost'
 import { useFleet } from '../lib/fleet'
@@ -30,12 +32,7 @@ export function Effect() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1">
-        <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">정비 효과</h1>
-        <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          예측에 따라 미리 정비해서 고장 후 처리 대비 아낀 금액(추정)입니다. 단가는 <Link to="/settings" className="underline">설정의 비용 기준</Link>({COST_PRESET_LABEL[settings.costPreset]})을 따릅니다.
-        </p>
-      </div>
+      <PageHead title="정비 효과" sub={<>예측에 따라 미리 정비해서 고장 후 처리 대비 아낀 금액(추정)입니다. 단가는 <Link to="/settings" className="underline">설정의 비용 기준</Link>({COST_PRESET_LABEL[settings.costPreset]})을 따릅니다.</>} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Tile label="지금까지 얻은 효과" value={eok(s.doneGain)} sub={`정비 완료 ${s.done.length}건 · 보수적으로 ${eok(s.doneGainLow)}`} color="var(--status-good)" />
@@ -43,6 +40,8 @@ export function Effect() {
         <Tile label="방치 시 위험 (30일 기대 손실)" value={eok(s.neglected.exposure)} sub={`기한이 지났는데 아직 처리 전인 ${s.neglected.n}대`} color="var(--status-critical)" />
         <Tile label="비용 기준" value={`계획 ${settings.cost.planned}억`} sub={`비계획 ×${settings.cost.ratio} · 운항 중단 ${settings.cost.lossPerDay}억/일`} />
       </div>
+
+      <PolicyCompare />
 
       <Panel title="앞으로 처리했을 때와 방치했을 때" sub="남은 수명이 그 기간 안에 다하는 엔진 기준 · 계획대로 처리하면 순이득 = 방치 시 추가 비용 − 일찍 교체해 버리는 값">
         <div className="flex flex-col gap-4">

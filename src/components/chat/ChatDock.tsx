@@ -36,7 +36,7 @@ function linkify(text: string, mine: boolean): ReactNode[] {
   while ((m = re.exec(text))) {
     if (m.index > last) out.push(text.slice(last, m.index))
     out.push(
-      <Link key={`${m.index}-${m[2]}`} to={`/equipment/engine-${m[2]}?tab=diagnosis`} className="font-semibold underline" style={{ color: mine ? 'var(--accent-ink)' : 'var(--accent)' }}>
+      <Link key={`${m.index}-${m[2]}`} to={`/equipment/engine-${m[2]}`} className="font-semibold underline" style={{ color: mine ? 'var(--accent-ink)' : 'var(--accent)' }}>
         {m[0]}
       </Link>,
     )

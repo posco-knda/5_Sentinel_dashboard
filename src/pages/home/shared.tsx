@@ -26,7 +26,7 @@ export function EngineLine({ e, note, noteLabel }: { e: FleetEngine; note?: stri
     <div data-row className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: '1px solid var(--border-soft)' }}>
       <div className="min-w-0 flex-1">
         <div className="flex flex-row flex-wrap items-center gap-2">
-          <Link to={`/equipment/engine-${e.unit}?tab=diagnosis`} className="text-[13.5px] font-semibold no-underline" style={{ color: 'var(--text-primary)' }}>{e.name}</Link>
+          <Link to={`/equipment/engine-${e.unit}`} className="text-[13.5px] font-semibold no-underline" style={{ color: 'var(--text-primary)' }}>{e.name}</Link>
           <UrgencyChip urgency={e.urgency} />
           <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
             남은 <span className="mono font-medium">{e.pred}</span> cycle · {daysText(e.daysLeft)} · 요청 기한 {deadlineText(e.requestIn)}

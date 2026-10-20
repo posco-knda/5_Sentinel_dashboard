@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Panel } from "../components/Panel";
+import { PageHead } from '../components/PageHead'
 import { analysisExtras } from "../data/analysisExtras";
 import { daysText, useFleet } from "../lib/fleet";
 import { usePlan } from "../lib/plan";
@@ -388,15 +389,7 @@ export function Settings() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1">
-        <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">
-          설정
-        </h1>
-        <p className="m-0 text-[12.5px]" style={{ color: "var(--text-muted)" }}>
-          이 기준에 따라 모든 화면의 등급과 정비 요청 기한이 다시 계산됩니다.
-          설정은 이 브라우저에 저장됩니다.
-        </p>
-      </div>
+      <PageHead title="설정" sub="이 기준에 따라 모든 화면의 등급과 정비 요청 기한이 다시 계산됩니다. 설정은 이 브라우저에 저장됩니다." />
 
       <Panel title="화면">
         <div className="flex flex-col gap-2 py-1 sm:flex-row sm:items-center sm:justify-between">

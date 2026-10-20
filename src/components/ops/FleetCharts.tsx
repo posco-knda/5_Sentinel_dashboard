@@ -104,7 +104,7 @@ export function UrgentBars({ engines, dangerN, limit = 8 }: { engines: FleetEngi
   return (
     <div className="flex flex-col gap-2.5">
       {rows.map((e) => (
-        <Link key={e.unit} to={`/equipment/engine-${e.unit}?tab=diagnosis`} className="grid grid-cols-[88px_1fr_132px] items-center gap-3 text-[12.5px] no-underline">
+        <Link key={e.unit} to={`/equipment/engine-${e.unit}`} className="grid grid-cols-[88px_1fr_132px] items-center gap-3 text-[12.5px] no-underline">
           <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{e.name}</span>
           <div className="relative h-3" style={{ background: 'var(--surface-2)', borderRadius: 3 }}>
             <div className="h-full" style={{ width: `${(e.pred / max) * 100}%`, background: FLEET_COLOR[e.urgency], borderRadius: 3, transition: 'width .6s ease' }} />
@@ -197,7 +197,7 @@ export function RecentAlerts({ engines, dangerN, cyclesPerDay, plan, limit = 8 }
       {events.map((ev) => {
         const isNew = (plan[ev.unit]?.status ?? 'new') === 'new'
         return (
-          <Link key={`${ev.unit}-${ev.kind}`} to={`/equipment/engine-${ev.unit}?tab=diagnosis`} className="flex flex-row items-center gap-2.5 py-[7px] text-[12.5px] no-underline" style={{ borderBottom: '1px solid var(--border-soft)' }}>
+          <Link key={`${ev.unit}-${ev.kind}`} to={`/equipment/engine-${ev.unit}`} className="flex flex-row items-center gap-2.5 py-[7px] text-[12.5px] no-underline" style={{ borderBottom: '1px solid var(--border-soft)' }}>
             <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: LEVEL[ev.kind].color }} />
             <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Engine #{ev.unit}</span>
             <span style={{ color: LEVEL[ev.kind].color }}>{ev.kind === 'red' ? '위험' : '주의'}</span>

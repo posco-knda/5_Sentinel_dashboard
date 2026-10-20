@@ -1,7 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { FlyLoading } from '../components/FlyLoading'
 import { Turbofan3D } from '../components/Turbofan3D'
 import { ACCOUNTS } from '../lib/accounts'
 import { ROLE_LABEL, useAuth } from '../lib/auth'
+
+/** 로그인 뒤 비행기 로딩 화면을 보여 주는 시간(ms) */
+const ENTER_DELAY = 2200
 
 const field = { background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text-primary)', borderRadius: 'var(--radius-xs)' } as const
 
@@ -10,10 +14,18 @@ export function Login() {
   const [id, setId] = useState('')
   const [pw, setPw] = useState('')
   const [err, setErr] = useState(false)
+  const [entering, setEntering] = useState(false)
+  const timer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(timer.current), [])
 
+  // 계정이 맞으면 비행기가 지나가는 화면을 잠시 보여 준 뒤 들어간다
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    if (!login(id, pw)) setErr(true)
+    if (entering) return
+    const ok = ACCOUNTS.some((a) => a.id === id.trim().toLowerCase() && a.password === pw)
+    if (!ok) return setErr(true)
+    setEntering(true)
+    timer.current = window.setTimeout(() => login(id, pw), ENTER_DELAY)
   }
   const fill = (i: string, p: string) => {
     setId(i)
@@ -77,6 +89,11 @@ export function Login() {
         </div>
       </div>
       </div>
+      {entering && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'var(--page)' }}>
+          <FlyLoading label="로그인 중…" height="100vh" />
+        </div>
+      )}
     </div>
   )
 }

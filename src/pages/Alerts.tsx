@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FlyLoading } from '../components/FlyLoading'
+import { PageHead } from '../components/PageHead'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Panel } from '../components/Panel'
 import { Pagination, type SizeMode } from '../components/Pagination'
@@ -70,12 +72,7 @@ export function Alerts() {
 
   return (
     <div className="flex flex-col gap-4 xl:h-[calc(100dvh-4rem)] xl:min-h-[520px]">
-      <div className="flex shrink-0 flex-col gap-1">
-        <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">알림</h1>
-        <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          예측 남은 수명이 위험(≤{settings.dangerN})·주의(&lt;80) 구간에 들어온 알림 · 최근 것부터 · 시간은 각 엔진의 최신 비행 후 데이터 기준
-        </p>
-      </div>
+      <PageHead title="알림" sub={<>예측 남은 수명이 위험(≤{settings.dangerN})·주의(&lt;80) 구간에 들어온 알림 · 최근 것부터 · 시간은 각 엔진의 최신 비행 후 데이터 기준</>} />
 
       <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiTile label="미확인 엔진" value={unreadEngines.size} unit="대" color={unreadEngines.size ? 'var(--status-critical)' : undefined} sub="확인하면 읽음 처리" />
@@ -149,7 +146,7 @@ export function Alerts() {
 
           <div ref={boxRef} className="min-h-0 flex-1 overflow-auto">
             {!events ? (
-              <div className="py-10 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>불러오는 중…</div>
+              <FlyLoading height="160px" />
             ) : visible.length === 0 ? (
               <div className="py-10 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>해당하는 알림이 없습니다</div>
             ) : (
@@ -162,7 +159,7 @@ export function Alerts() {
                       <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: isNew ? 'var(--status-critical)' : 'transparent', border: isNew ? 'none' : '1px solid var(--border)' }} title={isNew ? '미확인' : STATUS_LABEL[plan.get(ev.unit).status]} />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-1">
-                          <Link to={`/equipment/engine-${ev.unit}?tab=diagnosis`} className="text-[13.5px] font-semibold no-underline" style={{ color: 'var(--text-primary)' }}>Engine #{ev.unit}</Link>
+                          <Link to={`/equipment/engine-${ev.unit}`} className="text-[13.5px] font-semibold no-underline" style={{ color: 'var(--text-primary)' }}>Engine #{ev.unit}</Link>
                           <span className="text-[12.5px] font-medium" style={{ color: LEVEL[lv].color }}>{lv === 'red' ? '위험 구간 진입' : '주의 구간 진입'}</span>
                           <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{ev.ago} cycle({daysText(ev.ago / settings.cyclesPerDay)}) 전</span>
                         </div>

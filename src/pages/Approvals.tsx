@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { PageHead } from '../components/PageHead'
 import { Panel } from '../components/Panel'
 import { Pagination, type SizeMode } from '../components/Pagination'
 import { KpiTile } from '../components/ops/FleetCharts'
@@ -70,12 +71,7 @@ export function Approvals() {
 
   return (
     <div className="flex flex-col gap-4 lg:h-[calc(100dvh-4rem)] lg:min-h-[520px]">
-      <div className="flex shrink-0 flex-col gap-1">
-        <h1 className="m-0 text-[24px] font-semibold tracking-[-0.01em]">결재함</h1>
-        <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          {isManager ? '정비 담당자가 올린 요청을 검증해 승인하거나 반려합니다.' : '올린 결재 요청의 진행 상태입니다. 반려된 요청은 사유를 보고 다시 올릴 수 있습니다.'}
-        </p>
-      </div>
+      <PageHead title="결재함" sub={<>{isManager ? '정비 담당자가 올린 요청을 검증해 승인하거나 반려합니다.' : '올린 결재 요청의 진행 상태입니다. 반려된 요청은 사유를 보고 다시 올릴 수 있습니다.'}</>} />
 
       <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiTile label="결재 대기" value={by.pending.length} unit="건" color="var(--accent)" />
@@ -112,7 +108,7 @@ export function Approvals() {
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-row flex-wrap items-center gap-2.5">
-                        <Link to={`/equipment/engine-${e.unit}?tab=diagnosis`} className="text-[14.5px] font-semibold no-underline" style={{ color: 'var(--text-primary)' }}>{e.name}</Link>
+                        <Link to={`/equipment/engine-${e.unit}`} className="text-[14.5px] font-semibold no-underline" style={{ color: 'var(--text-primary)' }}>{e.name}</Link>
                         <UrgencyChip urgency={e.urgency} />
                         <span className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
                           남은 <span className="mono font-medium">{e.pred}</span> cycle · {daysText(e.daysLeft)} · 요청 기한 {deadlineText(e.requestIn)}
