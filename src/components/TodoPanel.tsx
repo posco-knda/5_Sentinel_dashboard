@@ -1,5 +1,6 @@
 import { useState, type CSSProperties, type FormEvent } from 'react'
 import { useAuth, type Role } from '../lib/auth'
+import { LeaveFx } from './LeaveFx'
 import { Panel } from './Panel'
 
 const KEY = 'sentinel-todos-v1'
@@ -56,6 +57,7 @@ export function TodoPanel({ fill = false }: { fill?: boolean }) {
   const [store, setStore] = useState<Store>(load)
   const [fresh, setFresh] = useState<number | null>(null)
   const [text, setText] = useState('')
+  const [leave, setLeave] = useState(0)
   if (!role) return null
 
   const todos = store[role] ?? SAMPLE[role].map((t, i) => ({ id: i + 1, text: t, done: false }))
@@ -76,6 +78,8 @@ export function TodoPanel({ fill = false }: { fill?: boolean }) {
     if (!cur) return
     setFresh(cur.done ? null : id)
     commit(todos.map((x) => (x.id === id ? { ...x, done: !x.done } : x)))
+    // 마지막 할 일까지 끝내면 퇴근 연출
+    if (!cur.done && todos.every((x) => x.id === id || x.done)) setLeave((n) => n + 1)
   }
   const doneN = todos.filter((x) => x.done).length
 
@@ -120,6 +124,7 @@ export function TodoPanel({ fill = false }: { fill?: boolean }) {
           </div>
         ))}
       </div>
+      {leave > 0 && <LeaveFx key={leave} name={user?.name ?? ''} onDone={() => setLeave(0)} />}
     </Panel>
   )
 }

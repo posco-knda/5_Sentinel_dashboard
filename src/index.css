@@ -464,6 +464,23 @@ a[style*='radius-pill']:active {
 .todo-row.is-new .todo-fly { animation: todo-fly 0.8s ease-in-out both; }
 .todo-row.is-new .todo-stamp { animation: todo-stamp 0.4s 0.75s cubic-bezier(0.3, 1.5, 0.5, 1) both; opacity: 0; }
 
+/* 할 일을 모두 끝내면: 왼쪽 아래 프로필 인물이 튀어나와 비행기를 타고 집으로 퇴근한다 */
+.leave-fx { position: fixed; left: 78px; bottom: 22px; z-index: 90; width: 0; height: 0; pointer-events: none; color: var(--accent); animation: leave-go 4.2s cubic-bezier(0.5, 0, 0.8, 0.6) both; }
+.leave-rider { position: absolute; left: -23px; bottom: 34px; width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: var(--surface-1); box-shadow: 0 0 0 3px var(--accent), 0 6px 18px rgba(0, 0, 0, 0.3); animation: leave-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.leave-rider img { width: 100%; height: 100%; object-fit: cover; }
+.leave-initial { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-weight: 700; }
+.leave-plane { position: absolute; left: -38px; bottom: -4px; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.25)); animation: leave-pop 0.5s 0.3s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.leave-trail { position: absolute; right: 38px; bottom: 33px; width: 160px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, transparent, currentColor); opacity: 0; animation: leave-trail 4.2s both; }
+.leave-bubble { position: absolute; left: -8px; bottom: 92px; white-space: nowrap; padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; background: var(--surface-1); color: var(--text-primary); box-shadow: 0 0 0 1.5px var(--accent), 0 6px 18px rgba(0, 0, 0, 0.2); animation: leave-bubble 4.2s both; }
+@keyframes leave-pop { from { opacity: 0; transform: translateY(24px) scale(0.3); } to { opacity: 1; transform: none; } }
+.leave-plane { --r: 45deg; }
+@keyframes leave-go {
+  0%, 38% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  100% { transform: translate(78vw, -78vh) rotate(-10deg) scale(0.35); opacity: 0.2; }
+}
+@keyframes leave-trail { 0%, 38% { opacity: 0; } 50% { opacity: 0.9; } 100% { opacity: 0; } }
+@keyframes leave-bubble { 0% { opacity: 0; transform: translateY(8px); } 10%, 36% { opacity: 1; transform: none; } 46%, 100% { opacity: 0; } }
+
 /* 불러오는 중: 비행기가 항로 위를 슉 지나간다 */
 .fly-plane { position: absolute; top: 50%; left: 0; display: flex; flex-direction: row; align-items: center; margin-top: -11px; animation: fly-by 1.25s cubic-bezier(0.55, 0.05, 0.35, 1) infinite; }
 .fly-trail { width: 96px; height: 2px; margin-right: -6px; border-radius: 2px; background: linear-gradient(90deg, transparent, currentColor); }
