@@ -158,7 +158,7 @@ export function Alerts() {
                       <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: isNew ? 'var(--status-critical)' : 'transparent', border: isNew ? 'none' : '1px solid var(--border)' }} title={isNew ? '미확인' : STATUS_LABEL[plan.get(ev.unit).status]} />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-1">
-                          <Link to={`/equipment/engine-${ev.unit}?tab=diagnosis`} className="text-[13.5px] font-semibold no-underline" style={{ color: 'var(--text-primary)' }}>Engine #{ev.unit}</Link>
+                          <Link to={`/equipment/engine-${ev.unit}`} className="text-[13.5px] font-semibold no-underline" style={{ color: 'var(--text-primary)' }}>Engine #{ev.unit}</Link>
                           <span className="text-[12.5px] font-medium" style={{ color: LEVEL[lv].color }}>{lv === 'red' ? '위험 구간 진입' : '주의 구간 진입'}</span>
                           <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{ev.ago} cycle({daysText(ev.ago / settings.cyclesPerDay)}) 전</span>
                         </div>

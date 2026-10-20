@@ -108,7 +108,7 @@ export function Approvals() {
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-row flex-wrap items-center gap-2.5">
-                        <Link to={`/equipment/engine-${e.unit}?tab=diagnosis`} className="text-[14.5px] font-semibold no-underline" style={{ color: 'var(--text-primary)' }}>{e.name}</Link>
+                        <Link to={`/equipment/engine-${e.unit}`} className="text-[14.5px] font-semibold no-underline" style={{ color: 'var(--text-primary)' }}>{e.name}</Link>
                         <UrgencyChip urgency={e.urgency} />
                         <span className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
                           남은 <span className="mono font-medium">{e.pred}</span> cycle · {daysText(e.daysLeft)} · 요청 기한 {deadlineText(e.requestIn)}
