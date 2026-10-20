@@ -17,8 +17,8 @@ interface Snap {
 
 const KEY = 'sentinel-todos-v1'
 export const MAX_ITEMS = 30
-/** 체크 연출(인물이 비행기를 타고 날아가는 시간)이 끝나는 데 걸리는 시간(ms) */
-const BUSY_MS = 3700
+/** 체크 연출(글자 위 비행기 + 도장)이 끝나는 데 걸리는 시간(ms) */
+const BUSY_MS = 1300
 
 /** 처음 열었을 때 비어 보이지 않게 두는 예시 (지우거나 고쳐도 된다) */
 const SAMPLE: Record<Role, string[]> = {
