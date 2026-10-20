@@ -107,3 +107,7 @@ Slack 채널은 목적에 따라 둘로 나눕니다. 결재용 웹훅(`SLACK_AP
 ## 기술 스택
 
 Vite · React · TypeScript · Tailwind v4 · Recharts · Framer Motion. 화면은 처음 열 때 불러오고(코드 분할), 큰 데이터(`partFlow` 346KB, `detectionCurves` 207KB)는 필요한 화면에서만 불러옵니다.
+
+## 촬영·발표 준비
+
+시연 영상 큐시트와 예상 질문은 [docs/시연-가이드.md](docs/시연-가이드.md)에 있습니다. 배포 직후 `npm run demo:check`로 화면 파일과 서버 연동(Slack·AI)을 한 번에 점검하고, 주소 뒤에 `?demo=reset&as=planner&present=1` 을 붙이면 저장된 처리 이력을 지워 처음 상태로 돌리고 담당자로 바로 시작하며 마우스 표시를 켭니다(`as=manager`, `present=0`도 가능).
