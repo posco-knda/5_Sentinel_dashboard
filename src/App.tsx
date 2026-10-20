@@ -7,7 +7,6 @@ import { PlanProvider } from './lib/PlanProvider'
 import { AuthProvider } from './lib/AuthProvider'
 import { ChatProvider } from './lib/ChatProvider'
 import { ChatDock } from './components/chat/ChatDock'
-import { TodayTodo } from './components/TodayTodo'
 import { AVATARS } from './lib/accounts'
 import { ROLE_LABEL, useAuth } from './lib/auth'
 import { useFleet } from './lib/fleet'
@@ -204,7 +203,6 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
           <SidebarNav />
         </div>
         <div className="px-1">
-          <TodayTodo />
           <RoleBanner />
         </div>
       </aside>
@@ -232,7 +230,6 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                 <SidebarNav onNavigate={onClose} />
               </div>
               <div className="px-1">
-                <TodayTodo />
                 <RoleBanner />
               </div>
             </motion.aside>

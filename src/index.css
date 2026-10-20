@@ -445,15 +445,15 @@ a[style*='radius-pill']:active {
 
 /* 오늘 할 일: 끝낸 일은 줄이 그어지고 오른쪽에 비행기 체크가 남는다. 방금 끝낸 일(is-new)은 비행기가 글자를 가로질러 날며 줄을 긋는다 */
 .todo-row .todo-strike { position: absolute; left: 0; top: 50%; height: 1.5px; width: 0; background: currentColor; }
-.todo-row .todo-fly { position: absolute; left: 0; top: 50%; margin-top: -7px; opacity: 0; pointer-events: none; }
+.todo-row .todo-fly { position: absolute; left: 0; top: 50%; margin-top: -8px; opacity: 0; pointer-events: none; }
 .todo-row .todo-stamp { flex-shrink: 0; opacity: 0; }
 .todo-row.is-done .todo-strike { width: 100%; }
 .todo-row.is-done .todo-stamp { opacity: 1; }
 @keyframes todo-strike { from { width: 0; } to { width: 100%; } }
 @keyframes todo-fly {
   0% { left: 0; opacity: 1; }
-  88% { left: calc(100% - 14px); opacity: 1; }
-  100% { left: calc(100% - 14px); opacity: 0; }
+  88% { left: calc(100% - 44px); opacity: 1; }
+  100% { left: calc(100% - 44px); opacity: 0; }
 }
 @keyframes todo-stamp {
   0% { opacity: 0; transform: rotate(45deg) scale(2.2); }

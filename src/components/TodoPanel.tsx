@@ -1,5 +1,6 @@
 import { useState, type CSSProperties, type FormEvent } from 'react'
 import { useAuth, type Role } from '../lib/auth'
+import { Panel } from './Panel'
 
 const KEY = 'sentinel-todos-v1'
 const MAX_ITEMS = 30
@@ -46,10 +47,10 @@ function Plane({ size, className, style }: { size: number; className?: string; s
 }
 
 /**
- * 사이드바의 할 일 목록 — 직접 적어 넣고, 끝내면 체크한다.
+ * 현황 화면의 할 일 목록 — 직접 적어 넣고, 끝내면 체크한다.
  * 체크하면 비행기가 글자를 가로질러 날며 줄을 긋고, 오른쪽에 비행기 모양 체크가 남는다. 목록은 계정(역할)별로 이 브라우저에 저장된다.
  */
-export function TodayTodo() {
+export function TodoPanel({ fill = false }: { fill?: boolean }) {
   const { user } = useAuth()
   const role = user?.role
   const [store, setStore] = useState<Store>(load)
@@ -79,47 +80,46 @@ export function TodayTodo() {
   const doneN = todos.filter((x) => x.done).length
 
   return (
-    <div className="mb-2.5 flex flex-col gap-1.5 border px-3 py-2.5" style={{ background: 'var(--surface-2)', borderColor: 'var(--border-soft)', borderRadius: 'var(--radius-sm)' }}>
-      <div className="flex flex-row items-baseline justify-between">
-        <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>할 일</span>
-        <span className="flex flex-row items-baseline gap-2">
-          {doneN > 0 && (
-            <button onClick={() => commit(todos.filter((x) => !x.done))} className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
-              완료 지우기
-            </button>
-          )}
-          <span className="mono text-[11px]" style={{ color: doneN === todos.length && todos.length > 0 ? 'var(--status-good)' : 'var(--text-muted)' }}>{doneN}/{todos.length}</span>
-        </span>
-      </div>
-      <div className="flex max-h-[148px] flex-col overflow-y-auto overflow-x-hidden">
-        {todos.length === 0 && (
-          <p className="m-0 py-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>할 일이 없습니다. 아래에 적어 보세요.</p>
-        )}
+    <Panel
+      dense
+      fill={fill}
+      title="할 일"
+      sub={`${doneN}/${todos.length} 완료 · 글을 누르면 체크됩니다`}
+      action={
+        doneN > 0 ? (
+          <button onClick={() => commit(todos.filter((x) => !x.done))} className="shrink-0 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+            완료 지우기
+          </button>
+        ) : undefined
+      }
+    >
+      <form onSubmit={add} className="mb-2 shrink-0">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="+ 할 일을 적고 Enter"
+          maxLength={80}
+          aria-label="할 일 추가"
+          className="w-full border px-3 py-2 text-[13.5px]"
+          style={{ background: 'var(--page)', borderColor: 'var(--border)', color: 'var(--text-primary)', borderRadius: 'var(--radius-xs)' }}
+        />
+      </form>
+      <div className={`flex flex-col overflow-y-auto overflow-x-hidden ${fill ? 'min-h-0 flex-1' : 'max-h-[260px]'}`}>
+        {todos.length === 0 && <p className="m-0 py-4 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>할 일이 없습니다</p>}
         {todos.map((t) => (
-          <div key={t.id} className={`todo-row group relative flex flex-row items-center gap-2 py-1 text-[12.5px] ${t.done ? 'is-done' : ''} ${fresh === t.id ? 'is-new' : ''}`} style={{ color: t.done ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+          <div key={t.id} className={`todo-row group relative flex flex-row items-center gap-3 py-2 text-[14.5px] ${t.done ? 'is-done' : ''} ${fresh === t.id ? 'is-new' : ''}`} style={{ color: t.done ? 'var(--text-muted)' : 'var(--text-primary)', borderBottom: '1px solid var(--border-soft)' }}>
             <button onClick={() => toggle(t.id)} aria-pressed={t.done} aria-label={`${t.text} ${t.done ? '완료 취소' : '완료'}`} className="relative min-w-0 flex-1 truncate text-left" title={t.text}>
               {t.text}
               <i className="todo-strike" />
             </button>
-            <Plane size={14} className="todo-fly" style={{ color: 'var(--accent)' }} />
-            <Plane size={15} className="todo-stamp" style={{ color: 'var(--status-good)' }} />
-            <button onClick={() => commit(todos.filter((x) => x.id !== t.id))} aria-label="삭제" className="hidden shrink-0 text-[13px] leading-none group-hover:block" style={{ color: 'var(--text-muted)' }}>
+            <Plane size={16} className="todo-fly" style={{ color: 'var(--accent)' }} />
+            <Plane size={18} className="todo-stamp" style={{ color: 'var(--status-good)' }} />
+            <button onClick={() => commit(todos.filter((x) => x.id !== t.id))} aria-label="삭제" className="hidden shrink-0 text-[16px] leading-none group-hover:block" style={{ color: 'var(--text-muted)' }}>
               ×
             </button>
           </div>
         ))}
       </div>
-      <form onSubmit={add}>
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="+ 할 일 추가"
-          maxLength={80}
-          aria-label="할 일 추가"
-          className="w-full border px-2 py-1 text-[12px]"
-          style={{ background: 'var(--surface-1)', borderColor: 'var(--border)', color: 'var(--text-primary)', borderRadius: 6 }}
-        />
-      </form>
-    </div>
+    </Panel>
   )
 }

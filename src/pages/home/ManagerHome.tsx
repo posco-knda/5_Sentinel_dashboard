@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Panel } from '../../components/Panel'
 import { PageHead } from '../../components/PageHead'
+import { TodoPanel } from '../../components/TodoPanel'
 import { MaintenanceCalendar } from '../../components/ops/MaintenanceCalendar'
 import { DemandChart } from '../../components/ops/OpsCharts'
 import { ModuleChart, ProgressChart, UrgentBars } from '../../components/ops/FleetCharts'
@@ -79,6 +80,7 @@ export function ManagerHome() {
           <Panel dense title="정비 일정" sub="날짜를 누르면 그날의 엔진을 볼 수 있습니다 · 승인된 정비와 결재 대기, 만석인 날을 한눈에 봅니다">
             <MaintenanceCalendar large engines={fleet} plan={plan.items} prepDays={settings.prepDays} slotsPerDay={settings.slotsPerDay} />
           </Panel>
+          <TodoPanel />
           <Panel dense title="점검 예상 모듈" sub="부품·인력 준비용 · 위험·주의 엔진 기준 추정">
             <ModuleChart engines={active} height={210} />
           </Panel>
