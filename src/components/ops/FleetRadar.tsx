@@ -1,10 +1,14 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { worldLand } from '../../data/worldLand'
-import { useFleet } from '../../lib/fleet'
+import { useCurves } from '../../lib/curves'
+import { LEVEL, URGENCY, daysText, deadlineText, useFleet, type FleetEngine } from '../../lib/fleet'
+import { STATUS_LABEL, usePlan } from '../../lib/plan'
 
 const PLANE = new Path2D('M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z')
 
 type Kind = 'ok' | 'warn' | 'red'
+const PLANES = 10
 
 /** [경도, 위도] — 대서양을 가운데로 두지 않도록 경도를 -25°부터 335°까지로 이어 붙여 그린다(태평양이 끊기지 않게) */
 const AIRPORTS: Record<string, [number, number]> = {
@@ -86,32 +90,70 @@ function rng(seed: number) {
   }
 }
 
+/** 등급별로 골고루(시급한 순에서 일정 간격으로) 엔진을 뽑는다 */
+function pickEngines(fleet: FleetEngine[], kind: Kind, n: number): FleetEngine[] {
+  const pool = fleet.filter((e) => (kind === 'red' ? e.level === 'red' : kind === 'warn' ? e.level === 'warn' : e.level === 'ok')).sort((a, b) => a.requestIn - b.requestIn || a.unit - b.unit)
+  if (!pool.length || n <= 0) return []
+  const step = kind === 'red' ? 1 : Math.max(1, Math.floor(pool.length / n))
+  return Array.from({ length: Math.min(n, pool.length) }, (_, i) => pool[Math.min(pool.length - 1, i * step + (kind === 'red' ? 0 : 1))])
+}
+
+interface PlaneInfo {
+  unit: number
+  kind: Kind
+  route: [string, string]
+  /** 노선을 얼마나 지났는가 0~1 */
+  progress: number
+  x: number
+  y: number
+}
+
 /**
  * 운항 현황 — 세계 지도 위에서 항공기들이 노선을 따라 날아다니는 비행 추적 화면.
- * 비행기의 색 비율은 실제 엔진 등급 분포(위험·주의·정상)를 따른다. 노선과 위치는 표시용이다.
+ * 비행기 한 대가 실제 엔진 한 대에 대응한다(등급 비율은 플릿 분포를 따름). 위에 올리면 엔진 정보가 뜨고, 누르면 엔진 상세로 간다.
+ * 노선과 위치는 표시용이다.
  */
 export function FleetRadar() {
   const fleet = useFleet()
+  const plan = usePlan()
+  const curves = useCurves()
+  const nav = useNavigate()
   const ref = useRef<HTMLCanvasElement>(null)
   const red = fleet.filter((e) => e.level === 'red').length
   const warn = fleet.filter((e) => e.level === 'warn').length
   const ok = fleet.length - red - warn
   const sig = `${red}-${warn}-${ok}`
 
+  // 비행기 한 대마다 대응하는 엔진
+  const assigned = useMemo(() => {
+    const total = Math.max(1, red + warn + ok)
+    const nRed = Math.max(1, Math.round((PLANES * red) / total))
+    const nWarn = Math.round((PLANES * warn) / total)
+    const nOk = PLANES - nRed - nWarn
+    const list: { e: FleetEngine; kind: Kind }[] = [
+      ...pickEngines(fleet, 'red', nRed).map((e) => ({ e, kind: 'red' as Kind })),
+      ...pickEngines(fleet, 'warn', nWarn).map((e) => ({ e, kind: 'warn' as Kind })),
+      ...pickEngines(fleet, 'ok', nOk).map((e) => ({ e, kind: 'ok' as Kind })),
+    ]
+    return list
+  }, [fleet, red, warn, ok])
+  const assignedRef = useRef(assigned)
+  const infoRef = useRef<PlaneInfo[]>([])
+  const hoverRef = useRef(-1)
+  const [hover, setHover] = useState<{ i: number; x: number; y: number; w: number; h: number; route: [string, string]; progress: number } | null>(null)
+
+  useEffect(() => {
+    assignedRef.current = assigned
+  }, [assigned])
+
   useEffect(() => {
     const canvas = ref.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    const total = Math.max(1, red + warn + ok)
-    const N = 18
-    const nRed = Math.max(1, Math.round((N * red) / total))
-    const nWarn = Math.round((N * warn) / total)
-    const kinds: Kind[] = Array.from({ length: N }, (_, i) => (i < nRed ? 'red' : i < nRed + nWarn ? 'warn' : 'ok'))
     const rand = rng(17)
-    const planes = kinds
-      .map((k, i) => ({ k, r: (i * 7) % ROUTES.length, t: rand(), v: 0.012 + rand() * 0.012, dir: rand() < 0.5 ? 1 : -1 }))
-      .sort(() => rand() - 0.5)
+    const planes = assignedRef.current.map((a, i) => ({ i, kind: a.kind, r: (i * 7 + 3) % ROUTES.length, t: rand(), v: 0.012 + rand() * 0.012, dir: rand() < 0.5 ? 1 : -1 }))
+    infoRef.current = planes.map((p) => ({ unit: assignedRef.current[p.i].e.unit, kind: p.kind, route: ROUTES[p.r], progress: p.t, x: -99, y: -99 }))
     let w = 0
     let h = 0
     let dpr = 1
@@ -159,6 +201,45 @@ export function FleetRadar() {
       const dy = 2 * u * (c.my - c.y0) + 2 * t * (c.y1 - c.my)
       return [x, y, dx, dy]
     }
+
+    // 마우스를 올린 비행기 찾기
+    const near = (e: PointerEvent) => {
+      const r = canvas.getBoundingClientRect()
+      const mx = e.clientX - r.left
+      const my = e.clientY - r.top
+      let best = -1
+      let bd = 18 * 18
+      infoRef.current.forEach((p, i) => {
+        const d = (p.x - mx) ** 2 + (p.y - my) ** 2
+        if (d < bd) {
+          bd = d
+          best = i
+        }
+      })
+      return { best, w: r.width, h: r.height }
+    }
+    const onMove = (e: PointerEvent) => {
+      const { best, w: cw, h: ch } = near(e)
+      if (best !== hoverRef.current) {
+        hoverRef.current = best
+        const p = infoRef.current[best]
+        setHover(best < 0 ? null : { i: best, x: p.x, y: p.y, w: cw, h: ch, route: p.route, progress: p.progress })
+      }
+      canvas.style.cursor = best >= 0 ? 'pointer' : 'default'
+    }
+    const onLeave = () => {
+      hoverRef.current = -1
+      setHover(null)
+      canvas.style.cursor = 'default'
+    }
+    const onClick = (e: PointerEvent) => {
+      const { best } = near(e)
+      if (best >= 0) nav(`/equipment/engine-${infoRef.current[best].unit}`)
+    }
+    canvas.addEventListener('pointermove', onMove)
+    canvas.addEventListener('pointerdown', onMove)
+    canvas.addEventListener('pointerleave', onLeave)
+    canvas.addEventListener('click', onClick as EventListener)
 
     let raf = 0
     let t0 = performance.now()
@@ -230,21 +311,30 @@ export function FleetRadar() {
         ctx.fillStyle = rgba(pal.muted, 1)
         ctx.fillText(code, x, y + (hub ? 21 : 16))
       }
-      // 비행기: 꼬리 흔적 + 기체
-      const s = w < 520 ? 0.8 : 1
+      // 비행기: 꼬리 흔적 + 기체 (마우스를 올린 비행기는 멈춰서 누르기 쉽게 한다)
+      const s = w < 520 ? 0.85 : 1.05
       for (const p of planes) {
         const [a, b] = ROUTES[p.r]
         const cc = curve(a, b)
         const visible = inView(cc.x0) && inView(cc.x1)
-        p.t += p.v * dt * p.dir
+        if (p.i !== hoverRef.current) p.t += p.v * dt * p.dir
         if (p.t > 1 || p.t < 0) {
           p.dir *= -1
           p.t = Math.min(1, Math.max(0, p.t))
         }
-        if (!visible) continue
+        const info = infoRef.current[p.i]
+        info.progress = p.dir > 0 ? p.t : 1 - p.t
+        info.route = p.dir > 0 ? [a, b] : [b, a]
+        if (!visible) {
+          info.x = -99
+          info.y = -99
+          continue
+        }
         const [x, y, dx, dy] = at(cc, p.t)
+        info.x = x
+        info.y = y
         const ang = Math.atan2(p.dir * dy, p.dir * dx)
-        const col = rgba(pal.kind[p.k], 1)
+        const col = rgba(pal.kind[p.kind], 1)
         for (let i = 1; i <= 9; i++) {
           const back = Math.max(0, Math.min(1, p.t - i * 0.012 * p.dir))
           const [bx, by] = at(cc, back)
@@ -255,13 +345,20 @@ export function FleetRadar() {
           ctx.fill()
         }
         ctx.globalAlpha = 1
+        if (p.i === hoverRef.current) {
+          ctx.strokeStyle = rgba(pal.kind[p.kind], 0.9)
+          ctx.lineWidth = 1.5
+          ctx.beginPath()
+          ctx.arc(x, y, 15, 0, Math.PI * 2)
+          ctx.stroke()
+        }
         ctx.save()
         ctx.translate(x, y)
         ctx.rotate(ang + Math.PI / 4)
-        ctx.scale(0.95 * s, 0.95 * s)
+        ctx.scale(s, s)
         ctx.translate(-12, -12)
-        ctx.shadowColor = rgba(pal.kind[p.k], 0.45)
-        ctx.shadowBlur = p.k === 'red' ? 8 : 4
+        ctx.shadowColor = rgba(pal.kind[p.kind], 0.45)
+        ctx.shadowBlur = p.kind === 'red' ? 8 : 4
         ctx.fillStyle = col
         ctx.fill(PLANE)
         ctx.restore()
@@ -277,13 +374,22 @@ export function FleetRadar() {
       ro.disconnect()
       mo.disconnect()
       mq.removeEventListener('change', refreshPal)
+      canvas.removeEventListener('pointermove', onMove)
+      canvas.removeEventListener('pointerdown', onMove)
+      canvas.removeEventListener('pointerleave', onLeave)
+      canvas.removeEventListener('click', onClick as EventListener)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sig])
+  }, [sig, nav])
+
+  const sel = hover ? assigned[hover.i] : null
+  const cycles = sel && curves?.[sel.e.unit] ? curves[sel.e.unit].c[curves[sel.e.unit].c.length - 1] : null
+  const tone = sel ? { ok: 'var(--status-good)', warn: 'var(--status-warning)', red: 'var(--status-critical)' }[sel.kind] : ''
+  const status = sel ? plan.get(sel.e.unit).status : null
 
   return (
     <section className="no-print relative overflow-hidden" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }} aria-label="운항 현황">
-      <canvas ref={ref} className="block h-[200px] w-full sm:h-[300px]" role="img" aria-label="세계 지도 위에서 항공기가 노선을 따라 비행하는 운항 현황 화면" />
+      <canvas ref={ref} className="block h-[200px] w-full touch-pan-y sm:h-[300px]" role="img" aria-label="세계 지도 위에서 항공기가 노선을 따라 비행하는 운항 현황 화면. 비행기를 누르면 해당 엔진 상세로 이동합니다" />
       <div className="pointer-events-none absolute left-4 top-3 flex flex-col">
         <span className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>운항 현황</span>
         <span className="mono text-[10.5px] tracking-[0.18em]" style={{ color: 'var(--accent)' }}>FLEET TRACKING</span>
@@ -293,6 +399,40 @@ export function FleetRadar() {
         <span className="flex flex-row items-center gap-1.5"><i className="inline-block h-2 w-2 rounded-full" style={{ background: 'var(--status-warning)' }} />주의 <b className="mono" style={{ color: 'var(--text-primary)' }}>{warn}</b></span>
         <span className="flex flex-row items-center gap-1.5"><i className="inline-block h-2 w-2 rounded-full" style={{ background: 'var(--status-good)' }} />정상 <b className="mono" style={{ color: 'var(--text-primary)' }}>{ok}</b></span>
       </div>
+
+      {hover && sel && (
+        <div
+          className="pointer-events-none absolute z-10 w-[236px] border p-3 text-[12px]"
+          style={{
+            left: Math.max(8, Math.min(hover.w - 244, hover.x + 18)),
+            top: Math.max(8, Math.min(hover.h - 172, hover.y - 20)),
+            background: 'var(--surface-raised)',
+            borderColor: 'var(--border-strong)',
+            borderRadius: 'var(--radius-xs)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+          }}
+        >
+          <div className="flex flex-row items-center justify-between gap-2">
+            <span className="mono text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>{sel.e.name}</span>
+            <span className="text-[11px] font-semibold" style={{ color: tone }}>● {LEVEL[sel.e.level].label} · {URGENCY[sel.e.urgency].label}</span>
+          </div>
+          <dl className="m-0 mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+            <dt style={{ color: 'var(--text-muted)' }}>남은 수명</dt>
+            <dd className="m-0 text-right"><b className="mono" style={{ color: tone }}>{sel.e.pred}</b> cycle <span style={{ color: 'var(--text-muted)' }}>({daysText(sel.e.daysLeft)})</span></dd>
+            <dt style={{ color: 'var(--text-muted)' }}>누적 비행</dt>
+            <dd className="m-0 text-right">{cycles != null ? <><b className="mono">{cycles}</b> cycle</> : '—'}</dd>
+            <dt style={{ color: 'var(--text-muted)' }}>정비 요청</dt>
+            <dd className="m-0 text-right" style={{ color: sel.e.requestIn <= 0 ? 'var(--status-critical)' : undefined }}>{deadlineText(sel.e.requestIn)}</dd>
+            <dt style={{ color: 'var(--text-muted)' }}>점검 부위</dt>
+            <dd className="m-0 text-right">{sel.e.topPart ? sel.e.topPart.label.replace(/\(.*\)/, '') : '뚜렷한 변화 없음'}</dd>
+            <dt style={{ color: 'var(--text-muted)' }}>처리 상태</dt>
+            <dd className="m-0 text-right">{status ? STATUS_LABEL[status] : '—'}</dd>
+            <dt style={{ color: 'var(--text-muted)' }}>운항 노선</dt>
+            <dd className="mono m-0 text-right">{hover.route[0]} → {hover.route[1]} · {Math.round(hover.progress * 100)}%</dd>
+          </dl>
+          <div className="mt-2 border-t pt-1.5 text-[11px]" style={{ borderColor: 'var(--border-soft)', color: 'var(--accent)' }}>눌러서 엔진 상세 보기 →</div>
+        </div>
+      )}
     </section>
   )
 }
