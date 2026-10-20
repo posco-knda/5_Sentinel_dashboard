@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { EngineSchematic, type SchematicPart } from './EngineSchematic'
 import { FlyLoading } from './FlyLoading'
 import { partTone } from '../lib/parts'
@@ -102,8 +103,12 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
     controls.minAzimuthAngle = -0.6
     controls.maxAzimuthAngle = 1.0
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x8892a8, 1.2))
-    const sun = new THREE.DirectionalLight(0xffffff, 1.7)
+    // 금속 재질은 주변을 비춰 줄 환경(반사)이 있어야 검게 죽지 않는다
+    const pmrem = new THREE.PMREMGenerator(renderer)
+    const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    scene.environment = envTex
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8892a8, 0.6))
+    const sun = new THREE.DirectionalLight(0xffffff, 1.2)
     sun.position.set(4, 6, 5)
     scene.add(sun)
     const rim = new THREE.DirectionalLight(0xaecbff, 0.7)
@@ -257,6 +262,8 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
         const mat = m.material as THREE.Material | undefined
         mat?.dispose?.()
       })
+      envTex.dispose()
+      pmrem.dispose()
       renderer.dispose()
       renderer.domElement.remove()
       api.current = null
