@@ -63,16 +63,16 @@ function SavingsHero({ react, per, pre }: { react: Summary; per: Summary; pre: S
       <div className="flex flex-col gap-3">
         <div className="text-[13px] font-semibold" style={{ color: 'var(--status-good)' }}>예측 정비로 얻는 절감 효과</div>
         {/* 아래 세 칸과 같은 3열 격자: 절감 금액이 두 번째 열(−22%)과 같은 줄에서 시작한다 */}
-        <div className="grid grid-cols-3 items-end gap-3">
-          <div className="mono text-[56px] font-bold leading-none" style={{ color: 'var(--status-good)' }}>−{pct.toFixed(0)}%</div>
-          <div className="col-span-2 pb-1">
-            <div className="mono text-[26px] font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{eokTotal(saved)} 절감</div>
+        <div className="grid grid-cols-1 items-end gap-x-3 gap-y-2 sm:grid-cols-3">
+          <div className="mono text-[48px] font-bold leading-none sm:text-[56px]" style={{ color: 'var(--status-good)' }}>−{pct.toFixed(0)}%</div>
+          <div className="pb-1 sm:col-span-2">
+            <div className="mono text-[24px] font-bold leading-none sm:text-[26px]" style={{ color: 'var(--text-primary)' }}>{eokTotal(saved)} 절감</div>
             <div className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>사후 정비 대비 · 엔진 {pre.n}대 기준</div>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <div className="mono text-[22px] font-bold leading-tight" style={{ color: 'var(--status-good)' }}>{react.failures}→{pre.failures}건</div>
+            <div className="mono whitespace-nowrap text-[20px] font-bold leading-tight sm:text-[22px]" style={{ color: 'var(--status-good)' }}>{react.failures}→{pre.failures}건</div>
             <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>고장 건수</div>
           </div>
           <div>

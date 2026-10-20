@@ -138,7 +138,7 @@ export function Weekly() {
         </Section>
 
         <Section title="우선 정비 대상 (상위 10대)">
-          <table className="w-full border-collapse">
+          <table className="m-cards w-full border-collapse">
             <thead>
               <tr style={{ color: 'var(--text-muted)' }}>
                 {['엔진', '남은 수명', '요청 기한', '점검 예상 모듈', '상태'].map((h) => (
@@ -149,11 +149,11 @@ export function Weekly() {
             <tbody>
               {stats.top.map((e) => (
                 <tr key={e.unit} style={{ borderBottom: '1px solid var(--border-soft)' }}>
-                  <td className={`${td} mono font-semibold`}>#{e.unit}</td>
-                  <td className={td}><span className="mono">{e.pred}</span> cycle <span style={{ color: 'var(--text-muted)' }}>{daysText(e.daysLeft)}</span></td>
-                  <td className={td} style={{ color: e.requestIn <= 0 ? 'var(--status-critical)' : undefined }}>{deadlineText(e.requestIn)}</td>
-                  <td className={td}>{e.topPart ? e.topPart.label : '뚜렷한 변화 없음'}</td>
-                  <td className={td}><StatusChip status={plan.get(e.unit).status} /></td>
+                  <td data-label="엔진" data-main className={`${td} mono font-semibold`}>#{e.unit}</td>
+                  <td data-label="남은 수명" className={td}><span className="mono">{e.pred}</span> cycle <span style={{ color: 'var(--text-muted)' }}>{daysText(e.daysLeft)}</span></td>
+                  <td data-label="요청 기한" className={td} style={{ color: e.requestIn <= 0 ? 'var(--status-critical)' : undefined }}>{deadlineText(e.requestIn)}</td>
+                  <td data-label="점검 예상 모듈" className={td}>{e.topPart ? e.topPart.label : '뚜렷한 변화 없음'}</td>
+                  <td data-label="상태" className={td}><StatusChip status={plan.get(e.unit).status} /></td>
                 </tr>
               ))}
               {!stats.top.length && (
@@ -167,7 +167,7 @@ export function Weekly() {
 
         <Section title="이번 주 결재 이력">
           {stats.events.length ? (
-            <table className="w-full border-collapse">
+            <table className="m-cards w-full border-collapse">
               <thead>
                 <tr style={{ color: 'var(--text-muted)' }}>
                   {['시각', '엔진', '처리', '담당', '내용'].map((h) => (
@@ -178,11 +178,11 @@ export function Weekly() {
               <tbody>
                 {stats.events.slice(0, 15).map((ev) => (
                   <tr key={`${ev.unit}-${ev.at}`} style={{ borderBottom: '1px solid var(--border-soft)' }}>
-                    <td className={`${td} mono whitespace-nowrap`} style={{ color: 'var(--text-muted)' }}>{when(ev.at)}</td>
-                    <td className={`${td} mono font-semibold`}>#{ev.unit}</td>
-                    <td className={`${td} whitespace-nowrap`} style={{ color: ev.action === 'reject' ? 'var(--status-critical)' : undefined }}>{ACTION_LABEL[ev.action]}</td>
-                    <td className={`${td} whitespace-nowrap`}>{ev.by}</td>
-                    <td className={td} style={{ color: 'var(--text-secondary)' }}>
+                    <td data-label="시각" data-main className={`${td} mono whitespace-nowrap`} style={{ color: 'var(--text-muted)' }}>{when(ev.at)}</td>
+                    <td data-label="엔진" className={`${td} mono font-semibold`}>#{ev.unit}</td>
+                    <td data-label="처리" className={`${td} whitespace-nowrap`} style={{ color: ev.action === 'reject' ? 'var(--status-critical)' : undefined }}>{ACTION_LABEL[ev.action]}</td>
+                    <td data-label="담당" className={`${td} whitespace-nowrap`}>{ev.by}</td>
+                    <td data-label="내용" data-wide className={td} style={{ color: 'var(--text-secondary)' }}>
                       {ev.date && <span className="mono">{ev.date.slice(5).replace('-', '/')} 정비 · </span>}
                       {ev.note ?? '—'}
                     </td>
