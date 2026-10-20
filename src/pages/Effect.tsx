@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { PageHead } from '../components/PageHead'
 import { Panel } from '../components/Panel'
+import { PolicyCompare } from '../components/ops/PolicyCompare'
 import { RoiReference } from '../components/ops/RoiReference'
 import { eok, summarize } from '../lib/cost'
 import { useFleet } from '../lib/fleet'
@@ -39,6 +40,8 @@ export function Effect() {
         <Tile label="방치 시 위험 (30일 기대 손실)" value={eok(s.neglected.exposure)} sub={`기한이 지났는데 아직 처리 전인 ${s.neglected.n}대`} color="var(--status-critical)" />
         <Tile label="비용 기준" value={`계획 ${settings.cost.planned}억`} sub={`비계획 ×${settings.cost.ratio} · 운항 중단 ${settings.cost.lossPerDay}억/일`} />
       </div>
+
+      <PolicyCompare />
 
       <Panel title="앞으로 처리했을 때와 방치했을 때" sub="남은 수명이 그 기간 안에 다하는 엔진 기준 · 계획대로 처리하면 순이득 = 방치 시 추가 비용 − 일찍 교체해 버리는 값">
         <div className="flex flex-col gap-4">
