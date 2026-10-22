@@ -43,7 +43,8 @@ function cssColor(v: string): THREE.Color {
   const rgb = getComputedStyle(probe).color
   probe.remove()
   const m = /(\d+(?:\.\d+)?)[ ,]+(\d+(?:\.\d+)?)[ ,]+(\d+(?:\.\d+)?)/.exec(rgb)
-  return m ? new THREE.Color(Number(m[1]) / 255, Number(m[2]) / 255, Number(m[3]) / 255) : new THREE.Color('#888888')
+  // CSS 색은 sRGB 값이다. three.js는 내부를 선형 색 공간으로 계산하므로 변환해서 넣어야 색이 바래지 않는다
+  return m ? new THREE.Color().setRGB(Number(m[1]) / 255, Number(m[2]) / 255, Number(m[3]) / 255, THREE.SRGBColorSpace) : new THREE.Color('#888888')
 }
 
 interface Handle {
@@ -119,7 +120,7 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
     scene.add(rim)
 
     const mats: Record<string, THREE.MeshStandardMaterial[]> = {}
-    const base = new Map<THREE.MeshStandardMaterial, THREE.Color>()
+    const base = new Map<THREE.MeshStandardMaterial, { color: THREE.Color; metalness: number; roughness: number }>()
     const pickable: THREE.Object3D[] = []
     const spinners: { pivot: THREE.Group; speed: number }[] = []
     const colors: Record<string, THREE.Color> = {}
@@ -133,10 +134,23 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
         const on = id === sel
         const c = colors[id] ?? new THREE.Color(0x9aa4b5)
         for (const m of list) {
-          // 모델의 원래 색은 그대로 두고, 고른 부품만 상태 색으로 은은하게 빛나게 한다
-          m.color.copy(base.get(m) ?? m.color)
-          m.emissive.copy(c)
-          m.emissiveIntensity = on ? 0.5 : 0
+          // 모델의 원래 색은 그대로 두고, 고른 부품만 상태 색으로 칠한다.
+          // 원래 색(밝은 회색)에 빛만 더하면 빨강이 분홍으로 바래므로, 색 자체를 바꾸고 금속 반사도 줄인다
+          const orig = base.get(m)
+          if (on) {
+            m.color.copy(c)
+            m.emissive.copy(c)
+            m.emissiveIntensity = 0.12
+            m.metalness = Math.min(orig?.metalness ?? m.metalness, 0.15)
+            m.roughness = Math.max(orig?.roughness ?? m.roughness, 0.55)
+          } else {
+            if (orig) {
+              m.color.copy(orig.color)
+              m.metalness = orig.metalness
+              m.roughness = orig.roughness
+            }
+            m.emissiveIntensity = 0
+          }
         }
       }
     }
@@ -174,7 +188,7 @@ export function EngineModel3D({ parts, selected, onSelect, topId }: { parts: Sch
             mesh.userData.part = part
             pickable.push(mesh)
             ;(mats[part] ??= []).push(m)
-            base.set(m, m.color.clone())
+            base.set(m, { color: m.color.clone(), metalness: m.metalness, roughness: m.roughness })
           }
           // 회전축(엔진 축)을 지나는 피벗에 달아 돌릴 수 있게 한다
           if (SPIN[mesh.name]) {
