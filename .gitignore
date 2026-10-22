@@ -30,3 +30,4 @@ dist-ssr
 .claude/skills/
 .claude/references/
 skills-lock.json
+recordings/
