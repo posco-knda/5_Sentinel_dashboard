@@ -41,9 +41,9 @@ function effect(n: number) {
 }
 
 const PRESETS = [
-  { n: 40, name: "표준", desc: "불필요한 점검을 가장 적게" },
-  { n: 42, name: "민감", desc: "놓침을 줄이고 점검은 조금 늘림" },
-  { n: 46, name: "매우 민감", desc: "놓침을 최소로, 점검 증가 감수" },
+  { n: 40, name: "비용 최우선", desc: "불필요한 점검을 가장 적게" },
+  { n: 42, name: "균형", desc: "놓침을 줄이고 점검은 조금 늘림" },
+  { n: 46, name: "안전 최우선", desc: "놓침을 최소로, 점검 증가 감수" },
 ];
 
 function Slider({
@@ -413,7 +413,7 @@ export function Settings() {
 
       <Panel
         title="알림 민감도"
-        sub="예측 남은 수명이 몇 cycle 이하이면 '위험'으로 알릴지 정합니다. 높일수록 놓칠 위험은 줄고 불필요한 점검은 늘어납니다."
+        sub="예측 남은 수명이 몇 cycle 이하이면 '위험'으로 알릴지 정합니다. 비용 최우선은 불필요한 점검을 줄이고, 안전 최우선은 놓칠 위험을 줄입니다."
       >
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {PRESETS.map((p) => {
@@ -494,7 +494,7 @@ export function Settings() {
               value={`${eff.failure.toFixed(2)}%`}
             />
             <Metric
-              label="정비 비용(표준 대비)"
+              label="정비 비용(비용 최우선 대비)"
               value={`${eff.cost >= 0 ? "+" : ""}${eff.cost.toFixed(1)}%`}
               tone={eff.cost > 3 ? "var(--status-warning)" : undefined}
             />
