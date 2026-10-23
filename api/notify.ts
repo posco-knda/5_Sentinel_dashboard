@@ -149,6 +149,10 @@ export default async function handler(req: Req, res: Res) {
   if (now - (lastSent[kind] ?? 0) < COOLDOWN_MS[kind]) return res.status(429).json({ error: 'too_many_requests' })
   lastSent[kind] = now
 
+  // 공개 시연 주소에서는 방문자가 누른 동작이 실제 Slack 채널로 가지 않게 한다.
+  // 화면에는 평소처럼 '보냄'으로 나오고(simulated), 실제로 보내려면 환경변수 SLACK_LIVE=1 을 켠다(촬영·내부 시연용).
+  if (process.env.SLACK_LIVE !== '1') return res.status(200).json({ ok: true, simulated: true })
+
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), 8000)
   try {

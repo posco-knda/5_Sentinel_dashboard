@@ -7,6 +7,7 @@
 interface Req {
   method?: string
   body?: unknown
+  headers?: Record<string, string | string[] | undefined>
 }
 interface Res {
   status(code: number): Res
@@ -15,6 +16,21 @@ interface Res {
 }
 
 const MAX_BODY_CHARS = 4000
+/** IP 하나가 1분에 보낼 수 있는 요약 요청 수 (서버 인스턴스마다 따로 센다) — 무료 한도를 한 사람이 다 쓰지 못하게 한다 */
+const RATE_LIMIT = 10
+const hits = new Map<string, number[]>()
+function limited(ip: string, now = Date.now()): boolean {
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < 60000)
+  recent.push(now)
+  hits.set(ip, recent)
+  if (hits.size > 500) for (const [k, v] of hits) if (!v.some((t) => now - t < 60000)) hits.delete(k)
+  return recent.length > RATE_LIMIT
+}
+const clientIp = (req: Req): string => {
+  const h = req.headers?.['x-forwarded-for']
+  const first = Array.isArray(h) ? h[0] : h
+  return (first ?? '').split(',')[0].trim().slice(0, 64) || 'unknown'
+}
 // -latest 별칭은 Google이 현재 권장 모델로 계속 바꿔 주므로 모델이 종료돼도 깨지지 않는다.
 // (gemini-2.5-* 는 새로 발급한 키에서는 404 "신규 사용자에게 제공 종료")
 const GEMINI_DEFAULT = 'gemini-flash-lite-latest'
@@ -134,6 +150,7 @@ export default async function handler(req: Req, res: Res) {
   const geminiKey = process.env.GEMINI_API_KEY
   const claudeKey = process.env.ANTHROPIC_API_KEY
   if (!geminiKey && !claudeKey) return res.status(503).json({ error: 'not_configured' })
+  if (limited(clientIp(req))) return res.status(429).json({ error: 'rate_limited' })
 
   const body = isObj(req.body) ? req.body : {}
   let system: string

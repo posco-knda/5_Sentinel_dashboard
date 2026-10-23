@@ -3,12 +3,14 @@ import assert from 'node:assert/strict'
 // 실행: npm run test:api  (Node 22.18+ 또는 24 — .ts를 직접 불러옴)
 const root = new URL('..', import.meta.url).href.replace(/\/$/, '')
 const mkRes = () => { const r = { code: 0, body: null, headers: {}, status(c) { r.code = c; return r }, json(b) { r.body = b }, setHeader(k, v) { r.headers[k] = v } }; return r }
-const call = async (h, req) => { const res = mkRes(); await h({ headers: { host: 'demo.example.app' }, ...req }, res); return res }
+let ipSeq = 0 // 호출마다 다른 IP로 보내서, IP별 제한이 다른 시험에 영향을 주지 않게 한다
+const call = async (h, req) => { const res = mkRes(); await h({ headers: { host: 'demo.example.app', 'x-forwarded-for': `198.51.100.${++ipSeq % 250}` }, ...req }, res); return res }
 const facts = { unit: 31, name: 'Engine #31', level: 'red', levelLabel: '위험', urgencyLabel: '즉시', predRul: 8.9, daysText: '약 3일', dangerAgo: 30, requestText: '기한 지남', topPart: '고압압축기(HPC)', topSensor: { name: 'Ps30 · HPC outlet 정압', z: 5 }, action: '다음 정비 슬롯에 배정' }
 let passed = 0
 const t = async (name, fn) => { await fn(); passed++; console.log('  ok  ', name) }
 
 // ---- notify
+process.env.SLACK_LIVE = '1' // 아래 시험은 실제 전송 경로를 확인한다(운영 기본은 시뮬레이션)
 delete process.env.SLACK_WEBHOOK_URL
 const notify = (await import(root + '/api/notify.ts?a')).default
 await t('notify: GET은 405', async () => assert.equal((await call(notify, { method: 'GET' })).code, 405))
@@ -134,6 +136,22 @@ await t('채널 분리: 상태 확인은 별도 채널이면 separate (주소는
   const st = mkRes(); statusFn({}, st); assert.equal(st.body.slackApprovals, 'separate'); assert.ok(!JSON.stringify(st.body).includes('hooks.slack.test'))
 })
 delete process.env.SLACK_APPROVAL_WEBHOOK_URL
+
+// ---- notify (공개 시연 모드: SLACK_LIVE가 없으면 보내지 않고 성공처럼 응답)
+delete process.env.SLACK_LIVE
+process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/x'
+let simSent = 0
+globalThis.fetch = async () => { simSent++; return { ok: true, status: 200, json: async () => ({}) } }
+const sim = (await import(root + '/api/notify.ts?sim')).default
+await t('notify 시뮬레이션: SLACK_LIVE가 없으면 Slack으로 보내지 않고 200 simulated', async () => {
+  const r = await call(sim, { method: 'POST', body: { facts } }); assert.equal(r.code, 200); assert.equal(r.body.simulated, true); assert.equal(simSent, 0)
+})
+await t('notify 시뮬레이션: 잘못된 입력은 여전히 400, 웹훅 미설정은 503', async () => {
+  assert.equal((await call(sim, { method: 'POST', body: { facts: { unit: 31, level: 'x' } } })).code, 400)
+  delete process.env.SLACK_WEBHOOK_URL; const sim2 = (await import(root + '/api/notify.ts?sim2')).default
+  assert.equal((await call(sim2, { method: 'POST', body: { facts } })).code, 503)
+})
+process.env.SLACK_LIVE = '1'
 
 // ---- status
 const status = (await import(root + '/api/status.ts')).default
@@ -312,6 +330,14 @@ await t('chat: IP별 분당 20회를 넘으면 429 rate_limited', async () => {
   for (let i = 0; i < 22; i++) last = await call(lim, { method: 'POST', headers: { 'x-forwarded-for': '203.0.113.9' }, body: { contents: ask('q'), context: ctx } })
   assert.equal(last.code, 429); assert.equal(last.body.error, 'rate_limited')
   assert.equal((await call(lim, { method: 'POST', headers: { 'x-forwarded-for': '203.0.113.10' }, body: { contents: ask('q'), context: ctx } })).code, 200)
+})
+await t('summary: IP별 분당 10회를 넘으면 429 rate_limited, 다른 IP는 영향 없음', async () => {
+  process.env.GEMINI_API_KEY = 'gk-secret-test'
+  globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: '요약' }] } }] }) })
+  const lim = (await import(root + '/api/summary.ts?lim')).default; let last
+  for (let i = 0; i < 12; i++) last = await call(lim, { method: 'POST', headers: { host: 'demo.example.app', 'x-forwarded-for': '203.0.113.50' }, body: { facts } })
+  assert.equal(last.code, 429); assert.equal(last.body.error, 'rate_limited')
+  assert.equal((await call(lim, { method: 'POST', headers: { host: 'demo.example.app', 'x-forwarded-for': '203.0.113.51' }, body: { facts } })).code, 200)
 })
 delete process.env.GEMINI_API_KEY
 console.log(`\n${passed}개 통과`)
