@@ -278,6 +278,18 @@ function Gate() {
     if (role) document.documentElement.setAttribute('data-role', role)
     else document.documentElement.removeAttribute('data-role')
   }, [role])
+  // 로그인한 뒤 한가할 때 엔진 상세 화면과 3D 모델(큰 파일)을 미리 받아 둔다 — 엔진을 열 때 로딩 화면이 길지 않도록
+  useEffect(() => {
+    if (!role) return
+    const warm = () => {
+      void import('./pages/Detail')
+      void import('./components/EngineModel3D')
+      void fetch('/models/turbofan-cutaway.glb').catch(() => {})
+    }
+    const idle = typeof window.requestIdleCallback === 'function'
+    const id = idle ? window.requestIdleCallback(warm, { timeout: 4000 }) : window.setTimeout(warm, 1500)
+    return () => (idle ? window.cancelIdleCallback(id) : window.clearTimeout(id))
+  }, [role])
   return user ? (
     <ChatProvider>
       <Shell />
