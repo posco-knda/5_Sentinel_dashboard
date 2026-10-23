@@ -40,7 +40,7 @@ export async function askBot(history: Content[], ctx: BotContext, env: ToolEnv, 
       r = await callApi('/api/chat', { contents, context: ctx })
     }
     if (!r.ok || !r.data) {
-      if (r.status === 503 || r.status === 404) return { ok: false, reason: 'off', message: '챗봇이 아직 연결되지 않았습니다. 서버에 GEMINI_API_KEY 설정이 필요합니다.' }
+      if (r.status === 503 || r.status === 404) return { ok: false, reason: 'off', message: '챗봇이 아직 연결되지 않았습니다. 관리자에게 연결을 요청해 주세요.' }
       if (r.status === 429) return { ok: false, reason: 'quota', message: '요청이 많아 지금은 답하기 어렵습니다. 잠시 후 다시 물어봐 주세요.' }
       return { ok: false, reason: 'error', message: '답변을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.' }
     }

@@ -549,7 +549,7 @@ export function Settings() {
 
       <Panel
         title="연동"
-        sub="알림과 AI 요약은 서버 기능입니다. 배포 환경의 환경변수가 설정돼 있으면 연결됩니다."
+        sub="Slack 알림과 AI 요약의 연결 상태입니다."
         action={
           <button
             onClick={check}
@@ -566,7 +566,7 @@ export function Settings() {
       >
         <Row
           title="Slack 정비 알림"
-          desc="엔진 위험 감지와 신규 즉시 조치를 이 채널로 보냅니다 · SLACK_WEBHOOK_URL"
+          desc="엔진 위험 감지와 신규 즉시 조치를 이 채널로 보냅니다"
         >
           {link.state === "checking" ? (
             <span
@@ -582,7 +582,7 @@ export function Settings() {
                 link.slack
                   ? "연결됨"
                   : link.state === "dev"
-                    ? "서버 기능 없음 (개발 모드)"
+                    ? "연결할 수 없음"
                     : "미연결"
               }
             />
@@ -590,7 +590,7 @@ export function Settings() {
         </Row>
         <Row
           title="Slack 결재 알림"
-          desc="결재 요청·승인·반려·정비 완료를 보냅니다 · SLACK_APPROVAL_WEBHOOK_URL (없으면 정비 알림 채널로 함께 보냄)"
+          desc="결재 요청·승인·반려·정비 완료를 보냅니다 (별도 채널이 없으면 정비 알림 채널로 함께 보냄)"
         >
           {link.state === "checking" ? (
             <span
@@ -608,7 +608,7 @@ export function Settings() {
                   : link.approvals === "shared"
                     ? "정비 알림 채널과 같은 곳으로 전송"
                     : link.state === "dev"
-                      ? "서버 기능 없음 (개발 모드)"
+                      ? "연결할 수 없음"
                       : "미연결"
               }
             />
@@ -616,7 +616,7 @@ export function Settings() {
         </Row>
         <Row
           title="AI 요약"
-          desc="리포트의 요약을 생성형 AI로 다시 씁니다 · GEMINI_API_KEY(무료 한도 있음) 또는 ANTHROPIC_API_KEY"
+          desc="리포트의 요약을 AI로 다시 씁니다"
         >
           {link.state === "checking" ? (
             <span
@@ -630,9 +630,9 @@ export function Settings() {
               on={link.ai}
               label={
                 link.ai
-                  ? `연결됨${link.provider === "gemini" ? " · Gemini" : link.provider === "claude" ? " · Claude" : ""}`
+                  ? "연결됨"
                   : link.state === "dev"
-                    ? "서버 기능 없음 (개발 모드)"
+                    ? "연결할 수 없음"
                     : "미연결"
               }
             />
