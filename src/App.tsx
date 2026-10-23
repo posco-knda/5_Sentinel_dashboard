@@ -15,7 +15,6 @@ import { usePlan } from './lib/plan'
 import { Overview } from './pages/Overview'
 import { Plan } from './pages/Plan'
 import { Login } from './pages/Login'
-import { Qa } from './pages/Qa'
 import { NoticeStack } from './components/NoticeStack'
 import { useUrgentWatcher } from './lib/autoAlert'
 
@@ -301,8 +300,6 @@ function Gate() {
 }
 
 export default function App() {
-  // 질의응답 화면은 로그인 없이 열린다(발표 마지막에 QR을 크게 띄우는 용도)
-  if (window.location.pathname.replace(/\/$/, '') === '/qa') return <ThemeProvider><Qa /></ThemeProvider>
   return (
     <ThemeProvider>
       <SettingsProvider>
