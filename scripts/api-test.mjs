@@ -9,6 +9,7 @@ let passed = 0
 const t = async (name, fn) => { await fn(); passed++; console.log('  ok  ', name) }
 
 // ---- notify
+process.env.SLACK_LIVE = '1' // 아래 시험은 실제 전송 경로를 확인한다(운영 기본은 시뮬레이션)
 delete process.env.SLACK_WEBHOOK_URL
 const notify = (await import(root + '/api/notify.ts?a')).default
 await t('notify: GET은 405', async () => assert.equal((await call(notify, { method: 'GET' })).code, 405))
@@ -134,6 +135,22 @@ await t('채널 분리: 상태 확인은 별도 채널이면 separate (주소는
   const st = mkRes(); statusFn({}, st); assert.equal(st.body.slackApprovals, 'separate'); assert.ok(!JSON.stringify(st.body).includes('hooks.slack.test'))
 })
 delete process.env.SLACK_APPROVAL_WEBHOOK_URL
+
+// ---- notify (공개 시연 모드: SLACK_LIVE가 없으면 보내지 않고 성공처럼 응답)
+delete process.env.SLACK_LIVE
+process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.test/T/B/x'
+let simSent = 0
+globalThis.fetch = async () => { simSent++; return { ok: true, status: 200, json: async () => ({}) } }
+const sim = (await import(root + '/api/notify.ts?sim')).default
+await t('notify 시뮬레이션: SLACK_LIVE가 없으면 Slack으로 보내지 않고 200 simulated', async () => {
+  const r = await call(sim, { method: 'POST', body: { facts } }); assert.equal(r.code, 200); assert.equal(r.body.simulated, true); assert.equal(simSent, 0)
+})
+await t('notify 시뮬레이션: 잘못된 입력은 여전히 400, 웹훅 미설정은 503', async () => {
+  assert.equal((await call(sim, { method: 'POST', body: { facts: { unit: 31, level: 'x' } } })).code, 400)
+  delete process.env.SLACK_WEBHOOK_URL; const sim2 = (await import(root + '/api/notify.ts?sim2')).default
+  assert.equal((await call(sim2, { method: 'POST', body: { facts } })).code, 503)
+})
+process.env.SLACK_LIVE = '1'
 
 // ---- status
 const status = (await import(root + '/api/status.ts')).default
