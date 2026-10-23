@@ -95,10 +95,10 @@ function ReportSheet({ unit }: { unit: number }) {
 
       {(ai.state === 'off' || ai.state === 'error' || slack.state !== 'idle') && (
         <div className="no-print flex flex-col gap-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-          {ai.state === 'off' && <span>AI 요약은 서버 연동이 필요합니다(설정 › 연동). 지금은 아래 기본 요약을 보여 줍니다.</span>}
+          {ai.state === 'off' && <span>AI 요약이 아직 연결되지 않았습니다(설정 › 연동). 지금은 아래 기본 요약을 보여 줍니다.</span>}
           {ai.state === 'error' && <span>AI 요약을 가져오지 못했습니다. 기본 요약은 그대로 사용할 수 있습니다.</span>}
           {slack.state === 'done' && <span style={{ color: 'var(--status-good)' }}>Slack으로 알림을 보냈습니다.</span>}
-          {slack.state === 'off' && <span>Slack 알림은 서버 연동이 필요합니다(설정 › 연동).</span>}
+          {slack.state === 'off' && <span>Slack 알림이 아직 연결되지 않았습니다(설정 › 연동).</span>}
           {slack.state === 'error' && <span>Slack 전송에 실패했습니다{slack.text ? ` — ${slack.text}` : ''}.</span>}
         </div>
       )}

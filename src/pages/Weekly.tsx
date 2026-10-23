@@ -81,7 +81,7 @@ export function Weekly() {
         </div>
       </div>
 
-      {ai.state === 'off' && <p className="no-print m-0 text-[12px]" style={{ color: 'var(--text-muted)' }}>AI 요약은 서버 연동이 필요합니다(설정 › 연동). 지금은 아래 기본 요약을 보여 줍니다.</p>}
+      {ai.state === 'off' && <p className="no-print m-0 text-[12px]" style={{ color: 'var(--text-muted)' }}>AI 요약이 아직 연결되지 않았습니다(설정 › 연동). 지금은 아래 기본 요약을 보여 줍니다.</p>}
       {ai.state === 'error' && <p className="no-print m-0 text-[12px]" style={{ color: 'var(--text-muted)' }}>AI 요약을 가져오지 못했습니다. 기본 요약은 그대로 사용할 수 있습니다.</p>}
 
       <article className="force-light report-sheet mx-auto w-full max-w-[720px] border p-8" style={{ background: 'var(--surface-1)', color: 'var(--text-primary)', borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)' }}>
