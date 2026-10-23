@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FlyLoading } from '../components/FlyLoading'
 import { Turbofan3D } from '../components/Turbofan3D'
-import { ACCOUNTS } from '../lib/accounts'
+import { ACCOUNTS, AVATARS } from '../lib/accounts'
 import { ROLE_LABEL, useAuth } from '../lib/auth'
 
 /** 로그인 뒤 비행기 로딩 화면을 보여 주는 시간(ms) */
@@ -78,13 +78,26 @@ export function Login() {
 
         <div className="mt-5">
           <p className="m-0 mb-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>계정 선택</p>
-          <div className="grid grid-cols-2 gap-2">
-            {ACCOUNTS.map((a) => (
-              <button key={a.id} type="button" onClick={() => fill(a.id, a.password)} className="flex flex-col items-start gap-0.5 border px-3 py-2.5 text-left" style={{ borderColor: 'var(--border)', background: 'var(--surface-1)', borderRadius: 'var(--radius-sm)' }}>
-                <span className="text-[13px] font-semibold">{ROLE_LABEL[a.role]}</span>
-                <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{a.name}</span>
-              </button>
-            ))}
+          <div className="grid grid-cols-2 gap-3">
+            {ACCOUNTS.map((a) => {
+              const on = id.trim().toLowerCase() === a.id
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => fill(a.id, a.password)}
+                  aria-pressed={on}
+                  className="flex flex-col items-center gap-2 border px-3 pb-3 pt-4 text-center transition-colors"
+                  style={{ borderColor: on ? 'var(--accent)' : 'var(--border)', background: on ? 'var(--accent-dim)' : 'var(--surface-1)', borderRadius: 'var(--radius-md)', boxShadow: on ? '0 0 0 1px var(--accent)' : 'none' }}
+                >
+                  <img src={AVATARS[a.name]} alt="" width={256} height={256} draggable={false} className="h-[104px] w-[104px] object-cover sm:h-[120px] sm:w-[120px]" style={{ borderRadius: 'var(--radius-md)' }} />
+                  <span className="flex flex-col items-center gap-0.5">
+                    <span className="text-[14px] font-semibold">{ROLE_LABEL[a.role]}</span>
+                    <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{a.name}</span>
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
