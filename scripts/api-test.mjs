@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 // 실행: npm run test:api  (Node 22.18+ 또는 24 — .ts를 직접 불러옴)
 const root = new URL('..', import.meta.url).href.replace(/\/$/, '')
 const mkRes = () => { const r = { code: 0, body: null, headers: {}, status(c) { r.code = c; return r }, json(b) { r.body = b }, setHeader(k, v) { r.headers[k] = v } }; return r }
-const call = async (h, req) => { const res = mkRes(); await h({ headers: { host: 'demo.example.app' }, ...req }, res); return res }
+let ipSeq = 0 // 호출마다 다른 IP로 보내서, IP별 제한이 다른 시험에 영향을 주지 않게 한다
+const call = async (h, req) => { const res = mkRes(); await h({ headers: { host: 'demo.example.app', 'x-forwarded-for': `198.51.100.${++ipSeq % 250}` }, ...req }, res); return res }
 const facts = { unit: 31, name: 'Engine #31', level: 'red', levelLabel: '위험', urgencyLabel: '즉시', predRul: 8.9, daysText: '약 3일', dangerAgo: 30, requestText: '기한 지남', topPart: '고압압축기(HPC)', topSensor: { name: 'Ps30 · HPC outlet 정압', z: 5 }, action: '다음 정비 슬롯에 배정' }
 let passed = 0
 const t = async (name, fn) => { await fn(); passed++; console.log('  ok  ', name) }
@@ -329,6 +330,14 @@ await t('chat: IP별 분당 20회를 넘으면 429 rate_limited', async () => {
   for (let i = 0; i < 22; i++) last = await call(lim, { method: 'POST', headers: { 'x-forwarded-for': '203.0.113.9' }, body: { contents: ask('q'), context: ctx } })
   assert.equal(last.code, 429); assert.equal(last.body.error, 'rate_limited')
   assert.equal((await call(lim, { method: 'POST', headers: { 'x-forwarded-for': '203.0.113.10' }, body: { contents: ask('q'), context: ctx } })).code, 200)
+})
+await t('summary: IP별 분당 10회를 넘으면 429 rate_limited, 다른 IP는 영향 없음', async () => {
+  process.env.GEMINI_API_KEY = 'gk-secret-test'
+  globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: '요약' }] } }] }) })
+  const lim = (await import(root + '/api/summary.ts?lim')).default; let last
+  for (let i = 0; i < 12; i++) last = await call(lim, { method: 'POST', headers: { host: 'demo.example.app', 'x-forwarded-for': '203.0.113.50' }, body: { facts } })
+  assert.equal(last.code, 429); assert.equal(last.body.error, 'rate_limited')
+  assert.equal((await call(lim, { method: 'POST', headers: { host: 'demo.example.app', 'x-forwarded-for': '203.0.113.51' }, body: { facts } })).code, 200)
 })
 delete process.env.GEMINI_API_KEY
 console.log(`\n${passed}개 통과`)
